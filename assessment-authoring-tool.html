@@ -217,11 +217,22 @@
         }
         
         .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        /* Updated Sub-Item Styling for Indentation */
         .p-sub-item { 
             margin-bottom: 0.75rem; 
-            text-align: justify; /* Justify sub-questions */
+            text-align: justify; 
+            /* Indentation Logic */
+            padding-left: 1.5rem; /* Indent the whole block */
+            display: flex; /* Flex layout for hanging indent of label */
+            align-items: baseline;
         }
-        .p-sub-label { font-weight: bold; margin-right: 0.5rem; }
+        
+        .p-sub-label { 
+            font-weight: bold; 
+            margin-right: 0.5rem; 
+            flex-shrink: 0; /* Prevent label from shrinking */
+        }
         
         .p-asset { margin: 0.5rem 0; text-align: center; }
         .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
@@ -389,6 +400,10 @@
                         <div class="header-top">
                             <div class="meta-group">
                                 <span class="badge-draft" id="meta-id">ID</span>
+                                <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
+                                    <option value="practice">Practice Pool</option>
+                                    <option value="exam">Exam Pool</option>
+                                </select>
                                 <select class="btn btn-sm" id="meta-difficulty" onchange="updateMeta('difficulty', this.value)">
                                     <option value="easy">Easy</option>
                                     <option value="medium">Medium</option>
@@ -531,7 +546,12 @@
                     try {
                         if (buffer.trim().endsWith('}') || buffer.trim().endsWith(']')) {
                             const obj = JSON.parse(buffer);
-                            const processQ = (q) => { q.layout = 'stack'; return q; };
+                            // Process Q: Set Layout and Pool Type Defaults
+                            const processQ = (q) => { 
+                                q.layout = 'stack'; 
+                                if(!q.pool_type) q.pool_type = 'practice'; // Set default pool
+                                return q; 
+                            };
                             if(Array.isArray(obj)) rawData = rawData.concat(obj.map(processQ)); 
                             else rawData.push(processQ(obj)); 
                             buffer = "";
@@ -625,6 +645,7 @@
             renderList();
 
             document.getElementById('meta-id').innerText = `Q${idx+1}`;
+            document.getElementById('meta-pool-type').value = q.pool_type || 'practice';
             document.getElementById('meta-difficulty').value = q.difficulty || 'medium';
             document.getElementById('meta-points').value = q.points || 1;
             
@@ -921,13 +942,16 @@
         // --- TAB SWITCHING ---
         function switchTab(tab) {
             // Disable Controls in Preview
+            const poolSelect = document.getElementById('meta-pool-type');
             const diffSelect = document.getElementById('meta-difficulty');
             const pointInput = document.getElementById('meta-points');
             
             if (tab === 'preview') {
+                poolSelect.disabled = true;
                 diffSelect.disabled = true;
                 pointInput.disabled = true;
             } else {
+                poolSelect.disabled = false;
                 diffSelect.disabled = false;
                 pointInput.disabled = false;
             }
@@ -996,9 +1020,11 @@
                     return `
                         <div class="p-sub-item">
                             <span class="p-sub-label">${label}.</span>
-                            ${formatForPrint(sq.prompt.text, sq.options)}
-                            ${sqAssets}
-                            ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                            <div> <!-- Wrapper for text/assets/options -->
+                                ${formatForPrint(sq.prompt.text, sq.options)}
+                                ${sqAssets}
+                                ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                            </div>
                         </div>
                     `;
                 }).join('');
