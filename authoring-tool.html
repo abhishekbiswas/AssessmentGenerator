@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Admin | Fluid Editor</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --bg-subtle: #f9fafb;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --success: #16a34a;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; color: var(--text-main); background: white; }
+
+        /* HEADER */
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .header-brand { display: flex; align-items: center; gap: 1rem; }
+        .header-title { font-weight: 700; font-size: 1.1rem; color: var(--text-main); }
+        .header-meta { font-size: 0.9rem; color: var(--text-muted); padding-left: 1rem; border-left: 1px solid var(--border); }
+        .badge-draft { background: #f3f4f6; color: var(--text-muted); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; border: 1px solid #d1d5db; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .actions { display: flex; gap: 0.75rem; }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: var(--bg-subtle); border-color: #d1d5db; }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .btn-icon { padding: 0.4rem; }
+
+        /* LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* SIDEBAR (List View) */
+        .sidebar {
+            width: 320px;
+            border-right: 1px solid var(--border);
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-filter {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-subtle);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .q-list { overflow-y: auto; flex: 1; }
+        
+        .q-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s;
+            position: relative;
+        }
+        .q-item:hover { background: #f8fafc; }
+        .q-item.active { background: #eff6ff; border-left: 4px solid var(--primary); padding-left: calc(1.25rem - 4px); }
+        
+        .q-item-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; align-items: center; }
+        .q-id { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .q-location { font-size: 0.7rem; color: var(--primary); font-weight: 600; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.02em; }
+
+        .q-preview { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); font-weight: 500; }
+        
+        .status-indicator { font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 5px; margin-top: 6px;}
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .valid { color: var(--success); } .valid .dot { background: var(--success); }
+        .pending { color: var(--warning); } .pending .dot { background: var(--warning); }
+
+        /* EDITOR (Detail View) */
+        .editor { flex: 1; background: #f3f4f6; overflow-y: auto; padding: 2rem; }
+        
+        .editor-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            /* INCREASED WIDTH FOR EDIT MODE */
+            max-width: 1200px; 
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+        }
+        
+        .card-header {
+            padding: 0; /* Tabs affect padding */
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-top { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        
+        .meta-group { display: flex; gap: 1rem; align-items: center; }
+        .meta-item { display: flex; flex-direction: column; }
+        
+        .card-tabs { display: flex; border-top: 1px solid var(--border); background: var(--bg-subtle); }
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn:hover { background: #f3f4f6; }
+        .tab-btn.active { background: white; color: var(--primary); border-bottom-color: var(--primary); }
+
+        .card-body { padding: 0; flex: 1; display: flex; flex-direction: column; }
+        
+        /* EDIT VIEW */
+        .edit-view { padding: 2rem; display: none; }
+        .edit-view.active { display: block; }
+        
+        /* PREVIEW VIEW (A4 Simulation) */
+        .preview-view { 
+            padding: 2rem; 
+            background: #525659; 
+            display: none; 
+            flex: 1; 
+            justify-content: center;
+        }
+        .preview-view.active { display: flex; }
+        
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            /* DECREASED PADDING FOR PREVIEW MODE (More space for text) */
+            padding: 12mm; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            font-family: "Times New Roman", serif;
+            /* SLIGHTLY SMALLER FONT TO FIT MORE TEXT */
+            font-size: 11pt; 
+            line-height: 1.4;
+            color: #000;
+        }
+
+        /* PREVIEW CONTENT STYLES */
+        .p-q-block { 
+            margin-bottom: 1.5rem; 
+            text-align: justify;
+        }
+        
+        /* Updated Header for Marks Alignment - Using Grid for alignment */
+        .p-q-header { 
+            display: grid;
+            grid-template-columns: 1fr auto; /* Text takes space, Marks take remaining */
+            align-items: end; /* Align to bottom */
+            gap: 1rem;
+            margin-bottom: 0.5rem; 
+        }
+        
+        .p-q-content { 
+            /* This ensures the question number and text flow correctly */
+        }
+        
+        .p-q-num { 
+            font-weight: bold; 
+            margin-right: 0.5rem; 
+        }
+        
+        .p-q-marks { 
+            font-size: 10pt; 
+            font-weight: bold; 
+            white-space: nowrap; 
+        }
+        
+        .p-stimulus { 
+            background: #f9fafb; 
+            padding: 0.75rem; 
+            border: 1px solid #e5e7eb; 
+            margin-bottom: 1rem; 
+            font-style: italic; 
+            text-align: justify; /* Justify stimulus too */
+        }
+        
+        .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .p-sub-item { 
+            margin-bottom: 0.75rem; 
+            text-align: justify; /* Justify sub-questions */
+        }
+        .p-sub-label { font-weight: bold; margin-right: 0.5rem; }
+        
+        .p-asset { margin: 0.5rem 0; text-align: center; }
+        .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
+        .p-asset-placeholder { 
+            border: 1px dashed #ccc; 
+            padding: 2rem; 
+            color: #999; 
+            font-family: sans-serif; 
+            font-size: 0.8rem; 
+        }
+
+        /* TOOLBAR */
+        .editor-toolbar {
+            background: var(--bg-subtle);
+            padding: 0.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .toolbar-group { display: flex; align-items: center; gap: 0.5rem; padding-right: 1rem; border-right: 1px solid var(--border); }
+        .toolbar-group:last-child { border-right: none; }
+        .toolbar-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-right: 0.5rem; }
+
+        /* FORM CONTROLS (Fluid Editor) */
+        .input-bare {
+            width: 100%;
+            border: 1px solid transparent;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            background: transparent;
+            resize: none;
+            transition: all 0.2s;
+        }
+        .input-bare:hover { background: #f9fafb; border-color: #e5e7eb; }
+        .input-bare:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+        
+        .prompt-input { font-size: 1.1rem; font-weight: 500; min-height: 3rem; }
+        .sub-input { font-size: 0.95rem; min-height: 2.5rem; }
+        
+        /* CONTENT BLOCKS */
+        .content-section { margin-bottom: 2rem; }
+        
+        /* SUB-QUESTIONS CONTAINER */
+        .sub-questions-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem; 
+        }
+        
+        /* SIDE-BY-SIDE GRID MODE */
+        .sub-questions-wrapper.layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .sub-question-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            position: relative;
+            transition: box-shadow 0.2s;
+        }
+        .sub-question-card:focus-within { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .sub-id-badge {
+            background: #eff6ff; 
+            color: var(--primary); 
+            font-weight: 700; 
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* OPTIONS EDITOR STYLES */
+        .options-editor {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .option-radio {
+            width: 14px; 
+            height: 14px; 
+            border: 1px solid #ccc; 
+            border-radius: 50%;
+            background: white;
+        }
+        .option-input {
+            flex: 1;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* ASSETS */
+        .asset-container { margin: 0.5rem 0; }
+        
+        .asset-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .asset-preview { width: 80px; height: 80px; background: #e2e8f0; border-radius: 4px; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; }
+        .asset-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .asset-details { flex: 1; }
+        .asset-prompt-input { width: 100%; font-size: 0.8rem; color: #4b5563; font-family: monospace; border: 1px solid #e5e7eb; padding: 4px; border-radius: 4px; margin-bottom: 4px;}
+        
+        .empty-state { text-align: center; color: var(--text-muted); margin-top: 20%; }
+        #file-input, #image-upload-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-brand">
+            <div class="header-title">Assessment Authoring</div>
+            <div class="header-meta" id="batch-name">No file loaded</div>
+        </div>
+        <div class="actions">
+            <input type="file" id="file-input" accept=".jsonl">
+            <button class="btn" onclick="document.getElementById('file-input').click()">📁 Open JSONL</button>
+            <button class="btn btn-primary" onclick="downloadJSONL()">Publish to Bank</button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-filter">
+                <span id="filter-text">-- / --</span>
+                <span id="question-count">0 Items</span>
+            </div>
+            <div id="question-list" class="q-list"></div>
+        </aside>
+
+        <main class="editor">
+            <div id="editor-wrapper" style="display:none;">
+                <div class="editor-card">
+                    <!-- Metadata Header -->
+                    <div class="card-header">
+                        <div class="header-top">
+                            <div class="meta-group">
+                                <span class="badge-draft" id="meta-id">ID</span>
+                                <select class="btn btn-sm" id="meta-difficulty" onchange="updateMeta('difficulty', this.value)">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                                <input type="number" class="btn btn-sm" style="width:60px" id="meta-points" onchange="updateMeta('points', this.value)" title="Points">
+                            </div>
+                            <button class="btn btn-sm btn-danger" onclick="deleteQuestion()">Delete Question</button>
+                        </div>
+                        <!-- TABS -->
+                        <div class="card-tabs">
+                            <div class="tab-btn active" id="tab-edit" onclick="switchTab('edit')">Edit</div>
+                            <div class="tab-btn" id="tab-preview" onclick="switchTab('preview')">Preview (A4)</div>
+                        </div>
+                    </div>
+
+                    <!-- Content Body -->
+                    <div class="card-body">
+                        
+                        <!-- VIEW: EDIT -->
+                        <div id="view-edit" class="edit-view active">
+                            <!-- Toolbar -->
+                            <div class="editor-toolbar">
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">Layout</span>
+                                    <button class="btn btn-sm" id="btn-layout-stack" onclick="setLayout('stack')">☰ Stacked</button>
+                                    <button class="btn btn-sm" id="btn-layout-grid" onclick="setLayout('grid')">⊞ Grid</button>
+                                </div>
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">Assets</span>
+                                    <button class="btn btn-sm" onclick="addAssetToPrompt()">+ Add Image</button>
+                                </div>
+                            </div>
+
+                            <!-- Main Prompt -->
+                            <div class="content-section">
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Question Prompt</label>
+                                <textarea class="input-bare prompt-input" id="input-prompt" oninput="updatePrompt(this.value)" placeholder="Enter question text..."></textarea>
+                                <div id="prompt-assets" class="asset-container"></div>
+                            </div>
+
+                            <!-- Stimulus -->
+                            <div id="stimulus-section" class="content-section" style="display:none; background:#fffbeb; padding:1rem; border-radius:6px; border:1px dashed #fcd34d;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                    <label style="font-size:0.75rem; font-weight:700; color:#b45309;">SHARED CONTEXT (STIMULUS)</label>
+                                    <button class="btn btn-sm" onclick="addAssetToStimulus()" style="background:white; border-color:#fcd34d; color:#b45309;">+ Add Image</button>
+                                </div>
+                                <textarea class="input-bare" id="input-stimulus" oninput="updateStimulus(this.value)" placeholder="Enter passage or context..."></textarea>
+                                <div id="stimulus-assets" class="asset-container"></div>
+                            </div>
+
+                            <!-- Sub-Questions -->
+                            <div class="content-section">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Sub-Questions / Answer</label>
+                                </div>
+                                <div id="sub-questions-list" class="sub-questions-wrapper"></div>
+                            </div>
+                        </div>
+
+                        <!-- VIEW: PREVIEW -->
+                        <div id="view-preview" class="preview-view">
+                            <div class="a4-page" id="a4-content">
+                                <!-- Rendered Content Goes Here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <p>Upload a .jsonl file to start editing.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Input for Image Upload -->
+    <input type="file" id="image-upload-input" accept="image/*">
+
+    <!-- SCRIPT -->
+    <script>
+        let rawData = [];
+        let activeIndex = null;
+        let activeUploadCallback = null;
+
+        // --- Helper: Calculate Blank Width ---
+        function getBlankStyle(text, options) {
+            if (!text || !text.includes('__')) return '';
+            
+            // Check for inline options if explicit options aren't passed
+            let optionsToMeasure = options || [];
+            if (!optionsToMeasure || optionsToMeasure.length === 0) {
+                const match = text.match(/\(([^)]+)\)/); // Finds (a/b)
+                if (match && match[1].includes('/')) {
+                    optionsToMeasure = match[1].split('/');
+                }
+            }
+
+            let width = '80px'; 
+            if (optionsToMeasure && optionsToMeasure.length > 0) {
+                let longest = 0;
+                optionsToMeasure.forEach(opt => {
+                    const txt = typeof opt === 'string' ? opt : (opt.text || '');
+                    if (txt.length > longest) longest = txt.length;
+                });
+                const calcWidth = Math.max(80, (longest * 10 * 1.2)); // 10px per char approx
+                width = `${Math.round(calcWidth)}px`;
+            }
+            return width; 
+        }
+        
+        // --- Helper: Format Text for Preview ---
+        function formatForPrint(text, options) {
+            if(!text) return '';
+            // If it has blanks, use the calculated width style
+            if(text.includes('__')) {
+                const w = getBlankStyle(text, options);
+                // Create a visual blank line
+                return text.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
+            }
+            return text;
+        }
+
+        // --- File Upload (JSONL) ---
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('batch-name').innerHTML = `File: <strong>${file.name}</strong>`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n');
+                rawData = [];
+                let buffer = "";
+                
+                for (const line of lines) {
+                    if (!line.trim() && buffer.trim().length === 0) continue;
+                    buffer += line + "\n";
+                    try {
+                        if (buffer.trim().endsWith('}') || buffer.trim().endsWith(']')) {
+                            const obj = JSON.parse(buffer);
+                            const processQ = (q) => { q.layout = 'stack'; return q; };
+                            if(Array.isArray(obj)) rawData = rawData.concat(obj.map(processQ)); 
+                            else rawData.push(processQ(obj)); 
+                            buffer = "";
+                        }
+                    } catch (err) {}
+                }
+                
+                if (rawData.length > 0) {
+                    initUI();
+                    selectQuestion(0);
+                } else {
+                    alert('No valid JSON objects found.');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // --- Image Upload Handler ---
+        document.getElementById('image-upload-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file || !activeUploadCallback) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                // Return Data URL to the callback
+                activeUploadCallback(evt.target.result);
+                activeUploadCallback = null; // Reset
+                // Reset input so same file can be selected again if needed
+                document.getElementById('image-upload-input').value = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function triggerImageUpload(callback) {
+            activeUploadCallback = callback;
+            document.getElementById('image-upload-input').click();
+        }
+
+        function initUI() {
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('editor-wrapper').style.display = 'block';
+            if(rawData[0]) {
+                document.getElementById('filter-text').innerText = `${rawData[0].subject_id} / ${rawData[0].grade_id}`;
+                document.getElementById('question-count').innerText = `${rawData.length} Questions`;
+            }
+            renderList();
+        }
+
+        // --- Sidebar ---
+        function renderList() {
+            const listEl = document.getElementById('question-list');
+            listEl.innerHTML = '';
+            rawData.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = `q-item ${idx === activeIndex ? 'active' : ''}`;
+                item.onclick = () => selectQuestion(idx);
+                
+                const hasAssets = hasMedia(q);
+                const status = hasAssets ? '<span class="status-indicator pending"><span class="dot"></span> Has Assets</span>' : '<span class="status-indicator valid"><span class="dot"></span> Text Only</span>';
+
+                const chap = q.chapter_id ? q.chapter_id.replace('ch_', '').replace(/_/g, ' ') : 'General';
+                const sec = q.section_id ? `Sec ${q.section_id}` : '';
+
+                item.innerHTML = `
+                    <div class="q-item-header">
+                        <span class="q-id">Q${idx + 1}</span>
+                        <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(q.difficulty||'').toUpperCase()}</span>
+                    </div>
+                    <div class="q-location">${chap} • ${sec}</div>
+                    <div class="q-preview">${q.prompt?.text || 'No prompt'}</div>
+                    ${status}
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function hasMedia(q) {
+            if(q.prompt?.media?.length) return true;
+            if(q.stimulus?.media?.length) return true; 
+            if(q.subquestions) {
+                return q.subquestions.some(sq => sq.prompt?.media?.length);
+            }
+            return false;
+        }
+
+        // --- Core Editor Logic ---
+        function selectQuestion(idx) {
+            activeIndex = idx;
+            const q = rawData[idx];
+            
+            renderList();
+
+            document.getElementById('meta-id').innerText = `Q${idx+1}`;
+            document.getElementById('meta-difficulty').value = q.difficulty || 'medium';
+            document.getElementById('meta-points').value = q.points || 1;
+            
+            document.getElementById('input-prompt').value = q.prompt?.text || '';
+            renderAssetList(q.prompt?.media || [], 'prompt-assets', (newMedia) => {
+                q.prompt.media = newMedia;
+            });
+
+            // Stimulus Logic
+            const stimArea = document.getElementById('stimulus-section');
+            const stimInput = document.getElementById('input-stimulus');
+            
+            if(q.stimulus) {
+                stimArea.style.display = 'block';
+                stimInput.value = q.stimulus.text || '';
+                renderAssetList(q.stimulus.media || [], 'stimulus-assets', (newMedia) => {
+                    q.stimulus.media = newMedia;
+                });
+            } else {
+                stimArea.style.display = 'none';
+            }
+
+            renderSubQuestions(q);
+            updateLayoutButtons(q.layout);
+            
+            // If preview tab is active, update it
+            if(document.getElementById('tab-preview').classList.contains('active')) {
+                renderPreview(q, idx);
+            }
+        }
+
+        function renderSubQuestions(q) {
+            const container = document.getElementById('sub-questions-list');
+            container.innerHTML = '';
+            
+            const mode = q.layout || 'stack';
+            container.className = `sub-questions-wrapper ${mode === 'grid' ? 'layout-grid' : ''}`;
+
+            if(q.subquestions && q.subquestions.length > 0) {
+                q.subquestions.forEach((sq, sqIdx) => {
+                    const card = document.createElement('div');
+                    card.className = 'sub-question-card';
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'sub-id-badge';
+                    badge.innerText = String.fromCharCode(97 + sqIdx);
+                    card.appendChild(badge);
+
+                    const input = document.createElement('textarea');
+                    input.className = 'input-bare sub-input';
+                    input.value = sq.prompt?.text || '';
+                    input.placeholder = 'Sub-question text...';
+                    
+                    // Dynamic Blank Logic
+                    const blankMatch = sq.prompt?.text?.match(/\(([^)]+)\)/); 
+                    let hintText = "";
+                    if (blankMatch) {
+                        const optionsStr = blankMatch[1]; 
+                        const options = optionsStr.split('/');
+                        const width = getBlankStyle(sq.prompt.text, options);
+                        hintText = `<div style="font-size:0.7rem; color:#059669; margin-top:4px;">ℹ️ Blank width: <strong>${width}</strong></div>`;
+                    }
+                    
+                    input.oninput = (e) => { 
+                        sq.prompt.text = e.target.value; 
+                    };
+                    card.appendChild(input);
+                    if(hintText) {
+                        const hintDiv = document.createElement('div');
+                        hintDiv.innerHTML = hintText;
+                        card.appendChild(hintDiv);
+                    }
+
+                    const assetCont = document.createElement('div');
+                    assetCont.className = 'asset-container';
+                    card.appendChild(assetCont);
+                    
+                    renderAssetList(sq.prompt?.media || [], assetCont, (newMedia) => {
+                        sq.prompt.media = newMedia;
+                    });
+                    
+                    // --- RENDER OPTIONS (EDITABLE) ---
+                    if (sq.options && sq.options.length > 0) {
+                        const optDiv = document.createElement('div');
+                        optDiv.className = 'options-editor';
+                        optDiv.innerHTML = `<label style="font-size:0.7rem; font-weight:700; color:#6b7280; text-transform:uppercase;">Options</label>`;
+                        
+                        sq.options.forEach((opt, oIdx) => {
+                            const optRow = document.createElement('div');
+                            optRow.className = 'option-row';
+                            
+                            const radio = document.createElement('div');
+                            radio.className = 'option-radio';
+                            
+                            const optInput = document.createElement('input');
+                            optInput.className = 'option-input';
+                            const optVal = typeof opt === 'string' ? opt : opt.text;
+                            optInput.value = optVal;
+                            optInput.oninput = (e) => {
+                                // Update data model
+                                if (typeof sq.options[oIdx] === 'string') {
+                                    sq.options[oIdx] = e.target.value;
+                                } else {
+                                    sq.options[oIdx].text = e.target.value;
+                                }
+                            };
+                            
+                            optRow.appendChild(radio);
+                            optRow.appendChild(optInput);
+                            optDiv.appendChild(optRow);
+                        });
+                        card.appendChild(optDiv);
+                    }
+
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'btn btn-sm';
+                    addBtn.style.marginTop = '0.5rem';
+                    addBtn.innerText = '+ Img';
+                    addBtn.onclick = () => {
+                        if(!sq.prompt.media) sq.prompt.media = [];
+                        sq.prompt.media.push({ asset_id: `new_sq_${Date.now()}`, ai_generation_prompt: "Describe image...", uri: null });
+                        selectQuestion(activeIndex);
+                    };
+                    card.appendChild(addBtn);
+
+                    const ansDiv = document.createElement('div');
+                    ansDiv.style.marginTop = '0.5rem';
+                    ansDiv.style.borderTop = '1px solid #f3f4f6';
+                    ansDiv.style.paddingTop = '0.5rem';
+                    ansDiv.innerHTML = `<span style="font-size:0.75rem; color:green; font-weight:bold;">ANSWER:</span>`;
+                    
+                    const ansInput = document.createElement('input');
+                    ansInput.className = 'input-bare';
+                    ansInput.style.color = 'green';
+                    ansInput.value = sq.answer?.value || '';
+                    ansInput.oninput = (e) => { 
+                        if(!sq.answer) sq.answer = {}; 
+                        sq.answer.value = e.target.value; 
+                    };
+                    ansDiv.appendChild(ansInput);
+                    card.appendChild(ansDiv);
+
+                    container.appendChild(card);
+                });
+            } else {
+                const ansDiv = document.createElement('div');
+                ansDiv.className = 'sub-question-card';
+                ansDiv.innerHTML = `<label style="font-size:0.8rem; font-weight:bold;">Answer Key</label>`;
+                const ansInput = document.createElement('textarea');
+                ansInput.className = 'input-bare';
+                ansInput.value = q.answer?.value || '';
+                ansInput.oninput = (e) => {
+                    if(!q.answer) q.answer = {};
+                    q.answer.value = e.target.value;
+                };
+                ansDiv.appendChild(ansInput);
+                container.appendChild(ansDiv);
+            }
+        }
+
+        function renderAssetList(mediaArray, containerOrId, updateCallback) {
+            const container = typeof containerOrId === 'string' ? document.getElementById(containerOrId) : containerOrId;
+            container.innerHTML = '';
+
+            mediaArray.forEach((m, idx) => {
+                const el = document.createElement('div');
+                el.className = 'asset-item';
+                
+                const isGenerated = m.uri !== null;
+                const icon = isGenerated ? `<img src="${m.uri}">` : '🖼️';
+                const statusColor = isGenerated ? 'var(--success)' : 'var(--warning)';
+
+                el.innerHTML = `
+                    <div class="asset-preview" style="border-color:${statusColor}">${icon}</div>
+                    <div class="asset-details">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="font-size:0.7rem; font-weight:700; color:${statusColor}">${isGenerated ? 'GENERATED' : 'PENDING GEN'}</span>
+                            <button class="btn btn-sm btn-danger" style="padding:2px 6px; font-size:0.7rem;">×</button>
+                        </div>
+                        <input class="asset-prompt-input" value="${m.ai_generation_prompt || ''}" placeholder="AI Prompt description...">
+                        <div style="margin-top:4px; display:flex; gap:0.5rem;">
+                            <button class="btn btn-sm gen-btn" style="background:var(--warning); color:white; border:none;">${isGenerated ? 'Regenerate' : 'Generate Now'}</button>
+                            <button class="btn btn-sm upload-btn" style="background:white; border:1px solid #ccc;">Insert Image</button>
+                        </div>
+                    </div>
+                `;
+
+                // Delete
+                el.querySelector('.btn-danger').onclick = () => {
+                    mediaArray.splice(idx, 1);
+                    updateCallback(mediaArray);
+                    renderAssetList(mediaArray, container, updateCallback);
+                };
+                
+                // Prompt Update
+                el.querySelector('.asset-prompt-input').oninput = (e) => {
+                    m.ai_generation_prompt = e.target.value;
+                };
+
+                // Generate (Mock AI Call)
+                el.querySelector('.gen-btn').onclick = (e) => {
+                    e.target.innerText = 'Generating...';
+                    setTimeout(() => {
+                        // Use placehold.co with custom text from prompt
+                        const safeText = encodeURIComponent(m.ai_generation_prompt.substring(0, 20));
+                        m.uri = `https://placehold.co/400x300/e0f2fe/0284c7?text=${safeText}`;
+                        updateCallback(mediaArray);
+                        renderAssetList(mediaArray, container, updateCallback);
+                    }, 1500);
+                };
+
+                // Upload (File Picker)
+                el.querySelector('.upload-btn').onclick = () => {
+                    triggerImageUpload((dataUrl) => {
+                        m.uri = dataUrl;
+                        updateCallback(mediaArray);
+                        renderAssetList(mediaArray, container, updateCallback);
+                    });
+                };
+
+                container.appendChild(el);
+            });
+        }
+
+        // --- Data Updates ---
+        function updatePrompt(val) {
+            rawData[activeIndex].prompt.text = val;
+            // No direct renderList() to save re-renders, just update logic
+        }
+        function updateMeta(field, val) {
+            rawData[activeIndex][field] = val;
+            renderList();
+        }
+        function updateStimulus(val) {
+            if(!rawData[activeIndex].stimulus) rawData[activeIndex].stimulus = {};
+            rawData[activeIndex].stimulus.text = val;
+        }
+        
+        function addAssetToPrompt() {
+            const q = rawData[activeIndex];
+            if(!q.prompt.media) q.prompt.media = [];
+            q.prompt.media.push({
+                asset_id: `new_${Date.now()}`,
+                ai_generation_prompt: "Describe the image to generate...",
+                uri: null
+            });
+            selectQuestion(activeIndex);
+        }
+
+        function addAssetToStimulus() {
+            const q = rawData[activeIndex];
+            if(!q.stimulus) q.stimulus = { text: "", media: [] };
+            if(!q.stimulus.media) q.stimulus.media = [];
+            
+            q.stimulus.media.push({
+                asset_id: `new_stim_${Date.now()}`,
+                ai_generation_prompt: "Describe the shared context image...",
+                uri: null
+            });
+            selectQuestion(activeIndex);
+        }
+
+        // --- Layout Toggles ---
+        function setLayout(mode) {
+            rawData[activeIndex].layout = mode;
+            updateLayoutButtons(mode);
+            renderSubQuestions(rawData[activeIndex]);
+        }
+
+        function updateLayoutButtons(mode) {
+            const btnStack = document.getElementById('btn-layout-stack');
+            const btnGrid = document.getElementById('btn-layout-grid');
+            const currentMode = mode || 'stack';
+
+            if(currentMode === 'stack') {
+                btnStack.classList.add('btn-primary');
+                btnGrid.classList.remove('btn-primary');
+            } else {
+                btnStack.classList.remove('btn-primary');
+                btnGrid.classList.add('btn-primary');
+            }
+        }
+
+        function downloadJSONL() {
+            let jsonl = rawData.map(q => JSON.stringify(q)).join('\n');
+            const blob = new Blob([jsonl], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'updated_questions.jsonl';
+            a.click();
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            // Disable Controls in Preview
+            const diffSelect = document.getElementById('meta-difficulty');
+            const pointInput = document.getElementById('meta-points');
+            
+            if (tab === 'preview') {
+                diffSelect.disabled = true;
+                pointInput.disabled = true;
+            } else {
+                diffSelect.disabled = false;
+                pointInput.disabled = false;
+            }
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            document.querySelectorAll('.edit-view, .preview-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+
+            if(tab === 'preview') {
+                renderPreview(rawData[activeIndex], activeIndex);
+            }
+        }
+
+        // --- RENDER PREVIEW (A4) ---
+        function renderPreview(q, idx) {
+            const container = document.getElementById('a4-content');
+            
+            // Build Stimulus HTML
+            let stimHtml = '';
+            if(q.stimulus) {
+                let assetsHtml = '';
+                if(q.stimulus.media) {
+                    assetsHtml = q.stimulus.media.map(m => 
+                        `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt}]</div>`}</div>`
+                    ).join('');
+                }
+                stimHtml = `<div class="p-stimulus">${q.stimulus.text || ''}${assetsHtml}</div>`;
+            }
+            
+            // Build Prompt Media
+            let promptAssets = '';
+            if(q.prompt && q.prompt.media) {
+                promptAssets = q.prompt.media.map(m => 
+                    `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt}]</div>`}</div>`
+                ).join('');
+            }
+            
+            // Build Sub Questions
+            let subHtml = '';
+            if(q.subquestions) {
+                // Check layout override
+                const isGrid = q.layout === 'grid';
+                
+                const subs = q.subquestions.map((sq, i) => {
+                    const label = String.fromCharCode(97 + i); // a,b,c
+                    
+                    let sqAssets = '';
+                    if(sq.prompt && sq.prompt.media) {
+                        sqAssets = sq.prompt.media.map(m => 
+                            `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`
+                        ).join('');
+                    }
+
+                    // Options logic for MCQ
+                    let optHtml = '';
+                    if(sq.options) {
+                        optHtml = sq.options.map((o, k) => {
+                            // Fix: Handle both string options and object options
+                            const txt = typeof o === 'string' ? o : o.text;
+                            return `<span style="margin-right:1rem;">(${k+1}) ${txt}</span>`;
+                        }).join('');
+                    }
+                    
+                    return `
+                        <div class="p-sub-item">
+                            <span class="p-sub-label">${label}.</span>
+                            ${formatForPrint(sq.prompt.text, sq.options)}
+                            ${sqAssets}
+                            ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+            }
+
+            // Marks logic (Pluralization)
+            const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
+
+            container.innerHTML = `
+                <div class="p-q-block">
+                    <div class="p-q-header">
+                        <div class="p-q-content">
+                            <span class="p-q-num">${idx + 1}.</span> ${formatForPrint(q.prompt.text)}
+                        </div>
+                        <div class="p-q-marks">${marksText}</div>
+                    </div>
+                    ${promptAssets}
+                    ${stimHtml}
+                    ${subHtml}
+                </div>
+            `;
+        }
+
+    </script>
+</body>
+</html>
