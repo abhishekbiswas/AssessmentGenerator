@@ -6,6 +6,7 @@
     <title>Assessment Generator - Wireframe</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -48,6 +49,189 @@
         }
         .toggle-checkbox:checked + .toggle-label {
             background-color: #68D391;
+        }
+
+        /* A4 Preview Styles for Question Cards */
+        .q-preview {
+            font-family: "Times New Roman", serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #000;
+            text-align: justify;
+        }
+        .q-preview .p-q-header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .q-preview .p-q-num {
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        .q-preview .p-q-marks {
+            font-size: 9pt;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .q-preview .p-stimulus {
+            background: #f9fafb;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+            font-style: italic;
+            text-align: justify;
+            font-size: 9pt;
+        }
+        .q-preview .p-sub-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .q-preview .p-sub-item {
+            margin-bottom: 0.5rem;
+            text-align: justify;
+            padding-left: 1rem;
+            display: flex;
+            align-items: baseline;
+            font-size: 9pt;
+        }
+        .q-preview .p-sub-label {
+            font-weight: bold;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        .q-preview .p-asset {
+            margin: 0.5rem 0;
+            text-align: center;
+        }
+        .q-preview .p-asset img {
+            max-width: 100%;
+            max-height: 120px;
+            border: 1px solid #ccc;
+        }
+        .q-preview .p-asset-placeholder {
+            border: 1px dashed #ccc;
+            padding: 1rem;
+            color: #999;
+            font-family: sans-serif;
+            font-size: 0.7rem;
+            background: #f9fafb;
+        }
+        .q-preview .blank-line {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+            min-width: 60px;
+            margin: 0 4px;
+        }
+
+        /* A4 Page Preview in Right Panel */
+        .a4-preview-page {
+            width: 100%;
+            height: 297mm;
+            max-width: 210mm;
+            margin: 0 auto 1rem auto;
+            background: white;
+            padding: 12mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-family: "Times New Roman", serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+            page-break-after: always;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .a4-preview-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+            margin-bottom: 0 !important;
+        }
+        .a4-preview-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+        .a4-preview-header h1 {
+            margin: 0;
+            font-size: 18pt;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .a4-preview-header .header-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+        .a4-preview-content {
+            flex: 1;
+            overflow: hidden;
+            padding-bottom: 1rem;
+        }
+        .a4-preview-section {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        .a4-preview-section-title {
+            font-weight: bold;
+            font-size: 14pt;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #000;
+            padding-bottom: 0.25rem;
+        }
+        .a4-preview-page .q-preview {
+            margin-bottom: 0.5rem;
+        }
+        /* Remove margin from first section header */
+        .a4-preview-section:first-child {
+            margin-top: 0;
+        }
+        /* Reduce spacing for last question before section header */
+        .a4-preview-content .relative.group.last-before-section .q-preview {
+            margin-bottom: 0;
+        }
+        .a4-preview-content .relative.group.last-before-section {
+            margin-bottom: 0;
+        }
+        
+        /* Hide spinners on marks inputs by default, show on focus */
+        .main-question-marks-input,
+        .sub-question-marks-input {
+            -moz-appearance: textfield;
+            appearance: textfield;
+            width: 30px !important;
+            transition: width 0.2s ease;
+        }
+        .main-question-marks-input::-webkit-inner-spin-button,
+        .main-question-marks-input::-webkit-outer-spin-button,
+        .sub-question-marks-input::-webkit-inner-spin-button,
+        .sub-question-marks-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        /* Show spinners and expand width when focused */
+        .main-question-marks-input:focus,
+        .sub-question-marks-input:focus {
+            -moz-appearance: auto;
+            appearance: auto;
+            width: 50px !important;
+            outline: 2px solid #3b82f6;
+            outline-offset: 1px;
+        }
+        .main-question-marks-input:focus::-webkit-inner-spin-button,
+        .main-question-marks-input:focus::-webkit-outer-spin-button,
+        .sub-question-marks-input:focus::-webkit-inner-spin-button,
+        .sub-question-marks-input:focus::-webkit-outer-spin-button {
+            -webkit-appearance: auto;
+            appearance: auto;
+            opacity: 1;
         }
     </style>
 </head>
@@ -176,8 +360,8 @@
                 <div class="flex gap-3">
                     <button onclick="switchView('config')" class="text-slate-500 hover:text-slate-800 font-medium text-sm px-3 py-2">Back</button>
                     <button class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium px-4 py-2 rounded-lg text-sm transition-colors">Save Draft</button>
-                    <button onclick="switchView('preview')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm shadow transition-colors">
-                        <i class="fa-solid fa-print mr-2"></i>Generate PDF Preview
+                    <button onclick="downloadPDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm shadow transition-colors">
+                        <i class="fa-solid fa-download mr-2"></i>Download PDF
                     </button>
                 </div>
             </div>
@@ -193,8 +377,10 @@
                             <span class="text-xs font-bold text-slate-400 flex items-center mr-3 uppercase">Chapter:</span>
                             <div class="flex gap-2 overflow-x-auto whitespace-nowrap">
                                 <button data-filter-value="All" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-blue-600 text-white rounded-full text-xs font-semibold" onclick="setFilter('chapter', 'All', this)">All</button>
-                                <button data-filter-value="Ch 1" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch 1', this)">Ch 1: Family</button>
-                                <button data-filter-value="Ch 2" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch 2', this)">Ch 2: Body</button>
+                                <button data-filter-value="Ch Measurement" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch Measurement', this)">Measurement</button>
+                                <button data-filter-value="Ch Addition" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch Addition', this)">Addition</button>
+                                <button data-filter-value="Ch Subtraction" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch Subtraction', this)">Subtraction</button>
+                                <button data-filter-value="Ch Arithmetic" data-filter-type="chapter" class="filter-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-100 rounded-full text-xs font-medium border border-slate-200" onclick="setFilter('chapter', 'Ch Arithmetic', this)">Arithmetic</button>
                             </div>
                         </div>
 
@@ -212,87 +398,142 @@
                     <!-- Questions List -->
                     <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50" id="question-source-list">
                         
-                        <!-- Question Item 1 (Visual) - Ch 2, Medium -->
-                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q1-card" data-chapter="Ch 2" data-difficulty="Medium">
+                        <!-- Question Item 1 (Fill in Blanks - Measurement) - Ch Measurement, Easy -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_459-card" data-chapter="Ch Measurement" data-difficulty="Easy" data-section="A">
                             <div class="flex justify-between items-start mb-3">
-                                <div class="flex gap-2">
-                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">LABELING</span>
-                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">CH 2</span>
-                                    <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">MEDIUM</span>
-                                </div>
-                                <span class="font-bold text-slate-400 text-sm">3 Marks</span>
-                            </div>
-                            <p class="text-sm font-medium text-slate-800 mb-3">Label the nose, ribcage, and lungs in the picture.</p>
-                            
-                            <!-- Visual Mockup -->
-                            <div class="bg-slate-100 rounded-lg p-4 mb-3 flex justify-center items-center h-32 border-2 border-dashed border-slate-300">
-                                <div class="text-center text-slate-400">
-                                    <i class="fa-solid fa-child text-4xl mb-2"></i>
-                                    <p class="text-xs">Diagram: Human Body (Girl)</p>
-                                </div>
-                            </div>
-
-                            <button id="btn-q1" onclick="addQuestion('q1', 3, 'Label the nose, ribcage, and lungs...')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
-                                <i class="fa-solid fa-plus"></i> Add to Current Section
-                            </button>
-                        </div>
-
-                        <!-- Question Item 2 (Matching) - Ch 1, Hard -->
-                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q2-card" data-chapter="Ch 1" data-difficulty="Hard">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="flex gap-2">
-                                    <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">MATCHING</span>
-                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">CH 1</span>
-                                    <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">HARD</span>
-                                </div>
-                                <span class="font-bold text-slate-400 text-sm">4 Marks</span>
-                            </div>
-                            <p class="text-sm font-medium text-slate-800 mb-3">Match the given words to their meanings.</p>
-                            
-                            <!-- Visual Content -->
-                            <div class="grid grid-cols-2 gap-4 text-xs text-slate-600 mb-3 pl-2 border-l-2 border-slate-200">
-                                <div>a. Trouble</div><div>i. Extremely happy</div>
-                                <div>b. Delighted</div><div>ii. Problem</div>
-                            </div>
-
-                            <button id="btn-q2" onclick="addQuestion('q2', 4, 'Match the given words...')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
-                                <i class="fa-solid fa-plus"></i> Add to Current Section
-                            </button>
-                        </div>
-
-                         <!-- Question Item 3 (Odd One Out) - Ch 1, Easy -->
-                         <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q3-card" data-chapter="Ch 1" data-difficulty="Easy">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="flex gap-2">
-                                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">CLASSIFICATION</span>
-                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">CH 1</span>
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC A</span>
+                                    <span class="bg-sky-100 text-sky-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">FILL IN</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">MEASURE</span>
                                     <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">EASY</span>
+                                    <button id="layout-toggle-q_1765218443974_459" onclick="toggleQuestionLayout('q_1765218443974_459')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-blue-100 text-blue-700 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-table-cells"></i> Grid
+                                    </button>
                                 </div>
                                 <span class="font-bold text-slate-400 text-sm">2 Marks</span>
                             </div>
-                            <p class="text-sm font-medium text-slate-800 mb-3">Circle the odd one out.</p>
-                            <div class="bg-slate-50 p-3 rounded text-sm text-slate-700 mb-3 font-mono">
-                                Uncle, Mother, Friend, Brother
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_459"></div>
+                            <button id="btn-q_1765218443974_459" onclick="addQuestion('q_1765218443974_459', 2, 'Fill in the blanks. Choose the correct words from the brackets.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                                <i class="fa-solid fa-plus"></i> Add to Current Section
+                            </button>
+                        </div>
+
+                        <!-- Question Item 6 (Addition Problems) - Ch Addition, Medium -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_462-card" data-chapter="Ch Addition" data-difficulty="Medium" data-section="A">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC A</span>
+                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">SHORT ANSWER</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">ADDITION</span>
+                                    <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">MEDIUM</span>
+                                    <button id="layout-toggle-q_1765218443974_462" onclick="toggleQuestionLayout('q_1765218443974_462')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-blue-100 text-blue-700 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-table-cells"></i> Grid
+                                    </button>
+                                </div>
+                                <span class="font-bold text-slate-400 text-sm">4 Marks</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_462"></div>
+                            <button id="btn-q_1765218443974_462" onclick="addQuestion('q_1765218443974_462', 4, 'Solve the following addition problems.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                                <i class="fa-solid fa-plus"></i> Add to Current Section
+                            </button>
                             </div>
 
-                            <button id="btn-q3" onclick="addQuestion('q3', 2, 'Circle the odd one out...')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                        <!-- Question Item 7 (MCQ Estimation) - Ch Measurement, Medium -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_788-card" data-chapter="Ch Measurement" data-difficulty="Medium" data-section="B">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC B</span>
+                                    <span class="bg-pink-100 text-pink-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">MCQ</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">MEASURE</span>
+                                    <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">MEDIUM</span>
+                                    <button id="layout-toggle-q_1765218443974_788" onclick="toggleQuestionLayout('q_1765218443974_788')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-blue-100 text-blue-700 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-table-cells"></i> Grid
+                                    </button>
+                                </div>
+                                <span class="font-bold text-slate-400 text-sm">2 Marks</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_788"></div>
+                            <button id="btn-q_1765218443974_788" onclick="addQuestion('q_1765218443974_788', 2, 'Circle the better estimate of measurement for the given objects.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                                <i class="fa-solid fa-plus"></i> Add to Current Section
+                            </button>
+                        </div>
+
+                        <!-- Question Item 8 (MCQ Word Problems) - Ch Arithmetic, Easy -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_842-card" data-chapter="Ch Arithmetic" data-difficulty="Easy" data-section="B">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC B</span>
+                                    <span class="bg-pink-100 text-pink-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">MCQ</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">ARITHMETIC</span>
+                                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">EASY</span>
+                                    <button id="layout-toggle-q_1765218443974_842" onclick="toggleQuestionLayout('q_1765218443974_842')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-blue-100 text-blue-700 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-table-cells"></i> Grid
+                                    </button>
+                                </div>
+                                <span class="font-bold text-slate-400 text-sm">2 Marks</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_842"></div>
+                            <button id="btn-q_1765218443974_842" onclick="addQuestion('q_1765218443974_842', 2, 'Tick (✓) the correct options.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                                <i class="fa-solid fa-plus"></i> Add to Current Section
+                            </button>
+                            </div>
+
+                        <!-- Question Item 9 (Estimation) - Ch Addition, Hard -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_826-card" data-chapter="Ch Addition" data-difficulty="Hard" data-section="B">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC B</span>
+                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">SHORT ANSWER</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">ADDITION</span>
+                                    <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">HARD</span>
+                                    <button id="layout-toggle-q_1765218443974_826" onclick="toggleQuestionLayout('q_1765218443974_826')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-slate-200 text-slate-600 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-list"></i> Stack
+                                    </button>
+                                </div>
+                                <span class="font-bold text-slate-400 text-sm">3 Marks</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_826"></div>
+                            <button id="btn-q_1765218443974_826" onclick="addQuestion('q_1765218443974_826', 3, 'Estimate the sum of 345 and 254 to the nearest hundreds. Find the actual sum and compare.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
                                 <i class="fa-solid fa-plus"></i> Add to Current Section
                             </button>
                         </div>
                         
-                         <!-- Question Item 4 (Fill in the Blank) - Ch 2, Easy -->
-                         <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q4-card" data-chapter="Ch 2" data-difficulty="Easy">
+                        <!-- Question Item 10 (Subtraction) - Ch Subtraction, Medium -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443974_562-card" data-chapter="Ch Subtraction" data-difficulty="Medium" data-section="B">
                             <div class="flex justify-between items-start mb-3">
-                                <div class="flex gap-2">
-                                    <span class="bg-sky-100 text-sky-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">FILL IN</span>
-                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">CH 2</span>
-                                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">EASY</span>
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC B</span>
+                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">SHORT ANSWER</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">SUBTRACT</span>
+                                    <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">MEDIUM</span>
+                                    <button id="layout-toggle-q_1765218443974_562" onclick="toggleQuestionLayout('q_1765218443974_562')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-slate-200 text-slate-600 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-list"></i> Stack
+                                    </button>
                                 </div>
-                                <span class="font-bold text-slate-400 text-sm">1 Mark</span>
+                                <span class="font-bold text-slate-400 text-sm">3 Marks</span>
                             </div>
-                            <p class="text-sm font-medium text-slate-800 mb-3">The food pipe is also called the ______________.</p>
-                            
-                            <button id="btn-q4" onclick="addQuestion('q4', 1, 'The food pipe is also called the...')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443974_562"></div>
+                            <button id="btn-q_1765218443974_562" onclick="addQuestion('q_1765218443974_562', 3, 'Solve 867 - 526 and check your answer.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
+                                <i class="fa-solid fa-plus"></i> Add to Current Section
+                            </button>
+                        </div>
+
+                        <!-- Question Item 11 (Word Problems) - Ch Measurement, Medium -->
+                        <div class="question-card bg-white p-4 rounded-xl border border-slate-200 shadow-sm group" id="q_1765218443975_84-card" data-chapter="Ch Measurement" data-difficulty="Medium" data-section="C">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex gap-2 items-center">
+                                    <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold">SEC C</span>
+                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">SHORT ANSWER</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">MEASURE</span>
+                                    <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">MEDIUM</span>
+                                    <button id="layout-toggle-q_1765218443975_84" onclick="toggleQuestionLayout('q_1765218443975_84')" class="ml-2 px-2 py-1 rounded text-[10px] font-medium transition-colors bg-slate-200 text-slate-600 flex items-center gap-1" title="Toggle layout">
+                                        <i class="fa-solid fa-list"></i> Stack
+                                    </button>
+                                </div>
+                                <span class="font-bold text-slate-400 text-sm">4 Marks</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded mb-3 border border-slate-200" id="preview-q_1765218443975_84"></div>
+                            <button id="btn-q_1765218443975_84" onclick="addQuestion('q_1765218443975_84', 4, 'Solve the given story sums.')" class="w-full py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white">
                                 <i class="fa-solid fa-plus"></i> Add to Current Section
                             </button>
                         </div>
@@ -304,7 +545,8 @@
                 <div class="w-1/2 flex flex-col bg-slate-50">
                     <!-- Section Tabs -->
                     <div class="flex bg-white border-b border-slate-200 px-2">
-                        <button onclick="setSection('A')" id="tab-A" class="px-6 py-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm transition-colors">Section A</button>
+                        <button onclick="setSection('All')" id="tab-All" class="px-6 py-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm transition-colors">Section All</button>
+                        <button onclick="setSection('A')" id="tab-A" class="px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors">Section A</button>
                         <button onclick="setSection('B')" id="tab-B" class="px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors">Section B</button>
                         <button onclick="setSection('C')" id="tab-C" class="px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors">Section C</button>
                     </div>
@@ -312,7 +554,7 @@
                     <!-- Constraints Info & Skip Toggle -->
                     <div class="bg-blue-50 px-6 py-3 text-xs text-blue-800 flex justify-between items-center border-b border-blue-100">
                         <div class="flex items-center gap-2">
-                            <span><i class="fa-solid fa-chart-pie mr-1"></i> Section <span id="current-section-label">A</span> Total:</span>
+                            <span><i class="fa-solid fa-chart-pie mr-1"></i> Section <span id="current-section-label">All</span> Total:</span>
                             <span class="font-bold text-sm"><span id="section-marks">0</span> Marks</span>
                         </div>
                         
@@ -328,9 +570,9 @@
                         </div>
                     </div>
 
-                    <!-- Selected Questions Area -->
-                    <div class="flex-1 overflow-y-auto p-6 transition-opacity duration-200" id="selected-list">
-                        <!-- JS renders here -->
+                    <!-- Selected Questions Area (A4 Preview) -->
+                    <div class="flex-1 overflow-y-auto p-4 transition-opacity duration-200 bg-slate-100" id="selected-list">
+                        <!-- A4 pages will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -379,9 +621,10 @@
     <script>
         // State Management
         let appState = {
-            currentSection: 'A',
+            currentSection: 'All',
             questions: [], // Stores {id, title, marks, section}
             sectionConfig: {
+                'All': { skipped: false },
                 'A': { skipped: false },
                 'B': { skipped: false },
                 'C': { skipped: false }
@@ -391,14 +634,236 @@
                 difficulty: 'All'
             },
             maxMarks: 20, // Strict total target
+            questionLayouts: {}, // Stores layout preference for each question: { qId: 'grid' | 'stack' }
             // Define all possible questions with their properties for filtering
             allQuestions: {
-                'q1': { chapter: 'Ch 2', difficulty: 'Medium', title: 'Label the nose, ribcage, and lungs...' },
-                'q2': { chapter: 'Ch 1', difficulty: 'Hard', title: 'Match the given words...' },
-                'q3': { chapter: 'Ch 1', difficulty: 'Easy', title: 'Circle the odd one out...' },
-                'q4': { chapter: 'Ch 2', difficulty: 'Easy', title: 'The food pipe is also called the...' },
+                'q_1765218443974_459': { chapter: 'Ch Measurement', difficulty: 'Easy', title: 'Fill in the blanks. Choose the correct words from the brackets.' },
+                'q_1765218443974_462': { chapter: 'Ch Addition', difficulty: 'Medium', title: 'Solve the following addition problems.' },
+                'q_1765218443974_788': { chapter: 'Ch Measurement', difficulty: 'Medium', title: 'Circle the better estimate of measurement for the given objects.' },
+                'q_1765218443974_842': { chapter: 'Ch Arithmetic', difficulty: 'Easy', title: 'Tick (✓) the correct options.' },
+                'q_1765218443974_826': { chapter: 'Ch Addition', difficulty: 'Hard', title: 'Estimate the sum of 345 and 254 to the nearest hundreds. Find the actual sum and compare.' },
+                'q_1765218443974_562': { chapter: 'Ch Subtraction', difficulty: 'Medium', title: 'Solve 867 - 526 and check your answer.' },
+                'q_1765218443975_84': { chapter: 'Ch Measurement', difficulty: 'Medium', title: 'Solve the given story sums.' },
             }
         };
+
+        // Full Question Data Structure
+        const questionData = {
+            'q_1765218443974_459': {
+                question_id: 'q_1765218443974_459',
+                section_id: 'A',
+                type: 'composite',
+                points: 2,
+                layout: 'grid',
+                prompt: { text: 'Fill in the blanks. Choose the correct words from the brackets.' },
+                subquestions: [
+                    { sub_id: 'a', prompt: { text: 'The standard unit to measure length is ______ (metre/kilogram).' }, points: 0.5 },
+                    { sub_id: 'b', prompt: { text: 'The standard unit to measure weight is ______ (kilogram/litre).' }, points: 0.5 },
+                    { sub_id: 'c', prompt: { text: 'The standard unit to measure capacity is ______ (metre/litre).' }, points: 0.5 },
+                    { sub_id: 'd', prompt: { text: 'A ______ is used to measure the length of an object. (metre tape/beam balance)' }, points: 0.5 }
+                ]
+            },
+            'q_1765218443974_462': {
+                question_id: 'q_1765218443974_462',
+                section_id: 'A',
+                type: 'composite',
+                points: 4,
+                layout: 'grid',
+                prompt: { text: 'Solve the following.' },
+                subquestions: [
+                    { sub_id: 'a', points: 2, prompt: { text: 'Solve the addition problem shown below.', media: [{ uri: 'https://ecdn.teacherspayteachers.com/cdn-cgi/image/format=avif,quality=70,width=525,height=525,onerror=redirect/thumbitem/Place-Value-Chart-with-Visual-HTO-chart--8514141-1674995298/750f-8514141-1.jpg' }] } },
+                    { sub_id: 'b', points: 2, prompt: { text: 'Solve the addition problem shown below.', media: [{ uri: 'https://ecdn.teacherspayteachers.com/cdn-cgi/image/format=avif,quality=70,width=525,height=525,onerror=redirect/thumbitem/Place-Value-Chart-with-Visual-HTO-chart--8514141-1674995298/750f-8514141-1.jpg' }] } }
+                ]
+            },
+            'q_1765218443974_788': {
+                question_id: 'q_1765218443974_788',
+                section_id: 'B',
+                type: 'composite',
+                points: 2,
+                layout: 'grid',
+                prompt: { text: 'Circle the better estimate of measurement for the given objects.' },
+                subquestions: [
+                    { sub_id: 'a', points: 0.5, prompt: { text: 'length of a table' }, options: [{ text: '2 cm' }, { text: '2 m' }] },
+                    { sub_id: 'b', points: 0.5, prompt: { text: 'weight of a paper' }, options: [{ text: '5 g' }, { text: '5 kg' }] },
+                    { sub_id: 'c', points: 0.5, prompt: { text: 'capacity of a bottle' }, options: [{ text: '1 mL' }, { text: '1 L' }] },
+                    { sub_id: 'd', points: 0.5, prompt: { text: 'thickness of a ruler' }, options: [{ text: '1 mm' }, { text: '1 cm' }] }
+                ]
+            },
+            'q_1765218443974_842': {
+                question_id: 'q_1765218443974_842',
+                section_id: 'B',
+                type: 'composite',
+                points: 2,
+                layout: 'grid',
+                prompt: { text: 'Tick ( ) the correct options.' },
+                subquestions: [
+                    { sub_id: 'a', points: 0.5, prompt: { text: 'Preethi has a double of 400 apples. She has ______ apples.' }, options: [{ text: '600' }, { text: '200' }, { text: '800' }] },
+                    { sub_id: 'b', points: 0.5, prompt: { text: 'Raj has 672 pens. He buys 10 more. He now has ______ pens.' }, options: [{ text: '682' }, { text: '689' }, { text: '680' }] },
+                    { sub_id: 'c', points: 0.5, prompt: { text: 'Navjot\'s puzzle box has 800 pieces. He lost 1 piece. The puzzle has now ______ pieces.' }, options: [{ text: '798' }, { text: '801' }, { text: '799' }] },
+                    { sub_id: 'd', points: 0.5, prompt: { text: 'A library has 789 books. 100 books are taken. There are ______ books in the library now.' }, options: [{ text: '682' }, { text: '689' }, { text: '700' }] }
+                ]
+            },
+            'q_1765218443974_826': {
+                question_id: 'q_1765218443974_826',
+                section_id: 'B',
+                type: 'composite',
+                points: 3,
+                layout: 'stack',
+                prompt: { text: 'Estimate the sum of 345 and 254 to the nearest hundreds. Find the actual sum and compare.' },
+                stimulus: { text: '345 + 254' },
+                subquestions: [
+                    { sub_id: 'a', points: 1.5, prompt: { text: 'Estimated Sum:' } },
+                    { sub_id: 'b', points: 1.5, prompt: { text: 'Actual Sum:' } }
+                ]
+            },
+            'q_1765218443974_562': {
+                question_id: 'q_1765218443974_562',
+                section_id: 'B',
+                type: 'short_answer',
+                points: 3,
+                layout: 'stack',
+                prompt: { text: 'Solve 867 - 526 and check your answer.' },
+                stimulus: { media: [{ uri: null, ai_generation_prompt: 'Vertical subtraction: 867 - 526' }] }
+            },
+            'q_1765218443975_84': {
+                question_id: 'q_1765218443975_84',
+                section_id: 'C',
+                type: 'composite',
+                points: 4,
+                layout: 'stack',
+                prompt: { text: 'Solve the given story sums.' },
+                subquestions: [
+                    { sub_id: 'a', points: 2, prompt: { text: 'Aastha buys a 15 cm long ribbon for making a bow. She uses 8 cm from it. What is the length of the ribbon left with her?', media: [{ uri: null, ai_generation_prompt: 'Ribbon illustration' }] } },
+                    { sub_id: 'b', points: 2, prompt: { text: 'Shaqib has 10 litres of petrol in his car. He fills 15 litres more at the petrol pump. How much petrol is in the car now?', media: [{ uri: null, ai_generation_prompt: 'Car at petrol pump' }] } }
+                ]
+            }
+        };
+
+        // Helper Functions for A4 Preview Rendering
+        function getBlankStyle(text, options) {
+            if (!text || !text.includes('__')) return '';
+            let optionsToMeasure = options || [];
+            if (!optionsToMeasure || optionsToMeasure.length === 0) {
+                const match = text.match(/\(([^)]+)\)/);
+                if (match && match[1].includes('/')) {
+                    optionsToMeasure = match[1].split('/');
+                }
+            }
+            let width = '60px';
+            if (optionsToMeasure && optionsToMeasure.length > 0) {
+                let longest = 0;
+                optionsToMeasure.forEach(opt => {
+                    const txt = typeof opt === 'string' ? opt : (opt.text || '');
+                    if (txt.length > longest) longest = txt.length;
+                });
+                const calcWidth = Math.max(60, (longest * 8 * 1.2));
+                width = `${Math.round(calcWidth)}px`;
+            }
+            return width;
+        }
+
+        function formatForPrint(text, options) {
+            if (!text) return '';
+            if (text.includes('__')) {
+                const w = getBlankStyle(text, options);
+                return text.replace(/_{2,}/g, `<span class="blank-line" style="min-width:${w};">&nbsp;</span>`);
+            }
+            return text;
+        }
+
+        function renderQuestionPreview(q, container, layoutOverride = null) {
+            if (!q) return;
+
+            // Use layout override if provided, otherwise use stored preference, otherwise use question's default layout
+            const layout = layoutOverride || appState.questionLayouts[q.question_id] || q.layout || 'grid';
+
+            // 1. Stimulus Logic
+            let stimHtml = '';
+            if (q.stimulus) {
+                let assetsHtml = '';
+                if (q.stimulus.media) {
+                    assetsHtml = q.stimulus.media.map(m =>
+                        `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
+                    ).join('');
+                }
+                if (q.stimulus.text) {
+                    stimHtml = `<div class="p-stimulus">${q.stimulus.text}${assetsHtml}</div>`;
+                } else if (assetsHtml) {
+                    stimHtml = `<div class="p-stimulus">${assetsHtml}</div>`;
+                }
+            }
+
+            // 2. Prompt Asset Logic
+            let promptAssets = '';
+            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
+            if (pMedia.length > 0) {
+                promptAssets = pMedia.map(m =>
+                    `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
+                ).join('');
+            }
+
+            // 3. Main Text Logic
+            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
+
+            // 4. Sub-questions Layout Logic
+            let subHtml = '';
+            if (q.subquestions) {
+                const isGrid = layout === 'grid';
+                const subs = q.subquestions.map((sq, i) => {
+                    const label = sq.sub_id || String.fromCharCode(97 + i);
+                    let sqAssets = '';
+                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
+                    if (sqMedia.length > 0) {
+                        sqAssets = sqMedia.map(m =>
+                            `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`
+                        ).join('');
+                    }
+                    let optHtml = '';
+                    if (sq.options) {
+                        optHtml = sq.options.map((o, k) => {
+                            const txt = typeof o === 'string' ? o : o.text;
+                            return `<span style="margin-right:0.75rem; font-size:8pt;">(${k + 1}) ${txt}</span>`;
+                        }).join('');
+                    }
+                    let sqMarks = '';
+                    if (sq.points) {
+                        sqMarks = `<span style="float:right; font-weight:bold; font-size:8pt;">(${sq.points} marks)</span>`;
+                    }
+                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
+                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:8pt;">${optHtml}</div>` : ''}</div></div>`;
+                }).join('');
+                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+            }
+
+            const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
+            container.innerHTML = `<div class="q-preview"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">1.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+        }
+
+        function toggleQuestionLayout(qId) {
+            const currentLayout = appState.questionLayouts[qId] || questionData[qId]?.layout || 'grid';
+            const newLayout = currentLayout === 'grid' ? 'stack' : 'grid';
+            appState.questionLayouts[qId] = newLayout;
+            
+            // Update toggle button visual
+            const toggleBtn = document.getElementById(`layout-toggle-${qId}`);
+            if (toggleBtn) {
+                if (newLayout === 'grid') {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-table-cells"></i> Grid';
+                    toggleBtn.classList.remove('bg-slate-200', 'text-slate-600');
+                    toggleBtn.classList.add('bg-blue-100', 'text-blue-700');
+                } else {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-list"></i> Stack';
+                    toggleBtn.classList.remove('bg-blue-100', 'text-blue-700');
+                    toggleBtn.classList.add('bg-slate-200', 'text-slate-600');
+                }
+            }
+            
+            // Re-render the question preview
+            const container = document.getElementById(`preview-${qId}`);
+            if (container && questionData[qId]) {
+                renderQuestionPreview(questionData[qId], container, newLayout);
+            }
+        }
 
         // DOM Elements
         const els = {
@@ -426,26 +891,204 @@
             if(viewId === 'preview') renderPreview();
         }
 
+        function downloadPDF() {
+            const element = els.selectedList;
+            
+            // Check if there's any content to download
+            if (!element || element.children.length === 0) {
+                alert('No questions added yet. Please add questions before downloading PDF.');
+                return;
+            }
+
+            // Store original container background and padding
+            const originalContainerBg = element.style.backgroundColor;
+            const originalContainerPadding = element.style.padding;
+            
+            // Set white background for PDF (removes grey rectangle)
+            element.style.backgroundColor = 'white';
+            element.style.padding = '0';
+            
+            // Replace input elements with plain text for clean PDF output
+            const marksInputs = element.querySelectorAll('.main-question-marks-input, .sub-question-marks-input');
+            const originalInputsData = [];
+            
+            marksInputs.forEach((input, index) => {
+                const value = input.value;
+                const parent = input.parentNode;
+                
+                // Store original data for restoration
+                originalInputsData.push({
+                    input: input,
+                    parent: parent,
+                    nextSibling: input.nextSibling
+                });
+                
+                // Create a span with the value (no box, no whitespace)
+                const span = document.createElement('span');
+                span.textContent = value;
+                span.className = 'pdf-marks-text';
+                span.style.fontWeight = 'bold';
+                span.style.fontSize = '9pt';
+                
+                // Replace input with span
+                parent.replaceChild(span, input);
+            });
+            
+            // Add temporary style for PDF
+            const pdfStyle = document.createElement('style');
+            pdfStyle.id = 'pdf-temp-style';
+            pdfStyle.textContent = `
+                .pdf-marks-text {
+                    display: inline;
+                    margin: 0;
+                    padding: 0;
+                }
+            `;
+            document.head.appendChild(pdfStyle);
+
+            // Store original styles to restore later
+            const originalStyles = [];
+            const pages = element.querySelectorAll('.a4-preview-page');
+            
+            // Temporarily modify styles on original element for PDF generation
+            if (pages.length > 0) {
+                pages.forEach((page, index) => {
+                    // Store original styles
+                    originalStyles.push({
+                        pageBreakAfter: page.style.pageBreakAfter,
+                        breakAfter: page.style.breakAfter,
+                        marginBottom: page.style.marginBottom,
+                        margin: page.style.margin,
+                        height: page.style.height,
+                        minHeight: page.style.minHeight,
+                        boxShadow: page.style.boxShadow
+                    });
+                    
+                    // Remove shadow for PDF
+                    page.style.boxShadow = 'none';
+                    page.style.margin = '0';
+                    
+                    if (index === pages.length - 1) {
+                        // Last page: remove page break and adjust height to content
+                        page.style.pageBreakAfter = 'auto';
+                        page.style.breakAfter = 'auto';
+                        page.style.marginBottom = '0';
+                        // Set height to auto for last page to prevent extra blank space
+                        page.style.height = 'auto';
+                        page.style.minHeight = 'auto';
+                    } else {
+                        // Other pages: keep page breaks
+                        page.style.pageBreakAfter = 'always';
+                    }
+                });
+            }
+
+            // Configure PDF options
+            const opt = {
+                margin: [0, 0, 0, 0],
+                filename: 'assessment.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait',
+                    compress: true
+                },
+                pagebreak: { 
+                    mode: ['avoid-all', 'css'],
+                    avoid: ['.a4-preview-page:last-child']
+                }
+            };
+
+            // Function to restore all original styles
+            const restoreStyles = () => {
+                // Remove temporary PDF style
+                const tempStyle = document.getElementById('pdf-temp-style');
+                if (tempStyle) {
+                    tempStyle.remove();
+                }
+                
+                // Restore original input elements (replace spans back with inputs)
+                const pdfMarksTexts = element.querySelectorAll('.pdf-marks-text');
+                pdfMarksTexts.forEach((span, index) => {
+                    if (originalInputsData[index]) {
+                        const { input, parent } = originalInputsData[index];
+                        span.parentNode.replaceChild(input, span);
+                    }
+                });
+                
+                // Restore container styles
+                element.style.backgroundColor = originalContainerBg;
+                element.style.padding = originalContainerPadding;
+                
+                // Restore page styles
+                pages.forEach((page, index) => {
+                    if (originalStyles[index]) {
+                        page.style.pageBreakAfter = originalStyles[index].pageBreakAfter;
+                        page.style.breakAfter = originalStyles[index].breakAfter;
+                        page.style.marginBottom = originalStyles[index].marginBottom;
+                        page.style.margin = originalStyles[index].margin;
+                        page.style.height = originalStyles[index].height;
+                        page.style.minHeight = originalStyles[index].minHeight;
+                        page.style.boxShadow = originalStyles[index].boxShadow;
+                    }
+                });
+            };
+
+            // Generate and download PDF
+            html2pdf().set(opt).from(element).save().then(() => {
+                restoreStyles();
+            }).catch(err => {
+                console.error('Error generating PDF:', err);
+                restoreStyles();
+                alert('Error generating PDF. Please try again.');
+            });
+        }
+
         function setSection(sectionId) {
             appState.currentSection = sectionId;
             els.currentSectionLabel.innerText = sectionId;
             
             // Update Tabs
-            ['A', 'B', 'C'].forEach(s => {
+            ['All', 'A', 'B', 'C'].forEach(s => {
                 const tab = document.getElementById(`tab-${s}`);
                 if(s === sectionId) {
-                    tab.classList.add('border-blue-600', 'text-blue-600');
-                    tab.classList.remove('border-transparent', 'text-slate-500');
+                    tab.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
+                    tab.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
                 } else {
-                    tab.classList.remove('border-blue-600', 'text-blue-600');
-                    tab.classList.add('border-transparent', 'text-slate-500');
+                    tab.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
+                    tab.classList.add('border-transparent', 'text-slate-500', 'font-medium');
                 }
             });
 
-            // Update Skip Toggle State
-            const isSkipped = appState.sectionConfig[sectionId].skipped;
-            els.toggleSkip.checked = isSkipped;
-            updateToggleVisuals(isSkipped);
+            // Update Skip Toggle State (hide for 'All' section)
+            const skipToggleContainer = document.querySelector('.bg-blue-50 .flex.items-center:last-child');
+            if (sectionId === 'All') {
+                els.toggleSkip.checked = false;
+                updateToggleVisuals(false);
+                // Hide skip toggle for 'All' section
+                if (skipToggleContainer) {
+                    skipToggleContainer.style.display = 'none';
+                }
+            } else {
+                // Show skip toggle for specific sections
+                if (skipToggleContainer) {
+                    skipToggleContainer.style.display = 'flex';
+                }
+                const isSkipped = appState.sectionConfig[sectionId].skipped;
+                els.toggleSkip.checked = isSkipped;
+                updateToggleVisuals(isSkipped);
+            }
+            
+            // Filter questions to show only those belonging to the current section (or all if 'All' is selected)
+            filterQuestions();
             
             renderSelectedQuestions();
         }
@@ -521,11 +1164,14 @@
             cards.forEach(card => {
                 const cardChapter = card.getAttribute('data-chapter');
                 const cardDifficulty = card.getAttribute('data-difficulty');
+                const cardSection = card.getAttribute('data-section');
                 
                 const chapterMatch = appState.filters.chapter === 'All' || appState.filters.chapter === cardChapter;
                 const difficultyMatch = appState.filters.difficulty === 'All' || appState.filters.difficulty === cardDifficulty;
+                // Filter by current section - show all questions if 'All' is selected, otherwise only show questions for the current section
+                const sectionMatch = appState.currentSection === 'All' || cardSection === appState.currentSection;
                 
-                if (chapterMatch && difficultyMatch) {
+                if (chapterMatch && difficultyMatch && sectionMatch) {
                     card.classList.remove('hidden');
                 } else {
                     card.classList.add('hidden');
@@ -549,12 +1195,30 @@
             btn.classList.replace('border-blue-600', 'border-green-200');
             btn.disabled = true;
 
+            // Determine section: if "All" is selected, use the question's own section from data attribute
+            // Otherwise, use the current section
+            let questionSection = appState.currentSection;
+            if (appState.currentSection === 'All') {
+                const cardSection = card.getAttribute('data-section');
+                questionSection = cardSection || 'A'; // Default to 'A' if no section attribute found
+            }
+
+            // Initialize sub-question marks from questionData
+            const subQuestionMarks = {};
+            if (questionData[id] && questionData[id].subquestions) {
+                questionData[id].subquestions.forEach((sq, idx) => {
+                    const subId = sq.sub_id || String.fromCharCode(97 + idx);
+                    subQuestionMarks[subId] = sq.points || 0;
+                });
+            }
+
             // Add to State
             appState.questions.push({
                 id,
                 title,
                 marks,
-                section: appState.currentSection
+                section: questionSection,
+                subQuestionMarks: subQuestionMarks // Store sub-question marks
             });
 
             renderSelectedQuestions();
@@ -615,7 +1279,55 @@
 
             // If check passes, update state
             q.marks = newMarks;
+            
+            // Distribute marks equally among sub-questions if they exist
+            if (questionData[id] && questionData[id].subquestions && questionData[id].subquestions.length > 0) {
+                // Initialize subQuestionMarks if it doesn't exist
+                if (!q.subQuestionMarks) {
+                    q.subQuestionMarks = {};
+                }
+                
+                const subQuestionCount = questionData[id].subquestions.length;
+                const marksPerSubQuestion = newMarks / subQuestionCount;
+                
+                // Distribute marks equally among all sub-questions
+                questionData[id].subquestions.forEach((sq, idx) => {
+                    const subId = sq.sub_id || String.fromCharCode(97 + idx);
+                    q.subQuestionMarks[subId] = marksPerSubQuestion;
+                });
+            }
+            
             calculateTotals();
+            renderSelectedQuestions(); // Re-render to update display
+        }
+
+        function updateSubQuestionMarks(questionId, subId, inputElement) {
+            const newMarks = parseFloat(inputElement.value);
+            const q = appState.questions.find(q => q.id === questionId);
+            
+            if (!q) return;
+
+            // Basic validation
+            if (isNaN(newMarks) || newMarks < 0) {
+                const currentMarks = q.subQuestionMarks?.[subId] || 0;
+                inputElement.value = currentMarks; // Revert to previous valid mark
+                return;
+            }
+
+            // Initialize subQuestionMarks if it doesn't exist
+            if (!q.subQuestionMarks) {
+                q.subQuestionMarks = {};
+            }
+
+            // Note: Sub-question marks are just a breakdown of main marks
+            // They don't affect the total (which uses main marks)
+            // So we don't need to validate against max marks here
+            // The validation happens when main marks are changed
+
+            // If check passes, update state
+            q.subQuestionMarks[subId] = newMarks;
+            calculateTotals();
+            renderSelectedQuestions(); // Re-render to update display
         }
 
         function calculateTotals() {
@@ -623,13 +1335,26 @@
             let sectionTotal = 0;
 
             appState.questions.forEach(q => {
+                // Calculate total marks for this question
+                // If question has sub-questions, use main marks as total (sub-question marks are just a breakdown)
+                // Otherwise, use main marks
+                let questionTotal = q.marks || 0;
+                
+                // Note: Sub-question marks are distributed from main marks, so we don't add them separately
+                // to avoid double-counting. Main marks represent the total for the question.
+                
                 // Only count marks if section is NOT skipped
                 if (!appState.sectionConfig[q.section].skipped) {
-                    grandTotal += q.marks;
+                    grandTotal += questionTotal;
                 }
                 
-                if (q.section === appState.currentSection) {
-                    sectionTotal += q.marks;
+                // For "All" section, show grand total; otherwise show section-specific total
+                if (appState.currentSection === 'All') {
+                    if (!appState.sectionConfig[q.section].skipped) {
+                        sectionTotal += questionTotal;
+                    }
+                } else if (q.section === appState.currentSection) {
+                    sectionTotal += questionTotal;
                 }
             });
 
@@ -637,46 +1362,310 @@
             els.sectionMarks.innerText = sectionTotal;
         }
 
+        // Render a question in A4 format (for right panel preview)
+        function renderA4Question(q, questionIndex, sectionLabel) {
+            if (!q || !questionData[q.id]) return '';
+
+            const qData = questionData[q.id];
+            const layout = appState.questionLayouts[q.id] || qData.layout || 'grid';
+
+            // 1. Stimulus Logic
+            let stimHtml = '';
+            if (qData.stimulus) {
+                let assetsHtml = '';
+                if (qData.stimulus.media) {
+                    assetsHtml = qData.stimulus.media.map(m =>
+                        `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
+                    ).join('');
+                }
+                if (qData.stimulus.text) {
+                    stimHtml = `<div class="p-stimulus">${qData.stimulus.text}${assetsHtml}</div>`;
+                } else if (assetsHtml) {
+                    stimHtml = `<div class="p-stimulus">${assetsHtml}</div>`;
+                }
+            }
+
+            // 2. Prompt Asset Logic
+            let promptAssets = '';
+            const pMedia = (qData.prompt && qData.prompt.media) ? qData.prompt.media : [];
+            if (pMedia.length > 0) {
+                promptAssets = pMedia.map(m =>
+                    `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
+                ).join('');
+            }
+
+            // 3. Main Text Logic
+            const pText = (qData.prompt && qData.prompt.text) ? qData.prompt.text : (qData.prompt || '');
+
+            // 4. Sub-questions Layout Logic
+            let subHtml = '';
+            if (qData.subquestions) {
+                const isGrid = layout === 'grid';
+                const subs = qData.subquestions.map((sq, i) => {
+                    const label = sq.sub_id || String.fromCharCode(97 + i);
+                    let sqAssets = '';
+                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
+                    if (sqMedia.length > 0) {
+                        sqAssets = sqMedia.map(m =>
+                            `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`
+                        ).join('');
+                    }
+                    let optHtml = '';
+                    if (sq.options) {
+                        optHtml = sq.options.map((o, k) => {
+                            const txt = typeof o === 'string' ? o : o.text;
+                            return `<span style="margin-right:1rem;">(${k + 1}) ${txt}</span>`;
+                        }).join('');
+                    }
+                    
+                    // Get current sub-question marks from appState or use default
+                    const currentSubMarks = q.subQuestionMarks?.[label] !== undefined ? q.subQuestionMarks[label] : (sq.points || 0);
+                    
+                    // Make sub-question marks editable
+                    const sqMarks = `<span style="float:right; font-weight:bold; font-size:10pt; display:inline-flex; align-items:center; gap:2px;">(<input type="number" 
+                               value="${currentSubMarks}" 
+                               step="0.5"
+                               min="0" 
+                               max="20"
+                               onchange="updateSubQuestionMarks('${q.id}', '${label}', this)"
+                               style="width:30px; padding:2px 4px; font-size:9pt; text-align:center; border:1px solid #ccc; border-radius:3px;"
+                               class="sub-question-marks-input"><span>marks)</span></span>`;
+                    
+                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
+                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}</div></div>`;
+                }).join('');
+                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+            }
+
+            // Make main question marks editable (always visible, not just on hover)
+            const marksInput = `<input type="number" 
+                                       value="${q.marks}" 
+                                       min="0" 
+                                       max="20"
+                                       onchange="updateMarks('${q.id}', this)"
+                                       style="width:30px; padding:2px 4px; font-size:9pt; text-align:center; border:1px solid #ccc; border-radius:3px; font-weight:bold;"
+                                       class="main-question-marks-input">`;
+            const marksText = `(${marksInput} ${q.marks == 1 ? 'mark' : 'marks'})`;
+            return `<div class="p-q-block"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">${questionIndex}.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+        }
+
         function renderSelectedQuestions() {
             const list = els.selectedList;
             list.innerHTML = '';
             
-            // Filter questions for current section
-            const sectionQs = appState.questions.filter(q => q.section === appState.currentSection);
+            // Get all questions from all non-skipped sections, ordered by section
+            // All sections (A, B, C) are treated equally
+            const allQuestions = [];
+            ['A', 'B', 'C'].forEach(section => {
+                if (!appState.sectionConfig[section].skipped) {
+                    const sectionQs = appState.questions.filter(q => q.section === section);
+                    if (sectionQs.length > 0) {
+                        allQuestions.push({ section, questions: sectionQs });
+                    }
+                }
+            });
 
-            if(sectionQs.length === 0) {
+            // Check if current section has questions (for empty state message)
+            const currentSectionQs = appState.currentSection === 'All' 
+                ? appState.questions 
+                : appState.questions.filter(q => q.section === appState.currentSection);
+            
+            if(allQuestions.length === 0) {
+                const emptyMessage = appState.currentSection === 'All' 
+                    ? 'No questions added yet' 
+                    : `Section ${appState.currentSection} is empty`;
                 list.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-xl m-4">
                         <i class="fa-solid fa-clipboard-list text-4xl mb-3 opacity-50"></i>
-                        <p class="text-sm font-medium">Section ${appState.currentSection} is empty</p>
+                        <p class="text-sm font-medium">${emptyMessage}</p>
                         <p class="text-xs">Add questions from the left panel</p>
                     </div>`;
-            } else {
-                sectionQs.forEach((q, index) => {
-                    const el = document.createElement('div');
-                    el.className = "bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-3 flex justify-between items-start animate-fade-in";
-                    el.innerHTML = `
-                        <div class="flex-1 pr-4">
-                            <span class="text-xs font-bold text-slate-400">Q${index + 1} (ID: ${q.id})</span>
-                            <p class="text-sm font-medium text-slate-800 mt-1">${q.title}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex flex-col items-end">
-                                <label class="text-[10px] text-slate-400 uppercase font-bold mb-1">Marks</label>
-                                <input type="number" 
-                                       value="${q.marks}" 
-                                       min="0" max="20" 
-                                       onchange="updateMarks('${q.id}', this)"
-                                       class="w-12 h-8 text-center text-sm border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <button onclick="removeQuestion('${q.id}')" class="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Remove Question">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                    list.appendChild(el);
-                });
+                calculateTotals();
+                return;
             }
+
+            // Create A4 page structure
+            let currentPage = null;
+            let currentPageContent = null;
+            let questionIndex = 1;
+            let pageNumber = 1;
+            let currentSectionInPage = null; // Track which section we're currently rendering
+
+            function createNewPage() {
+                const page = document.createElement('div');
+                page.className = 'a4-preview-page';
+                // Calculate total marks from all non-skipped sections
+                const grandTotal = appState.questions
+                    .filter(q => !appState.sectionConfig[q.section].skipped)
+                    .reduce((sum, q) => sum + q.marks, 0);
+                
+                // Only add header on the first page (pageNumber === 1)
+                const headerHTML = pageNumber === 1 ? `
+                    <div class="a4-preview-header">
+                        <h1>St. Xavier's High School</h1>
+                        <div class="header-info">
+                            <span>Class: 3</span>
+                            <span>Subject: Mathematics</span>
+                            <span>Time: 45 Mins</span>
+                        </div>
+                        <div class="header-info">
+                            <span>Name: ______________________</span>
+                            <span>Marks: ${grandTotal}</span>
+                        </div>
+                    </div>
+                ` : '';
+                
+                page.innerHTML = `
+                    ${headerHTML}
+                    <div class="a4-preview-content" id="page-content-${pageNumber}"></div>
+                `;
+                list.appendChild(page);
+                currentPage = page;
+                currentPageContent = document.getElementById(`page-content-${pageNumber}`);
+                pageNumber++;
+            }
+
+            // Create first page
+            createNewPage();
+
+            // Helper function to check if content fits on current page
+            function checkIfFits(element) {
+                // Add element temporarily to measure
+                currentPageContent.appendChild(element);
+                void currentPageContent.offsetHeight; // Force reflow
+                
+                // Calculate available height for content
+                const pageHeight = currentPage.offsetHeight;
+                const headerElement = currentPage.querySelector('.a4-preview-header');
+                const headerHeight = headerElement ? headerElement.offsetHeight : 0;
+                
+                // Available height = page height - header - small margin for bottom spacing
+                const availableHeight = pageHeight - headerHeight - 30;
+                
+                // Get total content height
+                const contentHeight = currentPageContent.scrollHeight;
+                
+                // Content fits if total height is within available space
+                const fits = contentHeight <= availableHeight;
+                
+                // Always remove element to check - caller will add it if it fits
+                currentPageContent.removeChild(element);
+                
+                return fits;
+            }
+
+            // Helper function to add section header
+            function addSectionHeader(section) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'a4-preview-section';
+                sectionDiv.innerHTML = `<div class="a4-preview-section-title">Section ${section}</div>`;
+                
+                // Check if section header fits on current page
+                if (!checkIfFits(sectionDiv)) {
+                    // Doesn't fit, create new page
+                    createNewPage();
+                }
+                
+                // Add section header to current page (either original or newly created)
+                // This ensures the header is always added when transitioning sections
+                currentPageContent.appendChild(sectionDiv);
+                currentSectionInPage = section;
+            }
+
+            // Render all sections continuously
+            allQuestions.forEach(({ section, questions: sectionQs }, sectionIndex) => {
+                // Track if this is the first question of the section
+                let isFirstQuestionInSection = true;
+                // Check if there's a next section (to mark last question of current section)
+                const hasNextSection = sectionIndex < allQuestions.length - 1;
+
+                // Render questions for this section
+                sectionQs.forEach((q, qIndex) => {
+                    const questionHtml = renderA4Question(q, questionIndex, section);
+                    if (!questionHtml) {
+                        questionIndex++;
+                        return;
+                    }
+
+                    // Create wrapper with controls
+                    const questionWrapper = document.createElement('div');
+                    questionWrapper.className = 'relative group';
+                    questionWrapper.setAttribute('data-question-id', q.id);
+                    
+                    // Add hover controls (only remove button, marks are now editable inline)
+                    const controls = document.createElement('div');
+                    controls.className = 'absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10';
+                    controls.innerHTML = `
+                        <button onclick="removeQuestion('${q.id}')" 
+                                class="bg-red-500 text-white p-1 rounded shadow-sm hover:bg-red-600 transition-colors" 
+                                title="Remove Question">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    `;
+                    
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'q-preview';
+                    questionDiv.innerHTML = questionHtml;
+                    
+                    questionWrapper.appendChild(questionDiv);
+                    questionWrapper.appendChild(controls);
+
+                    // Handle section header for first question of a section
+                    if (isFirstQuestionInSection && currentSectionInPage !== section) {
+                        // Create section header element
+                        const sectionDiv = document.createElement('div');
+                        sectionDiv.className = 'a4-preview-section';
+                        sectionDiv.innerHTML = `<div class="a4-preview-section-title">Section ${section}</div>`;
+                        
+                        // First check if header fits on current page
+                        if (checkIfFits(sectionDiv)) {
+                            // Header fits, add it
+                            currentPageContent.appendChild(sectionDiv);
+                            currentSectionInPage = section;
+                            
+                            // Now check if question also fits
+                            if (!checkIfFits(questionWrapper)) {
+                                // Question doesn't fit - we need to move header to new page with question
+                                // Remove header from current page
+                                sectionDiv.remove();
+                                
+                                // Create new page and add both header and question
+                                createNewPage();
+                                const newSectionDiv = document.createElement('div');
+                                newSectionDiv.className = 'a4-preview-section';
+                                newSectionDiv.innerHTML = `<div class="a4-preview-section-title">Section ${section}</div>`;
+                                currentPageContent.appendChild(newSectionDiv);
+                                currentSectionInPage = section;
+                            }
+                        } else {
+                            // Header doesn't fit on current page, create new page
+                            createNewPage();
+                            currentPageContent.appendChild(sectionDiv);
+                            currentSectionInPage = section;
+                        }
+                    } else {
+                        // Not first question of section, just check if question fits
+                        if (!checkIfFits(questionWrapper)) {
+                            // Doesn't fit, create new page
+                            createNewPage();
+                        }
+                    }
+                    
+                    // Check if this is the last question of the section and there's a next section
+                    const isLastQuestionInSection = qIndex === sectionQs.length - 1;
+                    if (isLastQuestionInSection && hasNextSection) {
+                        // Add class to reduce spacing before next section header
+                        questionWrapper.classList.add('last-before-section');
+                    }
+                    
+                    // Add question to current page (either original or newly created)
+                    // This ensures questions are rendered consecutively after their section header
+                    currentPageContent.appendChild(questionWrapper);
+                    
+                    isFirstQuestionInSection = false;
+                    questionIndex++;
+                });
+            });
             
             calculateTotals();
         }
@@ -734,11 +1723,45 @@
             totalEl.innerText = grandTotal;
         }
 
+        // Render all question previews
+        function renderAllQuestionPreviews() {
+            Object.keys(questionData).forEach(qId => {
+                const container = document.getElementById(`preview-${qId}`);
+                const q = questionData[qId];
+                if (container && q) {
+                    // Initialize layout preference if not set
+                    if (!appState.questionLayouts[qId]) {
+                        appState.questionLayouts[qId] = q.layout || 'grid';
+                    }
+                    
+                    // Initialize toggle button state
+                    const toggleBtn = document.getElementById(`layout-toggle-${qId}`);
+                    if (toggleBtn) {
+                        const currentLayout = appState.questionLayouts[qId];
+                        if (currentLayout === 'grid') {
+                            toggleBtn.innerHTML = '<i class="fa-solid fa-table-cells"></i> Grid';
+                            toggleBtn.classList.remove('bg-slate-200', 'text-slate-600');
+                            toggleBtn.classList.add('bg-blue-100', 'text-blue-700');
+                        } else {
+                            toggleBtn.innerHTML = '<i class="fa-solid fa-list"></i> Stack';
+                            toggleBtn.classList.remove('bg-blue-100', 'text-blue-700');
+                            toggleBtn.classList.add('bg-slate-200', 'text-slate-600');
+                        }
+                    }
+                    
+                    renderQuestionPreview(q, container);
+                }
+            });
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize with "All" section selected
+            setSection('All');
             renderSelectedQuestions();
             filterQuestions(); // Initial filter to show all questions
             updatePoolSourceDisplay(); // Initialize the pool source display
+            renderAllQuestionPreviews(); // Render all question previews
         });
     </script>
 </body>
