@@ -560,9 +560,9 @@
 
         // MOCK DATABASE
         const mockDatabase = [
-             { question_id:"db_q1", grade_id:"grade_3", subject_id:"mathematics", chapter_id:"ch_measurement", section_id:"A", pool:"practice", type:"composite", difficulty:"easy", points:2, prompt:{text:"Fill in the blanks. Choose words from brackets."}, subquestions:[{sub_id:"a", prompt:{text:"Standard unit for length is ____ (m/kg)"}, points:1}] },
-            { question_id:"db_q2", grade_id:"grade_3", subject_id:"mathematics", chapter_id:"ch_addition", section_id:"B", pool:"exam", type:"short_answer", difficulty:"medium", points:3, prompt:{text:"Solve 345 + 123"} },
-            { question_id:"db_q3", grade_id:"grade_3", subject_id:"english", chapter_id:"ch1", section_id:"A", pool:"practice", type:"mcq_single", difficulty:"easy", points:1, prompt:{text:"Tick the noun."}, options:["Run", "Cat", "Blue"] }
+             { question_id:"db_q1", grade_id:"grade_3", subject_id:"mathematics", unit_id:"ch_measurement", section_id:"A", pool:"practice", type:"composite", difficulty:"easy", points:2, prompt:{text:"Fill in the blanks. Choose words from brackets."}, subquestions:[{sub_id:"a", prompt:{text:"Standard unit for length is ____ (m/kg)"}, points:1}] },
+            { question_id:"db_q2", grade_id:"grade_3", subject_id:"mathematics", unit_id:"ch_addition", section_id:"B", pool:"exam", type:"short_answer", difficulty:"medium", points:3, prompt:{text:"Solve 345 + 123"} },
+            { question_id:"db_q3", grade_id:"grade_3", subject_id:"english", unit_id:"ch1", section_id:"A", pool:"practice", type:"mcq_single", difficulty:"easy", points:1, prompt:{text:"Tick the noun."}, options:["Run", "Cat", "Blue"] }
         ];
 
         // --- WORKFLOW SWITCHING ---
@@ -627,7 +627,9 @@
                 const filtered = mockDatabase.filter(q => {
                     const matchGrade = q.grade_id === grade;
                     const matchSubject = q.subject_id === subject;
-                    const matchChapter = chapter === 'all' ? true : q.chapter_id === chapter;
+                    // Support both unit_id (new) and chapter_id (legacy)
+                    const unitId = q.unit_id || q.chapter_id;
+                    const matchChapter = chapter === 'all' ? true : unitId === chapter;
                     return matchGrade && matchSubject && matchChapter;
                 });
                 
@@ -693,7 +695,9 @@
                     ? '<span class="status-indicator pending"><span class="dot"></span> Has Assets</span>' 
                     : '<span class="status-indicator valid"><span class="dot"></span> Text Only</span>';
 
-                const chap = q.chapter_id ? q.chapter_id.replace('ch_', '').replace(/_/g, ' ') : 'General';
+                // Support both unit_id (new) and chapter_id (legacy)
+                const unitId = q.unit_id || q.chapter_id;
+                const chap = unitId ? unitId.replace('ch_', '').replace(/_/g, ' ') : 'General';
                 const sec = q.section_id ? `Sec ${q.section_id}` : '';
                 
                 const poolBadge = q.pool === 'exam' 
@@ -725,28 +729,30 @@
             
             renderList(); // Refresh highlighting
 
+            // 1. Show the main editor pane
             document.getElementById('main-editor').classList.add('active');
+            // 2. Force Show Wrapper
             document.getElementById('empty-state').style.display = 'none';
             document.getElementById('editor-wrapper').style.display = 'block';
-
+            
+            // Populate Fields
             populateEditor(q);
             
-            // Check which tab is currently selected
+            // 2. Force Active Tab
             const isPreviewActive = document.getElementById('tab-preview').classList.contains('active');
-            
             if (isPreviewActive) {
-                // If preview tab is active, render preview
-                document.getElementById('view-preview').classList.add('active');
-                document.getElementById('view-edit').classList.remove('active');
-                renderPreview(q, idx);
+                 document.getElementById('view-preview').classList.add('active');
+                 document.getElementById('view-edit').classList.remove('active');
+                 renderPreview(q, idx);
             } else {
-                // Default to edit tab
-                document.getElementById('tab-edit').classList.add('active');
-                // IMPORTANT FIX: Explicitly show the edit container
-                document.getElementById('view-edit').classList.add('active');
-                document.getElementById('view-preview').classList.remove('active');
-                
-                // Ensure form controls are enabled
+                 // Force Edit View
+                 document.getElementById('tab-edit').classList.add('active');
+                 document.getElementById('tab-preview').classList.remove('active');
+                 
+                 document.getElementById('view-edit').classList.add('active');
+                 document.getElementById('view-preview').classList.remove('active');
+                 
+                 // Ensure controls enabled
                  const poolSelect = document.getElementById('meta-pool-type');
                  const diffSelect = document.getElementById('meta-difficulty');
                  const pointInput = document.getElementById('meta-points');
@@ -823,7 +829,7 @@
             const q = activeData[activeIndex];
             if(typeof q.prompt === 'string') q.prompt = { text: q.prompt, media: [] };
             if(!q.prompt.media) q.prompt.media = [];
-            q.prompt.media.push({ asset_id: `new_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+            q.prompt.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
             selectQuestion(activeIndex);
         }
 
@@ -831,7 +837,7 @@
             const q = activeData[activeIndex];
             if(!q.stimulus) q.stimulus = { text: "", media: [] };
             if(!q.stimulus.media) q.stimulus.media = [];
-            q.stimulus.media.push({ asset_id: `new_stim_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+            q.stimulus.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
             selectQuestion(activeIndex);
         }
 
@@ -1028,7 +1034,7 @@
                     addBtn.onclick = () => {
                          if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
                          if(!sq.prompt.media) sq.prompt.media = [];
-                         sq.prompt.media.push({ asset_id: `new_sq_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+                         sq.prompt.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
                          selectQuestion(activeIndex);
                     };
                     card.appendChild(addBtn);
@@ -1114,6 +1120,36 @@
                 };
                 container.appendChild(el);
             });
+        }
+        
+        function triggerImageUpload(callback) {
+            const input = document.getElementById('image-upload-input');
+            
+            // Set up a one-time event listener for file selection
+            const handleFileSelect = (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        callback(event.target.result);
+                    };
+                    reader.onerror = () => {
+                        alert('Error reading image file');
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file) {
+                    alert('Please select an image file');
+                }
+                // Reset the input so the same file can be selected again
+                input.value = '';
+            };
+            
+            // Remove any existing listeners and add new one
+            input.removeEventListener('change', handleFileSelect);
+            input.addEventListener('change', handleFileSelect);
+            
+            // Trigger the file input click
+            input.click();
         }
         
         function downloadJSONL() {
