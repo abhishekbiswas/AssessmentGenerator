@@ -187,7 +187,7 @@
         .pending { color: var(--warning); } .pending .dot { background: var(--warning); }
 
         /* EDITOR (Detail View) */
-        .editor { flex: 1; background: #f3f4f6; overflow-y: auto; padding: 2rem; display: none; }
+        .editor { flex: 1; background: #f3f4f6; overflow-y: auto; padding: 2rem; display: none; } /* Hidden by default */
         .editor.active { display: block; }
         
         .editor-card {
@@ -513,4 +513,725 @@
                                         <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
                                             <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Sub-Questions / Answer</label>
                                         </div>
-                                        <div
+                                        <div id="sub-questions-list" class="sub-questions-wrapper"></div>
+                                    </div>
+                                </div>
+
+                                <!-- SUB-VIEW: JSON (Read Only) -->
+                                <div id="sub-view-json" class="json-view">
+                                    <textarea id="json-ro-textarea" class="json-editor" readonly spellcheck="false"></textarea>
+                                    <div class="json-footer">
+                                        <span style="color:#aaa;">● Read-only (Updates automatically)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- VIEW: PREVIEW -->
+                            <div id="view-preview" class="preview-view-container">
+                                <div class="a4-page" id="a4-content">
+                                    <!-- Rendered Content Goes Here -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                
+            </main>
+        </div>
+    </div>
+
+    <!-- Hidden Input for Image Upload -->
+    <input type="file" id="image-upload-input" accept="image/*">
+
+    <!-- SCRIPT -->
+    <script>
+        // --- GLOBAL STATE ---
+        // 1. Data Store for Import Workflow
+        let importData = [];
+        // 2. Data Store for Library Workflow (Mock DB)
+        let libraryData = []; // Populated via fetch
+        // 3. Pointer to currently active dataset (reference)
+        let activeData = null; // Points to importData or libraryData
+        
+        let activeIndex = null;
+        let activeWorkflow = 'import'; // 'import' or 'library'
+        let activeUploadCallback = null;
+
+        // MOCK DATABASE
+        const mockDatabase = [
+             { question_id:"db_q1", grade_id:"grade_3", subject_id:"mathematics", chapter_id:"ch_measurement", section_id:"A", pool:"practice", type:"composite", difficulty:"easy", points:2, prompt:{text:"Fill in the blanks. Choose words from brackets."}, subquestions:[{sub_id:"a", prompt:{text:"Standard unit for length is ____ (m/kg)"}, points:1}] },
+            { question_id:"db_q2", grade_id:"grade_3", subject_id:"mathematics", chapter_id:"ch_addition", section_id:"B", pool:"exam", type:"short_answer", difficulty:"medium", points:3, prompt:{text:"Solve 345 + 123"} },
+            { question_id:"db_q3", grade_id:"grade_3", subject_id:"english", chapter_id:"ch1", section_id:"A", pool:"practice", type:"mcq_single", difficulty:"easy", points:1, prompt:{text:"Tick the noun."}, options:["Run", "Cat", "Blue"] }
+        ];
+
+        // --- WORKFLOW SWITCHING ---
+        function switchWorkflow(mode) {
+            activeWorkflow = mode;
+            
+            // 1. Update Navigation UI
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${mode}`).classList.add('active');
+
+            // 2. Update Sidebar Modules
+            document.querySelectorAll('.sidebar-module').forEach(el => el.classList.remove('active'));
+            document.getElementById(`module-${mode}`).classList.add('active');
+
+            // 3. Update Header Meta
+            const badge = document.getElementById('mode-badge');
+            const actionBtn = document.getElementById('btn-action');
+            const uploadBtn = document.getElementById('btn-upload');
+
+            if (mode === 'import') {
+                badge.innerText = "IMPORT MODE";
+                badge.className = "badge-mode badge-import";
+                activeData = importData;
+                
+                // Show Upload Button
+                uploadBtn.style.display = 'inline-flex';
+                actionBtn.innerText = "Publish All";
+                actionBtn.onclick = downloadJSONL; // Simulate publish
+            } else {
+                badge.innerText = "LIBRARY MODE";
+                badge.className = "badge-mode badge-library";
+                activeData = libraryData;
+                
+                // Hide Upload Button
+                uploadBtn.style.display = 'none';
+                actionBtn.innerText = "Save Changes"; // Simulate DB Update
+                actionBtn.onclick = () => alert("Changes saved to database!"); 
+            }
+
+            // 4. Reset Editor State
+            activeIndex = null;
+            document.getElementById('main-editor').classList.remove('active');
+            document.getElementById('editor-wrapper').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'block';
+
+            // 5. Render correct list
+            renderList();
+        }
+
+        // --- FETCH (Library Mode) ---
+        function fetchQuestions() {
+            const grade = document.getElementById('filter-grade').value;
+            const subject = document.getElementById('filter-subject').value;
+            const chapter = document.getElementById('filter-chapter').value;
+            
+            // Reset
+            libraryData = [];
+            activeData = libraryData;
+            renderList();
+
+            setTimeout(() => {
+                const filtered = mockDatabase.filter(q => {
+                    const matchGrade = q.grade_id === grade;
+                    const matchSubject = q.subject_id === subject;
+                    const matchChapter = chapter === 'all' ? true : q.chapter_id === chapter;
+                    return matchGrade && matchSubject && matchChapter;
+                });
+                
+                libraryData = JSON.parse(JSON.stringify(filtered)); // Deep copy
+                activeData = libraryData; // Update reference
+
+                document.getElementById('library-count').innerText = `${libraryData.length} Items`;
+                document.getElementById('library-status').innerText = libraryData.length > 0 ? "Ready" : "No Results";
+                
+                renderList();
+            }, 300);
+        }
+
+        // --- FILE UPLOAD (Import Mode) ---
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const newQuestions = parseMixedJson(content);
+                
+                if (newQuestions.length > 0) {
+                    importData = newQuestions;
+                    activeData = importData; // Switch reference
+                    
+                    document.getElementById('import-count').innerText = `${importData.length} Items`;
+                    document.getElementById('import-status').innerText = "Loaded";
+                    
+                    // If we are in Library mode, switch to Import automatically to show results
+                    if(activeWorkflow !== 'import') switchWorkflow('import');
+                    else renderList();
+                    
+                    selectQuestion(0);
+                } else {
+                    alert('No valid JSON objects found.');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // --- SHARED: RENDER LIST ---
+        function renderList() {
+            // Determine which container to use
+            const containerId = activeWorkflow === 'import' ? 'import-list' : 'library-list';
+            const listEl = document.getElementById(containerId);
+            if(!listEl) return;
+            
+            listEl.innerHTML = '';
+            
+            if(!activeData || activeData.length === 0) {
+                listEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#999; font-size:0.8rem;">No questions loaded</div>';
+                return;
+            }
+
+            activeData.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = `q-item ${idx === activeIndex ? 'active' : ''}`;
+                item.onclick = () => selectQuestion(idx);
+                
+                const status = hasMedia(q) 
+                    ? '<span class="status-indicator pending"><span class="dot"></span> Has Assets</span>' 
+                    : '<span class="status-indicator valid"><span class="dot"></span> Text Only</span>';
+
+                const chap = q.chapter_id ? q.chapter_id.replace('ch_', '').replace(/_/g, ' ') : 'General';
+                const sec = q.section_id ? `Sec ${q.section_id}` : '';
+                
+                const poolBadge = q.pool === 'exam' 
+                    ? '<span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:3px; border:1px solid #fcd34d;">EXAM</span>'
+                    : '<span style="font-size:0.65rem; background:#ecfdf5; color:#065f46; padding:1px 4px; border-radius:3px; border:1px solid #6ee7b7;">PRACTICE</span>';
+
+                const promptText = (q.prompt && typeof q.prompt === 'object') ? q.prompt.text : (q.prompt || 'No prompt');
+
+                item.innerHTML = `
+                    <div class="q-item-header">
+                        <span class="q-id">Q${idx + 1}</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            ${poolBadge}
+                            <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(q.difficulty||'').toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div class="q-location">${chap} • ${sec}</div>
+                    <div class="q-preview">${promptText}</div>
+                    ${status}
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // --- SHARED: SELECT QUESTION ---
+        function selectQuestion(idx) {
+            activeIndex = idx;
+            const q = activeData[idx]; // Use activeData reference
+            
+            renderList(); // Refresh highlighting
+
+            document.getElementById('main-editor').classList.add('active');
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('editor-wrapper').style.display = 'block';
+
+            populateEditor(q);
+            
+            // Check which tab is currently selected
+            const isPreviewActive = document.getElementById('tab-preview').classList.contains('active');
+            
+            if (isPreviewActive) {
+                // If preview tab is active, render preview
+                document.getElementById('view-preview').classList.add('active');
+                document.getElementById('view-edit').classList.remove('active');
+                renderPreview(q, idx);
+            } else {
+                // Default to edit tab
+                document.getElementById('tab-edit').classList.add('active');
+                // IMPORTANT FIX: Explicitly show the edit container
+                document.getElementById('view-edit').classList.add('active');
+                document.getElementById('view-preview').classList.remove('active');
+                
+                // Ensure form controls are enabled
+                 const poolSelect = document.getElementById('meta-pool-type');
+                 const diffSelect = document.getElementById('meta-difficulty');
+                 const pointInput = document.getElementById('meta-points');
+                 poolSelect.disabled = false;
+                 diffSelect.disabled = false;
+                 pointInput.disabled = false;
+            }
+        }
+
+        // New helper to avoid recursion
+        function populateEditor(q) {
+            document.getElementById('meta-id').innerText = `Q${activeIndex+1}`;
+            document.getElementById('meta-pool-type').value = q.pool || q.pool_type || 'practice';
+            document.getElementById('meta-difficulty').value = q.difficulty || 'medium';
+            document.getElementById('meta-points').value = q.points || 1;
+            
+            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
+            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
+
+            document.getElementById('input-prompt').value = pText;
+            renderAssetList(pMedia, 'prompt-assets', (newMedia) => {
+                if(typeof q.prompt === 'string') q.prompt = { text: q.prompt, media: [] };
+                q.prompt.media = newMedia;
+                updateJsonView(); 
+            });
+
+            const stimArea = document.getElementById('stimulus-section');
+            const stimInput = document.getElementById('input-stimulus');
+            
+            if(q.stimulus) {
+                stimArea.style.display = 'block';
+                stimInput.value = q.stimulus.text || '';
+                renderAssetList(q.stimulus.media || [], 'stimulus-assets', (newMedia) => {
+                    q.stimulus.media = newMedia;
+                    updateJsonView(); 
+                });
+            } else {
+                stimArea.style.display = 'none';
+            }
+
+            renderSubQuestions(q);
+            updateLayoutButtons(q.layout);
+            updateJsonView();
+        }
+
+        // --- DATA HELPERS (Same as before, adapted to use activeData) ---
+        function updatePrompt(val) {
+            const q = activeData[activeIndex];
+            if(typeof q.prompt === 'string') q.prompt = val;
+            else q.prompt.text = val;
+            renderList();
+            updateJsonView(); 
+        }
+
+        function updateMeta(field, val) {
+            if(field === 'pool_type') activeData[activeIndex].pool = val; 
+            else if(field === 'points') {
+                activeData[activeIndex].points = parseFloat(val);
+                distributeTotalMarks(parseFloat(val)); 
+            } else {
+                activeData[activeIndex][field] = val;
+            }
+            renderList();
+            updateJsonView(); 
+        }
+
+        function updateStimulus(val) {
+            if(!activeData[activeIndex].stimulus) activeData[activeIndex].stimulus = { text: '', media: [] };
+            activeData[activeIndex].stimulus.text = val;
+            updateJsonView(); 
+        }
+        
+        function addAssetToPrompt() {
+            const q = activeData[activeIndex];
+            if(typeof q.prompt === 'string') q.prompt = { text: q.prompt, media: [] };
+            if(!q.prompt.media) q.prompt.media = [];
+            q.prompt.media.push({ asset_id: `new_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+            selectQuestion(activeIndex);
+        }
+
+        function addAssetToStimulus() {
+            const q = activeData[activeIndex];
+            if(!q.stimulus) q.stimulus = { text: "", media: [] };
+            if(!q.stimulus.media) q.stimulus.media = [];
+            q.stimulus.media.push({ asset_id: `new_stim_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+            selectQuestion(activeIndex);
+        }
+
+        function distributeTotalMarks(newTotal) {
+            const q = activeData[activeIndex];
+            if(!q.subquestions || q.subquestions.length === 0) return;
+            const count = q.subquestions.length;
+            const newPerSub = Math.round((newTotal / count) * 100) / 100; 
+            q.subquestions.forEach(sq => { sq.points = newPerSub; });
+            renderSubQuestions(q);
+            updateJsonView();
+        }
+
+        function recalculateTotalMarks() {
+            const q = activeData[activeIndex];
+            if(!q.subquestions) return;
+            let total = 0;
+            q.subquestions.forEach(sq => {
+                if(sq.points) total += parseFloat(sq.points);
+            });
+            total = Math.round(total * 100) / 100;
+            q.points = total;
+            document.getElementById('meta-points').value = total;
+            updateJsonView(); 
+        }
+        
+        function setLayout(mode) {
+            activeData[activeIndex].layout = mode;
+            updateLayoutButtons(mode);
+            renderSubQuestions(activeData[activeIndex]);
+            updateJsonView(); 
+        }
+        
+        function deleteQuestion() {
+            activeData.splice(activeIndex, 1);
+            if(activeData.length > 0) selectQuestion(0);
+            else {
+                document.getElementById('main-editor').classList.remove('active');
+                document.getElementById('editor-wrapper').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+            }
+            renderList();
+        }
+
+        function updateJsonView() {
+            const q = activeData[activeIndex];
+            if (q) {
+                document.getElementById('json-ro-textarea').value = JSON.stringify(q, null, 2);
+            }
+        }
+        
+        // --- PREVIOUS HELPERS (Parsing, Rendering, etc.) ---
+        // (Keeping existing renderSubQuestions, renderAssetList, parseMixedJson, etc. as they were)
+        // [Re-inserting them below for completeness]
+
+        function parseMixedJson(content) {
+            const results = [];
+            let buffer = "";
+            let braceCount = 0;
+            let inString = false;
+            let escape = false;
+            if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+            for (let i = 0; i < content.length; i++) {
+                const char = content[i];
+                buffer += char;
+                if (escape) { escape = false; continue; }
+                if (char === '\\') { escape = true; continue; }
+                if (char === '"') { inString = !inString; continue; }
+                if (!inString) {
+                    if (char === '{') { braceCount++; } 
+                    else if (char === '}') {
+                        braceCount--;
+                        if (braceCount === 0) {
+                            try {
+                                const obj = JSON.parse(buffer);
+                                if(!obj.pool) obj.pool = 'practice';
+                                if(!obj.layout) obj.layout = 'stack';
+                                if(!obj.question_id) obj.question_id = `q_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+                                results.push(obj);
+                                buffer = ""; 
+                            } catch (e) {}
+                        }
+                    }
+                }
+            }
+            return results;
+        }
+
+        function hasMedia(q) {
+            if(q.prompt?.media?.length) return true;
+            if(q.stimulus?.media?.length) return true; 
+            if(q.subquestions) { return q.subquestions.some(sq => sq.prompt?.media?.length); }
+            return false;
+        }
+
+        function updateLayoutButtons(mode) {
+            const btnStack = document.getElementById('btn-layout-stack');
+            const btnGrid = document.getElementById('btn-layout-grid');
+            const currentMode = mode || 'stack';
+            if(currentMode === 'stack') {
+                btnStack.classList.add('btn-primary');
+                btnGrid.classList.remove('btn-primary');
+            } else {
+                btnStack.classList.remove('btn-primary');
+                btnGrid.classList.add('btn-primary');
+            }
+        }
+        
+        function renderSubQuestions(q) {
+            const container = document.getElementById('sub-questions-list');
+            container.innerHTML = '';
+            const mode = q.layout || 'stack';
+            container.className = `sub-questions-wrapper ${mode === 'grid' ? 'layout-grid' : ''}`;
+            if(q.subquestions && q.subquestions.length > 0) {
+                q.subquestions.forEach((sq, sqIdx) => {
+                    const card = document.createElement('div');
+                    card.className = 'sub-question-card';
+                    const header = document.createElement('div');
+                    header.className = 'sub-q-header';
+                    const badge = document.createElement('div');
+                    badge.className = 'sub-id-badge';
+                    badge.innerText = sq.sub_id || String.fromCharCode(97 + sqIdx);
+                    const marksWrapper = document.createElement('div');
+                    marksWrapper.style.display = 'flex';
+                    marksWrapper.style.alignItems = 'center';
+                    marksWrapper.style.gap = '8px';
+                    const label = document.createElement('label');
+                    label.className = 'toggle-wrapper';
+                    label.innerHTML = `<span>Show Marks</span><input type="checkbox" class="toggle-input" ${sq.points ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
+                    const marksInput = document.createElement('input');
+                    marksInput.type = 'number';
+                    marksInput.className = 'sub-marks-input';
+                    if(sq.points) { marksInput.value = sq.points; marksInput.classList.add('visible'); }
+                    marksInput.placeholder = '0.5';
+                    marksInput.oninput = (e) => { sq.points = parseFloat(e.target.value) || 0; recalculateTotalMarks(); };
+                    label.querySelector('input').onchange = (e) => {
+                        if(e.target.checked) { marksInput.classList.add('visible'); sq.points = parseFloat(marksInput.value) || 0.5; marksInput.value = sq.points; } 
+                        else { marksInput.classList.remove('visible'); delete sq.points; }
+                        recalculateTotalMarks();
+                    };
+                    marksWrapper.appendChild(label);
+                    marksWrapper.appendChild(marksInput);
+                    header.appendChild(badge);
+                    header.appendChild(marksWrapper);
+                    card.appendChild(header);
+                    const input = document.createElement('textarea');
+                    input.className = 'input-bare sub-input';
+                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
+                    input.value = sqText;
+                    input.placeholder = 'Sub-question text...';
+                    input.oninput = (e) => { 
+                        if(typeof sq.prompt === 'string') sq.prompt = { text: e.target.value, media: [] };
+                        else sq.prompt.text = e.target.value;
+                        updateJsonView(); 
+                    };
+                    card.appendChild(input);
+                    const assetCont = document.createElement('div');
+                    assetCont.className = 'asset-container';
+                    card.appendChild(assetCont);
+                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
+                    renderAssetList(sqMedia, assetCont, (newMedia) => {
+                        if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
+                        sq.prompt.media = newMedia;
+                        updateJsonView(); 
+                    });
+                    if (sq.options && sq.options.length > 0) {
+                        const optDiv = document.createElement('div');
+                        optDiv.className = 'options-editor';
+                        optDiv.innerHTML = `<label style="font-size:0.7rem; font-weight:700; color:#6b7280; text-transform:uppercase;">Options</label>`;
+                        sq.options.forEach((opt, oIdx) => {
+                            const optRow = document.createElement('div');
+                            optRow.className = 'option-row';
+                            const radio = document.createElement('div');
+                            radio.className = 'option-radio';
+                            const optInput = document.createElement('input');
+                            optInput.className = 'option-input';
+                            const optVal = typeof opt === 'string' ? opt : opt.text;
+                            optInput.value = optVal;
+                            optInput.oninput = (e) => {
+                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = e.target.value;
+                                else sq.options[oIdx].text = e.target.value;
+                                updateJsonView(); 
+                            };
+                            optRow.appendChild(radio);
+                            optRow.appendChild(optInput);
+                            optDiv.appendChild(optRow);
+                        });
+                        card.appendChild(optDiv);
+                    }
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'btn btn-sm';
+                    addBtn.style.marginTop = '0.5rem';
+                    addBtn.innerText = '+ Img';
+                    addBtn.onclick = () => {
+                         if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
+                         if(!sq.prompt.media) sq.prompt.media = [];
+                         sq.prompt.media.push({ asset_id: `new_sq_${Date.now()}`, ai_generation_prompt: "Describe...", uri: null });
+                         selectQuestion(activeIndex);
+                    };
+                    card.appendChild(addBtn);
+                    const ansDiv = document.createElement('div');
+                    ansDiv.style.marginTop = '0.5rem';
+                    ansDiv.style.borderTop = '1px solid #f3f4f6';
+                    ansDiv.style.paddingTop = '0.5rem';
+                    ansDiv.innerHTML = `<span style="font-size:0.75rem; color:green; font-weight:bold;">ANSWER:</span>`;
+                    const ansInput = document.createElement('input');
+                    ansInput.className = 'input-bare';
+                    ansInput.style.color = 'green';
+                    let ansVal = '';
+                    if(sq.answer) ansVal = (typeof sq.answer === 'string') ? sq.answer : sq.answer.value;
+                    ansInput.value = ansVal;
+                    ansInput.oninput = (e) => { 
+                        if(!sq.answer) sq.answer = { kind: 'text', value: '' };
+                        if(typeof sq.answer === 'string') sq.answer = e.target.value;
+                        else sq.answer.value = e.target.value;
+                        updateJsonView(); 
+                    };
+                    ansDiv.appendChild(ansInput);
+                    card.appendChild(ansDiv);
+                    container.appendChild(card);
+                });
+            } else {
+                const ansDiv = document.createElement('div');
+                ansDiv.className = 'sub-question-card';
+                ansDiv.innerHTML = `<label style="font-size:0.8rem; font-weight:bold;">Answer Key</label>`;
+                const ansInput = document.createElement('textarea');
+                ansInput.className = 'input-bare';
+                let ansVal = '';
+                if(q.answer) ansVal = (typeof q.answer === 'string') ? q.answer : q.answer.value;
+                ansInput.value = ansVal;
+                ansInput.oninput = (e) => {
+                     if(!q.answer) q.answer = { kind: 'text', value: '' };
+                     if(typeof q.answer === 'string') q.answer = e.target.value;
+                     else q.answer.value = e.target.value;
+                     updateJsonView();
+                };
+                ansDiv.appendChild(ansInput);
+                container.appendChild(ansDiv);
+            }
+        }
+
+        function renderAssetList(mediaArray, containerOrId, updateCallback) {
+            const container = typeof containerOrId === 'string' ? document.getElementById(containerOrId) : containerOrId;
+            container.innerHTML = '';
+            if(!mediaArray) return;
+            mediaArray.forEach((m, idx) => {
+                const el = document.createElement('div');
+                el.className = 'asset-item';
+                const isGenerated = m.uri !== null;
+                const icon = isGenerated ? `<img src="${m.uri}">` : '🖼️';
+                const statusColor = isGenerated ? 'var(--success)' : 'var(--warning)';
+                el.innerHTML = `
+                    <div class="asset-preview" style="border-color:${statusColor}">${icon}</div>
+                    <div class="asset-details">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="font-size:0.7rem; font-weight:700; color:${statusColor}">${isGenerated ? 'GENERATED' : 'PENDING GEN'}</span>
+                            <button class="btn btn-sm btn-danger" style="padding:2px 6px; font-size:0.7rem;">×</button>
+                        </div>
+                        <input class="asset-prompt-input" value="${m.ai_generation_prompt || ''}" placeholder="AI Prompt description...">
+                        <div style="margin-top:4px; display:flex; gap:0.5rem;">
+                            <button class="btn btn-sm gen-btn" style="background:var(--warning); color:white; border:none;">${isGenerated ? 'Regenerate' : 'Generate Now'}</button>
+                            <button class="btn btn-sm upload-btn" style="background:white; border:1px solid #ccc;">Insert Image</button>
+                        </div>
+                    </div>
+                `;
+                el.querySelector('.btn-danger').onclick = () => { mediaArray.splice(idx, 1); updateCallback(mediaArray); renderAssetList(mediaArray, container, updateCallback); };
+                el.querySelector('.asset-prompt-input').oninput = (e) => { m.ai_generation_prompt = e.target.value; updateJsonView(); };
+                el.querySelector('.gen-btn').onclick = (e) => {
+                    e.target.innerText = 'Generating...';
+                    setTimeout(() => {
+                        const safeText = encodeURIComponent((m.ai_generation_prompt || 'image').substring(0, 20));
+                        m.uri = `https://placehold.co/400x300/e0f2fe/0284c7?text=${safeText}`;
+                        updateCallback(mediaArray);
+                        renderAssetList(mediaArray, container, updateCallback);
+                        updateJsonView(); 
+                    }, 1500);
+                };
+                el.querySelector('.upload-btn').onclick = () => {
+                    triggerImageUpload((dataUrl) => { m.uri = dataUrl; updateCallback(mediaArray); renderAssetList(mediaArray, container, updateCallback); updateJsonView(); });
+                };
+                container.appendChild(el);
+            });
+        }
+        
+        function downloadJSONL() {
+            let jsonl = activeData.map(q => JSON.stringify(q)).join('\n');
+            const blob = new Blob([jsonl], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = activeWorkflow === 'import' ? 'published_questions.jsonl' : 'library_export.jsonl';
+            a.click();
+        }
+
+        function switchTab(tab) {
+            const poolSelect = document.getElementById('meta-pool-type');
+            const diffSelect = document.getElementById('meta-difficulty');
+            const pointInput = document.getElementById('meta-points');
+            if (tab === 'preview') { poolSelect.disabled = true; diffSelect.disabled = true; pointInput.disabled = true; } 
+            else { poolSelect.disabled = false; diffSelect.disabled = false; pointInput.disabled = false; }
+            if (tab === 'edit') { selectQuestion(activeIndex); }
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.querySelectorAll('.edit-view-container, .preview-view-container').forEach(v => v.classList.remove('active'));
+            if(tab === 'preview') document.getElementById('view-preview').classList.add('active');
+            else document.getElementById('view-edit').classList.add('active');
+
+            if(tab === 'preview') { renderPreview(activeData[activeIndex], activeIndex); }
+        }
+
+        function switchSubView(subview) {
+            const btnGraph = document.getElementById('subview-graphical');
+            const btnJson = document.getElementById('subview-json');
+            const viewGraph = document.getElementById('sub-view-graphical');
+            const viewJson = document.getElementById('sub-view-json');
+            if(subview === 'graphical') {
+                btnGraph.classList.add('active'); btnJson.classList.remove('active');
+                viewGraph.style.display = 'block'; viewJson.style.display = 'none';
+            } else {
+                btnGraph.classList.remove('active'); btnJson.classList.add('active');
+                viewGraph.style.display = 'none'; viewJson.style.display = 'flex';
+                updateJsonView();
+            }
+        }
+        
+        function getBlankStyle(text, options) {
+            if (!text || !text.includes('__')) return '';
+            let optionsToMeasure = options || [];
+            if (!optionsToMeasure || optionsToMeasure.length === 0) {
+                const match = text.match(/\(([^)]+)\)/); 
+                if (match && match[1].includes('/')) { optionsToMeasure = match[1].split('/'); }
+            }
+            let width = '80px'; 
+            if (optionsToMeasure && optionsToMeasure.length > 0) {
+                let longest = 0;
+                optionsToMeasure.forEach(opt => {
+                    const txt = typeof opt === 'string' ? opt : (opt.text || '');
+                    if (txt.length > longest) longest = txt.length;
+                });
+                const calcWidth = Math.max(80, (longest * 10 * 1.2)); 
+                width = `${Math.round(calcWidth)}px`;
+            }
+            return width; 
+        }
+        function formatForPrint(text, options) {
+            if(!text) return '';
+            if(text.includes('__')) {
+                const w = getBlankStyle(text, options);
+                return text.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
+            }
+            return text;
+        }
+
+        function renderPreview(q, idx) {
+            const container = document.getElementById('a4-content');
+            let stimHtml = '';
+            if(q.stimulus) {
+                let assetsHtml = '';
+                if(q.stimulus.media) {
+                    assetsHtml = q.stimulus.media.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
+                }
+                stimHtml = `<div class="p-stimulus">${q.stimulus.text || ''}${assetsHtml}</div>`;
+            }
+            let promptAssets = '';
+            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
+            if(pMedia.length > 0) {
+                promptAssets = pMedia.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
+            }
+            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
+            let subHtml = '';
+            if(q.subquestions) {
+                const isGrid = q.layout === 'grid';
+                const subs = q.subquestions.map((sq, i) => {
+                    const label = sq.sub_id || String.fromCharCode(97 + i);
+                    let sqAssets = '';
+                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
+                    if(sqMedia.length > 0) {
+                        sqAssets = sqMedia.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
+                    }
+                    let optHtml = '';
+                    if(sq.options) {
+                        optHtml = sq.options.map((o, k) => {
+                            const txt = typeof o === 'string' ? o : o.text;
+                            return `<span style="margin-right:1rem;">(${k+1}) ${txt}</span>`;
+                        }).join('');
+                    }
+                    let sqMarks = '';
+                    if(sq.points) { sqMarks = `<span style="float:right; font-weight:bold; font-size:10pt;">(${sq.points} marks)</span>`; }
+                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
+                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}</div></div>`;
+                }).join('');
+                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+            }
+            const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
+            container.innerHTML = `<div class="p-q-block"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+        }
+
+        // Initialize with default view
+        switchWorkflow('import');
+
+    </script>
+</body>
+</html>
