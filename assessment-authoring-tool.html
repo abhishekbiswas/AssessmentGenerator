@@ -289,9 +289,10 @@
 
         /* CONTENT STYLES */
         .p-q-block { margin-bottom: 1.5rem; text-align: justify; }
-        .p-q-header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 1rem; margin-bottom: 0.5rem; }
+        .p-q-header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; margin-bottom: 0.5rem; }
+        .p-q-content { flex: 1; }
         .p-q-num { font-weight: bold; margin-right: 0.5rem; }
-        .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; }
+        .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
         .p-stimulus { background: #f9fafb; padding: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1rem; font-style: italic; text-align: justify; }
         .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -301,6 +302,24 @@
         .p-asset { margin: 0.5rem 0; text-align: center; }
         .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
         .p-asset-placeholder { border: 1px dashed #ccc; padding: 2rem; color: #999; font-family: sans-serif; font-size: 0.8rem; }
+
+        /* Grid layout for preview sections (text left, media right) */
+        .p-section-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
+        .p-section-grid .p-section-text { flex: 1; }
+        .p-section-grid .p-section-media { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; max-width: 200px; }
+        .p-section-grid .p-section-media .p-asset { margin: 0; }
+        .p-section-grid .p-section-media .p-asset img { max-width: 180px; max-height: 150px; }
+        
+        /* Stack layout (default - text above media) */
+        .p-section-stack { display: flex; flex-direction: column; }
+        .p-section-stack .p-section-media { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+        
+        /* Options grid layout in preview */
+        .p-options { margin-top: 0.5rem; }
+        .p-options-stack .p-option-item { display: block; margin-bottom: 0.25rem; }
+        .p-options-grid .p-option-item { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+        .p-options-grid .p-option-media { max-width: 100px; }
+        .p-options-grid .p-option-media img { max-width: 80px; max-height: 60px; }
 
         /* FORM CONTROLS */
         .content-section { margin-bottom: 2rem; }
@@ -315,6 +334,36 @@
 
         .sub-question-card { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; position: relative; transition: box-shadow 0.2s; }
         .sub-question-card:focus-within { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* Sub-question layout modes */
+        .sq-content-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+        .sq-content-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
+        .sq-text-area { flex: 1; min-width: 0; }
+        .sq-media-area { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; max-width: 200px; }
+        .sq-media-area .asset-item-compact { margin: 0; }
+        
+        /* Layout toggle buttons */
+        .layout-toggle-group { 
+            display: inline-flex; 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            overflow: hidden;
+            background: #f3f4f6;
+        }
+        .layout-toggle-btn {
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+        .layout-toggle-btn:hover { background: #e5e7eb; }
+        .layout-toggle-btn.active { 
+            background: var(--primary); 
+            color: white; 
+        }
         
         .sub-q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
         .sub-id-badge { background: #eff6ff; color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; }
@@ -340,8 +389,374 @@
         .asset-details { flex: 1; }
         .asset-prompt-input { width: 100%; font-size: 0.8rem; color: #4b5563; font-family: monospace; border: 1px solid #e5e7eb; padding: 4px; border-radius: 4px; margin-bottom: 4px;}
         
+        /* Compact asset item (when image is present) */
+        .asset-item-compact { display: inline-block; margin-right: 0.5rem; margin-bottom: 0.5rem; vertical-align: top; }
+        .asset-image-container { 
+            position: relative; 
+            display: inline-block;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid var(--success);
+            resize: both;
+            min-width: 60px;
+            min-height: 60px;
+            max-width: 400px;
+            max-height: 400px;
+        }
+        .asset-image-container img { 
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+        /* Resize handle indicator */
+        .asset-image-container::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, transparent 50%, var(--success) 50%);
+            border-radius: 0 0 4px 0;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .asset-hover-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .asset-image-container:hover .asset-hover-controls { opacity: 1; }
+        .asset-hover-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+        }
+        .asset-hover-btn:hover { transform: scale(1.1); }
+        .asset-hover-btn.delete-btn { background: #fee2e2; color: #dc2626; }
+        
         .empty-state { text-align: center; color: var(--text-muted); margin-top: 20%; }
         #file-input, #image-upload-input { display: none; }
+
+        /* ADD SECTION BUTTONS */
+        .add-sections-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f0f9ff;
+            border: 1px dashed #93c5fd;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+        .add-section-btn {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #93c5fd;
+            background: white;
+            color: #1d4ed8;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .add-section-btn:hover { background: #dbeafe; }
+        .add-section-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        .add-section-label { font-size: 0.7rem; font-weight: 700; color: #1d4ed8; text-transform: uppercase; width: 100%; margin-bottom: 0.25rem; }
+
+        /* SECTION HEADERS WITH REMOVE BUTTON */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .remove-section-btn {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-section-btn:hover { background: #fecaca; }
+
+        /* OPTIONS EDITOR (Main Level) */
+        .options-section {
+            background: #faf5ff;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px dashed #c4b5fd;
+        }
+        .options-section .section-label { color: #6d28d9; }
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        .option-item .option-id {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #6d28d9;
+            min-width: 50px;
+        }
+        .option-item input { flex: 1; padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem; }
+        .option-actions { display: flex; gap: 0.25rem; }
+        .option-actions button { padding: 4px 8px; font-size: 0.7rem; }
+
+        /* RUBRIC EDITOR */
+        .rubric-section {
+            background: #fef3c7;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px dashed #fcd34d;
+        }
+        .rubric-section .section-label { color: #92400e; }
+        .rubric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .rubric-field { display: flex; flex-direction: column; gap: 0.25rem; }
+        .rubric-field label { font-size: 0.7rem; font-weight: 600; color: #92400e; }
+        .rubric-field select, .rubric-field input, .rubric-field textarea {
+            padding: 0.4rem;
+            border: 1px solid #fcd34d;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        .checks-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .check-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: white;
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        .check-tag button {
+            background: none;
+            border: none;
+            color: #991b1b;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.8rem;
+        }
+
+        /* METADATA EDITOR */
+        .metadata-section {
+            background: #f0fdf4;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px dashed #86efac;
+        }
+        .metadata-section .section-label { color: #166534; }
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .metadata-field { display: flex; flex-direction: column; gap: 0.25rem; }
+        .metadata-field label { font-size: 0.7rem; font-weight: 600; color: #166534; }
+        .metadata-field input, .metadata-field select {
+            padding: 0.4rem;
+            border: 1px solid #86efac;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+        }
+
+        /* ANSWER EDITOR */
+        .answer-section {
+            background: #ecfdf5;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px dashed #6ee7b7;
+        }
+        .answer-section .section-label { color: #047857; }
+        .answer-kind-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .answer-kind-row label { font-size: 0.7rem; font-weight: 600; color: #047857; }
+        .answer-kind-row select {
+            padding: 0.4rem;
+            border: 1px solid #6ee7b7;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* WORD BANK EDITOR */
+        .word-bank-section {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+        .word-bank-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        .word-bank-item input { flex: 1; padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem; }
+
+        /* SECTION LAYOUT TOGGLE */
+        .section-layout-toggle {
+            display: flex;
+            background: #e5e7eb;
+            border-radius: 4px;
+            padding: 2px;
+        }
+        .section-layout-btn {
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+        }
+        .section-layout-btn.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* GRID LAYOUT FOR SECTIONS (text left, media right) */
+        .section-content-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: start;
+        }
+        .section-content-grid .section-text-area {
+            flex: 1;
+            min-width: 0;
+        }
+        .section-content-grid .section-media-area {
+            width: 200px;
+            flex-shrink: 0;
+        }
+        .section-content-grid .section-media-area .asset-item {
+            flex-direction: column;
+        }
+        .section-content-grid .section-media-area .asset-preview {
+            width: 100%;
+            height: 120px;
+        }
+
+        /* STACK LAYOUT FOR SECTIONS (default - text above media) */
+        .section-content-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .section-content-stack .section-text-area {
+            width: 100%;
+        }
+        .section-content-stack .section-media-area {
+            width: 100%;
+        }
+
+        /* SUB-QUESTION ENHANCEMENTS */
+        .sub-question-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .sub-question-type-select {
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .delete-sub-btn {
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-sub-btn:hover { background: #fecaca; }
+        
+        /* SKILL TAGS */
+        .skill-tags-section {
+            margin-top: 0.75rem;
+        }
+        .skill-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .skill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #1d4ed8;
+        }
+        .skill-tag button {
+            background: none;
+            border: none;
+            color: #991b1b;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -386,6 +801,7 @@
                 <div id="module-import" class="sidebar-module active">
                     <div class="sidebar-filter">
                         <div style="font-size:0.85rem; color:#666; margin-bottom:0.5rem;">Upload new questions to review and publish.</div>
+                        <button class="btn btn-primary" style="width:100%;" onclick="createNewQuestion()">+ Create New Question</button>
                     </div>
                     <div class="sidebar-header-status">
                          <span id="import-count">0 Items</span>
@@ -437,7 +853,16 @@
                         <div class="card-header">
                             <div class="header-top">
                                 <div class="meta-group">
-                                    <span class="badge-draft" id="meta-id">ID</span>
+                                    <span class="badge-draft" id="meta-id" style="background:#eff6ff; color:var(--primary); padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.8rem;">ID</span>
+                                    <select class="btn btn-sm" id="meta-type" onchange="updateMeta('type', this.value)" title="Question Type">
+                                        <option value="short_answer">Short Answer</option>
+                                        <option value="long_answer">Long Answer</option>
+                                        <option value="mcq_single">MCQ Single</option>
+                                        <option value="mcq_multi">MCQ Multi</option>
+                                        <option value="fill_blank">Fill Blank</option>
+                                        <option value="composite">Composite</option>
+                                        <option value="picture_prompt">Picture Prompt</option>
+                                    </select>
                                     <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
                                         <option value="practice">Practice Pool</option>
                                         <option value="exam">Exam Pool</option>
@@ -452,7 +877,33 @@
                                         <span style="font-size:0.8rem; color:var(--text-muted);">marks</span>
                                     </div>
                                 </div>
-                                <button class="btn btn-sm btn-danger" onclick="deleteQuestion()">Delete Question</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteQuestion()" style="background:#fee2e2; color:#991b1b; border-color:#fecaca;">Delete</button>
+                            </div>
+                            <!-- Second row for location metadata -->
+                            <div class="header-top" style="padding-top:0; border-top:1px solid var(--border); margin-top:0;">
+                                <div class="meta-group" style="flex-wrap:wrap;">
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Grade:</label>
+                                        <input type="text" class="btn btn-sm" style="width:80px;" id="meta-grade" onchange="updateMeta('grade_id', this.value)" placeholder="grade_3">
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Subject:</label>
+                                        <input type="text" class="btn btn-sm" style="width:100px;" id="meta-subject" onchange="updateMeta('subject_id', this.value)" placeholder="mathematics">
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Unit:</label>
+                                        <input type="text" class="btn btn-sm" style="width:80px;" id="meta-unit" onchange="updateMeta('unit_id', this.value)" placeholder="ch1">
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Section:</label>
+                                        <select class="btn btn-sm" style="width:60px;" id="meta-section" onchange="updateMeta('section_id', this.value)">
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <!-- TABS -->
                             <div class="card-tabs">
@@ -469,15 +920,7 @@
                                 <!-- Toolbar -->
                                 <div class="editor-toolbar">
                                     <div class="toolbar-left">
-                                        <div class="toolbar-group">
-                                            <span class="toolbar-label">Layout</span>
-                                            <button class="btn btn-sm" id="btn-layout-stack" onclick="setLayout('stack')">☰ Stacked</button>
-                                            <button class="btn btn-sm" id="btn-layout-grid" onclick="setLayout('grid')">⊞ Grid</button>
-                                        </div>
-                                        <div class="toolbar-group">
-                                            <span class="toolbar-label">Assets</span>
-                                            <button class="btn btn-sm" onclick="addAssetToPrompt()">+ Add Image</button>
-                                        </div>
+                                        <span style="font-size:0.75rem; color:var(--text-muted);">Use layout toggles in each section below</span>
                                     </div>
                                     
                                     <div class="toolbar-right">
@@ -491,30 +934,194 @@
 
                                 <!-- SUB-VIEW: GRAPHICAL (Default) -->
                                 <div id="sub-view-graphical" class="graphical-view">
+                                    
+                                    <!-- ADD MISSING SECTIONS BAR -->
+                                    <div id="add-sections-bar" class="add-sections-bar">
+                                        <span class="add-section-label">➕ Add Missing Sections:</span>
+                                        <button class="add-section-btn" id="add-stimulus-btn" onclick="addStimulusSection()">+ Stimulus</button>
+                                        <button class="add-section-btn" id="add-options-btn" onclick="addOptionsSection()">+ Options (MCQ)</button>
+                                        <button class="add-section-btn" id="add-subquestions-btn" onclick="addSubquestionsSection()">+ Sub-Questions</button>
+                                        <button class="add-section-btn" id="add-answer-btn" onclick="addAnswerSection()">+ Answer</button>
+                                        <button class="add-section-btn" id="add-rubric-btn" onclick="addRubricSection()">+ Rubric</button>
+                                        <button class="add-section-btn" id="add-metadata-btn" onclick="addMetadataSection()">+ Metadata</button>
+                                    </div>
+
                                     <!-- Main Prompt -->
-                                    <div class="content-section">
-                                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Question Prompt</label>
-                                        <textarea class="input-bare prompt-input" id="input-prompt" oninput="updatePrompt(this.value)" placeholder="Enter question text..."></textarea>
-                                        <div id="prompt-assets" class="asset-container"></div>
-                                    </div>
-
-                                    <!-- Stimulus -->
-                                    <div id="stimulus-section" class="content-section" style="display:none; background:#fffbeb; padding:1rem; border-radius:6px; border:1px dashed #fcd34d;">
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                                            <label style="font-size:0.75rem; font-weight:700; color:#b45309;">SHARED CONTEXT (STIMULUS)</label>
-                                            <button class="btn btn-sm" onclick="addAssetToStimulus()" style="background:white; border-color:#fcd34d; color:#b45309;">+ Add Image</button>
+                                    <div class="content-section" style="background:white; padding:1rem; border-radius:6px; border:1px solid var(--border);">
+                                        <div class="section-header">
+                                            <label class="section-label">QUESTION PROMPT</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <div class="section-layout-toggle" id="prompt-layout-toggle">
+                                                    <button class="section-layout-btn active" onclick="setSectionLayout('prompt', 'stack')" data-layout="stack">☰ Stack</button>
+                                                    <button class="section-layout-btn" onclick="setSectionLayout('prompt', 'grid')" data-layout="grid">⊞ Grid</button>
+                                                </div>
+                                                <button class="btn btn-sm" onclick="addAssetToPrompt()">+ Add Image</button>
+                                            </div>
                                         </div>
-                                        <textarea class="input-bare" id="input-stimulus" oninput="updateStimulus(this.value)" placeholder="Enter passage or context..."></textarea>
-                                        <div id="stimulus-assets" class="asset-container"></div>
+                                        <div id="prompt-content" class="section-content-stack">
+                                            <div class="section-text-area">
+                                                <textarea class="input-bare prompt-input" id="input-prompt" oninput="updatePrompt(this.value)" placeholder="Enter text..."></textarea>
+                                            </div>
+                                            <div class="section-media-area">
+                                        <div id="prompt-assets" class="asset-container"></div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <!-- Sub-Questions -->
-                                    <div class="content-section">
-                                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                                            <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Sub-Questions / Answer</label>
+                                    <!-- Stimulus Section -->
+                                    <div id="stimulus-section" class="content-section" style="display:none; background:white; padding:1rem; border-radius:6px; border:1px solid var(--border);">
+                                        <div class="section-header">
+                                            <label class="section-label">SHARED CONTEXT (STIMULUS)</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <div class="section-layout-toggle" id="stimulus-layout-toggle">
+                                                    <button class="section-layout-btn active" onclick="setSectionLayout('stimulus', 'stack')" data-layout="stack">☰ Stack</button>
+                                                    <button class="section-layout-btn" onclick="setSectionLayout('stimulus', 'grid')" data-layout="grid">⊞ Grid</button>
+                                        </div>
+                                                <button class="btn btn-sm" onclick="addAssetToStimulus()">+ Add Image</button>
+                                                <button class="btn btn-sm" onclick="toggleWordBank()" id="toggle-wordbank-btn">+ Word Bank</button>
+                                                <button class="remove-section-btn" onclick="removeSection('stimulus')">✕ Remove</button>
+                                            </div>
+                                        </div>
+                                        <div id="stimulus-content" class="section-content-stack">
+                                            <div class="section-text-area">
+                                                <textarea class="input-bare" id="input-stimulus" oninput="updateStimulus(this.value)" placeholder="Enter text..."></textarea>
+                                            </div>
+                                            <div class="section-media-area">
+                                        <div id="stimulus-assets" class="asset-container"></div>
+                                            </div>
+                                    </div>
+
+                                        <!-- Word Bank Section (inside Stimulus) -->
+                                        <div id="word-bank-section" class="word-bank-section" style="display:none;">
+                                            <div class="section-header">
+                                                <label style="font-size:0.7rem; font-weight:700; color:var(--text-muted);">WORD BANK</label>
+                                                <button class="btn btn-sm" onclick="addWordBankItem()" style="font-size:0.7rem;">+ Add Word</button>
+                                            </div>
+                                            <div id="word-bank-list"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Options Section (for MCQ types) -->
+                                    <div id="options-section" class="content-section options-section" style="display:none;">
+                                        <div class="section-header">
+                                            <label class="section-label">OPTIONS (MCQ)</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <div class="section-layout-toggle" id="options-layout-toggle">
+                                                    <button class="section-layout-btn active" onclick="setSectionLayout('options', 'stack')" data-layout="stack">☰ Stack</button>
+                                                    <button class="section-layout-btn" onclick="setSectionLayout('options', 'grid')" data-layout="grid">⊞ Grid</button>
+                                                </div>
+                                                <button class="btn btn-sm" onclick="addOption()">+ Add Option</button>
+                                                <button class="remove-section-btn" onclick="removeSection('options')">✕ Remove</button>
+                                            </div>
+                                        </div>
+                                        <div id="options-list"></div>
+                                    </div>
+
+                                    <!-- Sub-Questions Section -->
+                                    <div id="subquestions-section" class="content-section" style="display:none; background:white; padding:1rem; border-radius:6px; border:1px solid var(--border);">
+                                        <div class="section-header">
+                                            <label class="section-label">SUB-QUESTIONS</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <div class="section-layout-toggle" id="subquestions-layout-toggle">
+                                                    <button class="section-layout-btn active" onclick="setLayout('stack')" data-layout="stack">☰ Stack</button>
+                                                    <button class="section-layout-btn" onclick="setLayout('grid')" data-layout="grid">⊞ Grid</button>
+                                                </div>
+                                                <button class="btn btn-sm" onclick="addSubQuestion()">+ Add Sub-Question</button>
+                                                <button class="remove-section-btn" onclick="removeSection('subquestions')">✕ Remove</button>
+                                            </div>
                                         </div>
                                         <div id="sub-questions-list" class="sub-questions-wrapper"></div>
                                     </div>
+
+                                    <!-- Answer Section (for non-composite questions) -->
+                                    <div id="answer-section" class="content-section answer-section" style="display:none;">
+                                        <div class="section-header">
+                                            <label class="section-label">ANSWER</label>
+                                            <button class="remove-section-btn" onclick="removeSection('answer')">✕ Remove</button>
+                                        </div>
+                                        <div class="answer-kind-row">
+                                            <label>Kind:</label>
+                                            <select id="answer-kind" onchange="updateAnswerKind(this.value)">
+                                                <option value="text">Text</option>
+                                                <option value="single_selection">Single Selection</option>
+                                                <option value="multi_selection">Multi Selection</option>
+                                                <option value="sample_text">Sample Text</option>
+                                                <option value="json">JSON</option>
+                                            </select>
+                                        </div>
+                                        <textarea class="input-bare" id="input-answer" oninput="updateAnswerValue(this.value)" placeholder="Enter text..." style="color:green;"></textarea>
+                                    </div>
+
+                                    <!-- Rubric Section -->
+                                    <div id="rubric-section" class="content-section rubric-section" style="display:none;">
+                                        <div class="section-header">
+                                            <label class="section-label">RUBRIC (Scoring Rules)</label>
+                                            <button class="remove-section-btn" onclick="removeSection('rubric')">✕ Remove</button>
+                                        </div>
+                                        <div class="rubric-grid">
+                                            <div class="rubric-field">
+                                                <label>Scoring Type</label>
+                                                <select id="rubric-scoring" onchange="updateRubric('scoring', this.value)">
+                                                    <option value="auto">Auto</option>
+                                                    <option value="manual">Manual</option>
+                                                    <option value="mixed">Mixed</option>
+                                                </select>
+                                            </div>
+                                            <div class="rubric-field">
+                                                <label>Add Check</label>
+                                                <div style="display:flex; gap:0.25rem;">
+                                                    <input type="text" id="new-check-input" placeholder="e.g., grammar" style="flex:1;">
+                                                    <button class="btn btn-sm" onclick="addRubricCheck()">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="rubric-field" style="margin-top:0.75rem;">
+                                            <label>Checks (Auto-grading criteria)</label>
+                                            <div id="rubric-checks-list" class="checks-list"></div>
+                                        </div>
+                                        <div class="rubric-field" style="margin-top:0.75rem; grid-column: span 2;">
+                                            <label>Explanation (Optional)</label>
+                                            <textarea id="rubric-explanation" oninput="updateRubric('explanation', this.value)" placeholder="Enter text..." rows="2"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Metadata Section -->
+                                    <div id="metadata-section" class="content-section metadata-section" style="display:none;">
+                                        <div class="section-header">
+                                            <label class="section-label">METADATA</label>
+                                            <button class="remove-section-btn" onclick="removeSection('metadata')">✕ Remove</button>
+                                        </div>
+                                        <div class="metadata-grid">
+                                            <div class="metadata-field">
+                                                <label>UI Hint</label>
+                                                <input type="text" id="meta-ui-hint" oninput="updateMetadata('ui_hint', this.value)" placeholder="Optional hint...">
+                                            </div>
+                                            <div class="metadata-field">
+                                                <label>Version</label>
+                                                <input type="number" id="meta-version" oninput="updateMetadata('version', parseInt(this.value))" placeholder="1" min="1">
+                                            </div>
+                                            <div class="metadata-field">
+                                                <label>Source</label>
+                                                <select id="meta-source" onchange="updateMetadata('source', this.value)">
+                                                    <option value="">Select...</option>
+                                                    <option value="AI_Generated">AI Generated</option>
+                                                    <option value="Manual">Manual</option>
+                                                    <option value="Imported">Imported</option>
+                                                    <option value="Curated">Curated</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <!-- Skill Tags -->
+                                        <div class="skill-tags-section">
+                                            <label style="font-size:0.7rem; font-weight:600; color:#166534;">Skill Tags</label>
+                                            <div style="display:flex; gap:0.25rem; margin-top:0.25rem;">
+                                                <input type="text" id="new-skill-tag-input" placeholder="e.g., reading" style="flex:1; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-size:0.85rem;">
+                                                <button class="btn btn-sm" onclick="addSkillTag()">+ Add</button>
+                                            </div>
+                                            <div id="skill-tags-list" class="skill-tags-container"></div>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                                 <!-- SUB-VIEW: JSON (Read Only) -->
@@ -764,12 +1371,28 @@
 
         // New helper to avoid recursion
         function populateEditor(q) {
-            document.getElementById('meta-id').innerText = `Q${activeIndex+1}`;
+            // First, hide all optional sections to ensure clean state
+            document.getElementById('stimulus-section').style.display = 'none';
+            document.getElementById('options-section').style.display = 'none';
+            document.getElementById('subquestions-section').style.display = 'none';
+            document.getElementById('answer-section').style.display = 'none';
+            document.getElementById('rubric-section').style.display = 'none';
+            document.getElementById('metadata-section').style.display = 'none';
+            document.getElementById('word-bank-section').style.display = 'none';
+            
+            document.getElementById('meta-id').innerText = q.question_id || `Q${activeIndex+1}`;
+            document.getElementById('meta-type').value = q.type || 'short_answer';
             document.getElementById('meta-pool-type').value = q.pool || q.pool_type || 'practice';
             document.getElementById('meta-difficulty').value = q.difficulty || 'medium';
             document.getElementById('meta-points').value = q.points || 1;
             
-            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
+            // Location metadata
+            document.getElementById('meta-grade').value = q.grade_id || '';
+            document.getElementById('meta-subject').value = q.subject_id || '';
+            document.getElementById('meta-unit').value = q.unit_id || q.chapter_id || '';
+            document.getElementById('meta-section').value = q.section_id || 'A';
+
+            const pText = getTextValue(q.prompt);
             const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
 
             document.getElementById('input-prompt').value = pText;
@@ -779,6 +1402,7 @@
                 updateJsonView(); 
             });
 
+            // Stimulus Section
             const stimArea = document.getElementById('stimulus-section');
             const stimInput = document.getElementById('input-stimulus');
             
@@ -789,13 +1413,122 @@
                     q.stimulus.media = newMedia;
                     updateJsonView(); 
                 });
+                // Word Bank
+                renderWordBank(q.stimulus.word_bank || []);
+                document.getElementById('word-bank-section').style.display = (q.stimulus.word_bank && q.stimulus.word_bank.length > 0) ? 'block' : 'none';
             } else {
                 stimArea.style.display = 'none';
             }
 
+            // Get question type for conditional rendering
+            const qType = q.type || 'short_answer';
+            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi';
+            const isCompositeType = qType === 'composite';
+
+            // Options Section (only for MCQ types)
+            const optionsSection = document.getElementById('options-section');
+            if(isMcqType && q.options && q.options.length > 0) {
+                optionsSection.style.display = 'block';
+                renderMainOptions(q.options);
+            } else {
+                optionsSection.style.display = 'none';
+            }
+
+            // Sub-Questions Section (only for composite type)
+            const subqSection = document.getElementById('subquestions-section');
+            if(isCompositeType && q.subquestions && q.subquestions.length > 0) {
+                subqSection.style.display = 'block';
             renderSubQuestions(q);
+            } else {
+                subqSection.style.display = 'none';
+            }
+
+            // Answer Section (only for non-composite questions)
+            const ansSection = document.getElementById('answer-section');
+            if(!isCompositeType && q.answer) {
+                ansSection.style.display = 'block';
+                const ansKind = q.answer.kind || 'text';
+                const ansVal = getTextValue(q.answer);
+                document.getElementById('answer-kind').value = ansKind;
+                document.getElementById('input-answer').value = ansVal;
+            } else {
+                ansSection.style.display = 'none';
+            }
+
+            // Rubric Section
+            const rubricSection = document.getElementById('rubric-section');
+            if(q.rubric) {
+                rubricSection.style.display = 'block';
+                document.getElementById('rubric-scoring').value = q.rubric.scoring || 'auto';
+                document.getElementById('rubric-explanation').value = q.rubric.explanation || '';
+                renderRubricChecks(q.rubric.checks || []);
+            } else {
+                rubricSection.style.display = 'none';
+            }
+
+            // Metadata Section
+            const metaSection = document.getElementById('metadata-section');
+            if(q.metadata) {
+                metaSection.style.display = 'block';
+                document.getElementById('meta-ui-hint').value = q.metadata.ui_hint || '';
+                document.getElementById('meta-version').value = q.metadata.version || '';
+                document.getElementById('meta-source').value = q.metadata.source || '';
+            } else {
+                metaSection.style.display = 'none';
+            }
+
+            // Skill Tags (stored at question level)
+            renderSkillTags(q.skill_tags || []);
+
+            // Update "Add Section" buttons visibility
+            updateAddSectionButtons(q);
+
             updateLayoutButtons(q.layout);
+            restoreSectionLayouts(q);
             updateJsonView();
+        }
+
+        // Update visibility of "Add Section" buttons based on what's present and question type
+        function updateAddSectionButtons(q) {
+            const qType = q.type || 'short_answer';
+            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi';
+            const isCompositeType = qType === 'composite';
+            
+            // Stimulus - always available
+            document.getElementById('add-stimulus-btn').classList.toggle('disabled', !!q.stimulus);
+            
+            // Options - only for MCQ types
+            const optionsBtn = document.getElementById('add-options-btn');
+            if (!isMcqType) {
+                optionsBtn.style.display = 'none';
+            } else {
+                optionsBtn.style.display = 'inline-block';
+                optionsBtn.classList.toggle('disabled', !!(q.options && q.options.length > 0));
+            }
+            
+            // Sub-Questions - only for composite type
+            const subqBtn = document.getElementById('add-subquestions-btn');
+            if (!isCompositeType) {
+                subqBtn.style.display = 'none';
+            } else {
+                subqBtn.style.display = 'inline-block';
+                subqBtn.classList.toggle('disabled', !!(q.subquestions && q.subquestions.length > 0));
+            }
+            
+            // Answer - only for non-composite types (composite uses sub-question answers)
+            const answerBtn = document.getElementById('add-answer-btn');
+            if (isCompositeType) {
+                answerBtn.style.display = 'none';
+            } else {
+                answerBtn.style.display = 'inline-block';
+                answerBtn.classList.toggle('disabled', !!q.answer);
+            }
+            
+            // Rubric - always available
+            document.getElementById('add-rubric-btn').classList.toggle('disabled', !!q.rubric);
+            
+            // Metadata - always available
+            document.getElementById('add-metadata-btn').classList.toggle('disabled', !!q.metadata);
         }
 
         // --- DATA HELPERS (Same as before, adapted to use activeData) ---
@@ -808,12 +1541,75 @@
         }
 
         function updateMeta(field, val) {
-            if(field === 'pool_type') activeData[activeIndex].pool = val; 
-            else if(field === 'points') {
-                activeData[activeIndex].points = parseFloat(val);
+            const q = activeData[activeIndex];
+            if(field === 'pool_type') {
+                q.pool = val;
+            } else if(field === 'points') {
+                q.points = parseFloat(val);
                 distributeTotalMarks(parseFloat(val)); 
+            } else if(field === 'grade_id') {
+                q.grade_id = val;
+            } else if(field === 'subject_id') {
+                q.subject_id = val;
+            } else if(field === 'unit_id') {
+                q.unit_id = val;
+                // Also update chapter_id for legacy compatibility
+                if(q.chapter_id) q.chapter_id = val;
+            } else if(field === 'section_id') {
+                q.section_id = val;
+            } else if(field === 'type') {
+                const oldType = q.type;
+                q.type = val;
+                
+                const isMcqType = val === 'mcq_single' || val === 'mcq_multi';
+                const isCompositeType = val === 'composite';
+                
+                // Auto-add options for MCQ types if not present
+                if(isMcqType && !q.options) {
+                    q.options = [
+                        { id: 'opt_a', text: 'Option A', media: [] },
+                        { id: 'opt_b', text: 'Option B', media: [] }
+                    ];
+                }
+                
+                // Remove options for non-MCQ types (with confirmation if data exists)
+                if(!isMcqType && q.options && q.options.length > 0) {
+                    if(confirm('Changing to this type will remove the Options section. Continue?')) {
+                        delete q.options;
             } else {
-                activeData[activeIndex][field] = val;
+                        q.type = oldType; // Revert
+                        document.getElementById('meta-type').value = oldType;
+                        return;
+                    }
+                }
+                
+                // Auto-add subquestions for composite type if not present
+                if(isCompositeType && !q.subquestions) {
+                    q.subquestions = [
+                        { sub_id: 'a', type: 'short_answer', points: 1, prompt: { text: '', media: [] } }
+                    ];
+                }
+                
+                // Remove subquestions for non-composite types (with confirmation if data exists)
+                if(!isCompositeType && q.subquestions && q.subquestions.length > 0) {
+                    if(confirm('Changing to this type will remove the Sub-Questions section. Continue?')) {
+                        delete q.subquestions;
+                    } else {
+                        q.type = oldType; // Revert
+                        document.getElementById('meta-type').value = oldType;
+                        return;
+                    }
+                }
+                
+                // For composite type, remove main-level answer (answers are at sub-question level)
+                if(isCompositeType && q.answer) {
+                    delete q.answer;
+                }
+                
+                selectQuestion(activeIndex); // Refresh to show/hide relevant sections
+                return;
+            } else {
+                q[field] = val;
             }
             renderList();
             updateJsonView(); 
@@ -870,16 +1666,127 @@
             renderSubQuestions(activeData[activeIndex]);
             updateJsonView(); 
         }
+
+        // Set layout for individual sections (prompt, stimulus, options)
+        function setSectionLayout(section, mode) {
+            const q = activeData[activeIndex];
+            
+            // Store layout preference in question data
+            if (!q.section_layouts) q.section_layouts = {};
+            q.section_layouts[section] = mode;
+            
+            // Update toggle button states
+            const toggleContainer = document.getElementById(`${section}-layout-toggle`);
+            if (toggleContainer) {
+                toggleContainer.querySelectorAll('.section-layout-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.layout === mode);
+                });
+            }
+            
+            // Update content container class
+            const contentContainer = document.getElementById(`${section}-content`);
+            if (contentContainer) {
+                contentContainer.className = mode === 'grid' ? 'section-content-grid' : 'section-content-stack';
+            }
+            
+            // For options, re-render to apply layout
+            if (section === 'options' && q.options) {
+                renderMainOptions(q.options);
+            }
+            
+            updateJsonView();
+        }
+
+        // Restore section layout states when loading a question
+        function restoreSectionLayouts(q) {
+            const layouts = q.section_layouts || {};
+            
+            ['prompt', 'stimulus', 'options'].forEach(section => {
+                const mode = layouts[section] || 'stack';
+                
+                // Update toggle button states
+                const toggleContainer = document.getElementById(`${section}-layout-toggle`);
+                if (toggleContainer) {
+                    toggleContainer.querySelectorAll('.section-layout-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.layout === mode);
+                    });
+                }
+                
+                // Update content container class
+                const contentContainer = document.getElementById(`${section}-content`);
+                if (contentContainer) {
+                    contentContainer.className = mode === 'grid' ? 'section-content-grid' : 'section-content-stack';
+                }
+            });
+        }
         
         function deleteQuestion() {
+            if(!confirm('Are you sure you want to delete this question?')) return;
             activeData.splice(activeIndex, 1);
-            if(activeData.length > 0) selectQuestion(0);
-            else {
+            
+            // Clear the preview content to prevent stale data
+            document.getElementById('a4-content').innerHTML = '';
+            
+            if(activeData.length > 0) {
+                selectQuestion(0);
+            } else {
+                // No questions left - reset editor state
                 document.getElementById('main-editor').classList.remove('active');
                 document.getElementById('editor-wrapper').style.display = 'none';
                 document.getElementById('empty-state').style.display = 'block';
+                
+                // Reset to Edit tab so next question opens in edit mode
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('tab-edit').classList.add('active');
+                document.querySelectorAll('.edit-view-container, .preview-view-container').forEach(v => v.classList.remove('active'));
+                document.getElementById('view-edit').classList.add('active');
+                
+                // Clear JSON view as well
+                document.getElementById('json-ro-textarea').value = '';
             }
             renderList();
+            // Update counts
+            if(activeWorkflow === 'import') {
+                document.getElementById('import-count').innerText = `${importData.length} Items`;
+            } else {
+                document.getElementById('library-count').innerText = `${libraryData.length} Items`;
+            }
+        }
+
+        function createNewQuestion() {
+            const newQuestion = {
+                question_id: `q_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+                grade_id: 'grade_3',
+                subject_id: 'mathematics',
+                unit_id: 'ch1',
+                section_id: 'A',
+                pool: 'practice',
+                type: 'short_answer',
+                difficulty: 'medium',
+                points: 1,
+                layout: 'stack',
+                prompt: { text: '', media: [] }
+            };
+            
+            activeData.push(newQuestion);
+            renderList();
+            
+            // Clear preview content before selecting new question
+            document.getElementById('a4-content').innerHTML = '';
+            
+            // Force switch to Edit tab for new questions
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-edit').classList.add('active');
+            
+            selectQuestion(activeData.length - 1);
+            
+            // Update counts
+            if(activeWorkflow === 'import') {
+                document.getElementById('import-count').innerText = `${importData.length} Items`;
+                document.getElementById('import-status').innerText = 'Editing';
+            } else {
+                document.getElementById('library-count').innerText = `${libraryData.length} Items`;
+            }
         }
 
         function updateJsonView() {
@@ -887,6 +1794,447 @@
             if (q) {
                 document.getElementById('json-ro-textarea').value = JSON.stringify(q, null, 2);
             }
+        }
+
+        // Helper function to safely extract text from various data structures
+        function getTextValue(data) {
+            if (!data) return '';
+            if (typeof data === 'string') return data;
+            if (typeof data === 'object' && data.text !== undefined) return data.text || '';
+            if (typeof data === 'object' && data.value !== undefined) return data.value || '';
+            return '';
+        }
+
+        // =====================================================
+        // ADD SECTION FUNCTIONS
+        // =====================================================
+        
+        function addStimulusSection() {
+            const q = activeData[activeIndex];
+            if(!q.stimulus) {
+                q.stimulus = { text: '', media: [], word_bank: [] };
+                selectQuestion(activeIndex);
+            }
+        }
+
+        function addOptionsSection() {
+            const q = activeData[activeIndex];
+            const qType = q.type || 'short_answer';
+            // Only allow options for MCQ types
+            if(qType !== 'mcq_single' && qType !== 'mcq_multi') {
+                alert('Options are only available for MCQ question types.');
+                return;
+            }
+            if(!q.options || q.options.length === 0) {
+                q.options = [
+                    { id: 'opt_a', text: 'Option A', media: [] },
+                    { id: 'opt_b', text: 'Option B', media: [] }
+                ];
+                selectQuestion(activeIndex);
+            }
+        }
+
+        function addSubquestionsSection() {
+            const q = activeData[activeIndex];
+            const qType = q.type || 'short_answer';
+            // Only allow sub-questions for composite type
+            if(qType !== 'composite') {
+                alert('Sub-questions are only available for Composite question types.');
+                return;
+            }
+            if(!q.subquestions || q.subquestions.length === 0) {
+                q.subquestions = [
+                    { sub_id: 'a', type: 'short_answer', points: 1, prompt: { text: '', media: [] } }
+                ];
+                selectQuestion(activeIndex);
+            }
+        }
+
+        function addAnswerSection() {
+            const q = activeData[activeIndex];
+            const qType = q.type || 'short_answer';
+            // Answer at question level is not available for composite (uses sub-question answers)
+            if(qType === 'composite') {
+                alert('Composite questions use answers at the sub-question level, not at the main question level.');
+                return;
+            }
+            if(!q.answer) {
+                q.answer = { kind: 'text', value: '' };
+                selectQuestion(activeIndex);
+            }
+        }
+
+        function addRubricSection() {
+            const q = activeData[activeIndex];
+            if(!q.rubric) {
+                q.rubric = { scoring: 'auto', checks: [], explanation: '' };
+                selectQuestion(activeIndex);
+            }
+        }
+
+        function addMetadataSection() {
+            const q = activeData[activeIndex];
+            if(!q.metadata) {
+                q.metadata = { ui_hint: '', version: 1, source: 'AI_Generated' };
+                selectQuestion(activeIndex);
+            }
+        }
+
+        // =====================================================
+        // REMOVE SECTION FUNCTIONS
+        // =====================================================
+        
+        function removeSection(sectionName) {
+            const q = activeData[activeIndex];
+            if(confirm(`Are you sure you want to remove the ${sectionName} section?`)) {
+                delete q[sectionName];
+                selectQuestion(activeIndex);
+            }
+        }
+
+        // =====================================================
+        // OPTIONS MANAGEMENT (Main Level)
+        // =====================================================
+        
+        function renderMainOptions(options) {
+            const container = document.getElementById('options-list');
+            container.innerHTML = '';
+            
+            const q = activeData[activeIndex];
+            const isGridLayout = q.section_layouts?.options === 'grid';
+            
+            options.forEach((opt, idx) => {
+                const optId = opt.id || `opt_${String.fromCharCode(97 + idx)}`;
+                const optText = getTextValue(opt);
+                const optMedia = (typeof opt === 'object' && opt.media) ? opt.media : [];
+                
+                const item = document.createElement('div');
+                item.className = 'option-item';
+                item.style.flexDirection = isGridLayout && optMedia.length > 0 ? 'row' : 'row';
+                item.style.flexWrap = isGridLayout ? 'nowrap' : 'wrap';
+                item.style.alignItems = 'flex-start';
+                
+                // Create text/input section
+                const textSection = document.createElement('div');
+                textSection.style.display = 'flex';
+                textSection.style.alignItems = 'center';
+                textSection.style.gap = '0.5rem';
+                textSection.style.flex = '1';
+                textSection.style.minWidth = '0';
+                textSection.innerHTML = `
+                    <span class="option-id">${optId}</span>
+                    <input type="text" value="${optText}" placeholder="Enter text..." 
+                           oninput="updateOption(${idx}, this.value)" style="flex:1;">
+                    <div class="option-actions">
+                        <button class="btn btn-sm" onclick="addOptionMedia(${idx})">🖼️</button>
+                        <button class="btn btn-sm delete-sub-btn" onclick="deleteOption(${idx})">✕</button>
+                    </div>
+                `;
+                item.appendChild(textSection);
+                
+                // Create media section if grid layout and has media
+                if (optMedia.length > 0) {
+                    const mediaSection = document.createElement('div');
+                    mediaSection.className = 'asset-container';
+                    
+                    if (isGridLayout) {
+                        mediaSection.style.width = '150px';
+                        mediaSection.style.flexShrink = '0';
+                        mediaSection.style.marginLeft = '0.5rem';
+                    } else {
+                        mediaSection.style.width = '100%';
+                        mediaSection.style.marginLeft = '50px';
+                        mediaSection.style.marginTop = '0.5rem';
+                    }
+                    
+                    renderAssetList(optMedia, mediaSection, (newMedia) => {
+                        activeData[activeIndex].options[idx].media = newMedia;
+                        updateJsonView();
+                    });
+                    
+                    if (isGridLayout) {
+                        item.appendChild(mediaSection);
+                    } else {
+                        container.appendChild(item);
+                        container.appendChild(mediaSection);
+                        return; // Skip the default append below
+                    }
+                }
+                
+                container.appendChild(item);
+            });
+        }
+
+        function addOption() {
+            const q = activeData[activeIndex];
+            if(!q.options) q.options = [];
+            const newIdx = q.options.length;
+            const newId = `opt_${String.fromCharCode(97 + newIdx)}`;
+            q.options.push({ id: newId, text: '', media: [] });
+            renderMainOptions(q.options);
+            updateJsonView();
+        }
+
+        function updateOption(idx, value) {
+            const q = activeData[activeIndex];
+            if(typeof q.options[idx] === 'string') {
+                q.options[idx] = value;
+            } else {
+                q.options[idx].text = value;
+            }
+            updateJsonView();
+        }
+
+        function deleteOption(idx) {
+            const q = activeData[activeIndex];
+            q.options.splice(idx, 1);
+            renderMainOptions(q.options);
+            updateJsonView();
+        }
+
+        function addOptionMedia(idx) {
+            const q = activeData[activeIndex];
+            if(typeof q.options[idx] === 'string') {
+                q.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: q.options[idx], media: [] };
+            }
+            if(!q.options[idx].media) q.options[idx].media = [];
+            q.options[idx].media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
+            selectQuestion(activeIndex);
+        }
+
+        // =====================================================
+        // WORD BANK MANAGEMENT
+        // =====================================================
+        
+        function toggleWordBank() {
+            const q = activeData[activeIndex];
+            if(!q.stimulus) return;
+            
+            const section = document.getElementById('word-bank-section');
+            if(section.style.display === 'none') {
+                section.style.display = 'block';
+                if(!q.stimulus.word_bank) q.stimulus.word_bank = [];
+                if(q.stimulus.word_bank.length === 0) {
+                    addWordBankItem();
+                }
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function renderWordBank(wordBank) {
+            const container = document.getElementById('word-bank-list');
+            container.innerHTML = '';
+            
+            wordBank.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'word-bank-item';
+                el.innerHTML = `
+                    <span style="font-size:0.7rem; font-weight:700; color:#92400e; min-width:40px;">${item.id || `wb_${idx+1}`}</span>
+                    <input type="text" value="${item.text || ''}" placeholder="Enter text..." 
+                           oninput="updateWordBankItem(${idx}, this.value)">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deleteWordBankItem(${idx})">✕</button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function addWordBankItem() {
+            const q = activeData[activeIndex];
+            if(!q.stimulus) return;
+            if(!q.stimulus.word_bank) q.stimulus.word_bank = [];
+            const newIdx = q.stimulus.word_bank.length;
+            q.stimulus.word_bank.push({ id: `wb_${newIdx + 1}`, text: '', media: [] });
+            renderWordBank(q.stimulus.word_bank);
+            document.getElementById('word-bank-section').style.display = 'block';
+            updateJsonView();
+        }
+
+        function updateWordBankItem(idx, value) {
+            const q = activeData[activeIndex];
+            q.stimulus.word_bank[idx].text = value;
+            updateJsonView();
+        }
+
+        function deleteWordBankItem(idx) {
+            const q = activeData[activeIndex];
+            q.stimulus.word_bank.splice(idx, 1);
+            renderWordBank(q.stimulus.word_bank);
+            updateJsonView();
+        }
+
+        // =====================================================
+        // ANSWER MANAGEMENT
+        // =====================================================
+        
+        function updateAnswerKind(kind) {
+            const q = activeData[activeIndex];
+            if(!q.answer) q.answer = { kind: kind, value: '' };
+            else q.answer.kind = kind;
+            updateJsonView();
+        }
+
+        function updateAnswerValue(value) {
+            const q = activeData[activeIndex];
+            if(!q.answer) q.answer = { kind: 'text', value: '' };
+            q.answer.value = value;
+            updateJsonView();
+        }
+
+        // =====================================================
+        // RUBRIC MANAGEMENT
+        // =====================================================
+        
+        function updateRubric(field, value) {
+            const q = activeData[activeIndex];
+            if(!q.rubric) q.rubric = { scoring: 'auto', checks: [] };
+            q.rubric[field] = value;
+            updateJsonView();
+        }
+
+        function renderRubricChecks(checks) {
+            const container = document.getElementById('rubric-checks-list');
+            container.innerHTML = '';
+            
+            checks.forEach((check, idx) => {
+                const tag = document.createElement('span');
+                tag.className = 'check-tag';
+                tag.innerHTML = `${check}<button onclick="deleteRubricCheck(${idx})">✕</button>`;
+                container.appendChild(tag);
+            });
+        }
+
+        function addRubricCheck() {
+            const q = activeData[activeIndex];
+            const input = document.getElementById('new-check-input');
+            const value = input.value.trim();
+            if(!value) return;
+            
+            if(!q.rubric) q.rubric = { scoring: 'auto', checks: [] };
+            if(!q.rubric.checks) q.rubric.checks = [];
+            q.rubric.checks.push(value);
+            input.value = '';
+            renderRubricChecks(q.rubric.checks);
+            updateJsonView();
+        }
+
+        function deleteRubricCheck(idx) {
+            const q = activeData[activeIndex];
+            q.rubric.checks.splice(idx, 1);
+            renderRubricChecks(q.rubric.checks);
+            updateJsonView();
+        }
+
+        // =====================================================
+        // METADATA MANAGEMENT
+        // =====================================================
+        
+        function updateMetadata(field, value) {
+            const q = activeData[activeIndex];
+            if(!q.metadata) q.metadata = {};
+            q.metadata[field] = value;
+            updateJsonView();
+        }
+
+        // =====================================================
+        // SKILL TAGS MANAGEMENT
+        // =====================================================
+        
+        function renderSkillTags(tags) {
+            const container = document.getElementById('skill-tags-list');
+            container.innerHTML = '';
+            
+            tags.forEach((tag, idx) => {
+                const el = document.createElement('span');
+                el.className = 'skill-tag';
+                el.innerHTML = `${tag}<button onclick="deleteSkillTag(${idx})">✕</button>`;
+                container.appendChild(el);
+            });
+        }
+
+        function addSkillTag() {
+            const q = activeData[activeIndex];
+            const input = document.getElementById('new-skill-tag-input');
+            const value = input.value.trim();
+            if(!value) return;
+            
+            if(!q.skill_tags) q.skill_tags = [];
+            q.skill_tags.push(value);
+            input.value = '';
+            renderSkillTags(q.skill_tags);
+            updateJsonView();
+        }
+
+        function deleteSkillTag(idx) {
+            const q = activeData[activeIndex];
+            q.skill_tags.splice(idx, 1);
+            renderSkillTags(q.skill_tags);
+            updateJsonView();
+        }
+
+        // =====================================================
+        // SUB-QUESTION MANAGEMENT (Enhanced)
+        // =====================================================
+        
+        function addSubQuestion() {
+            const q = activeData[activeIndex];
+            if(!q.subquestions) q.subquestions = [];
+            const newIdx = q.subquestions.length;
+            const newSubId = String.fromCharCode(97 + newIdx); // a, b, c, ...
+            q.subquestions.push({
+                sub_id: newSubId,
+                type: 'short_answer',
+                points: 1,
+                prompt: { text: '', media: [] }
+                // Note: answer and rubric are NOT added by default - use "Add" buttons
+            });
+            renderSubQuestions(q);
+            updateJsonView();
+        }
+
+        function deleteSubQuestion(idx) {
+            const q = activeData[activeIndex];
+            q.subquestions.splice(idx, 1);
+            // Re-index sub_ids
+            q.subquestions.forEach((sq, i) => {
+                sq.sub_id = String.fromCharCode(97 + i);
+            });
+            renderSubQuestions(q);
+            recalculateTotalMarks();
+            updateJsonView();
+        }
+
+        function updateSubQuestionType(idx, type) {
+            const q = activeData[activeIndex];
+            q.subquestions[idx].type = type;
+            // Add/remove options based on type
+            if(type === 'mcq_single' || type === 'mcq_multi') {
+                if(!q.subquestions[idx].options) {
+                    q.subquestions[idx].options = [
+                        { id: 'sq_opt1', text: 'Option 1', media: [] },
+                        { id: 'sq_opt2', text: 'Option 2', media: [] }
+                    ];
+                }
+            }
+            renderSubQuestions(q);
+            updateJsonView();
+        }
+
+        function addSubQuestionOption(sqIdx) {
+            const q = activeData[activeIndex];
+            const sq = q.subquestions[sqIdx];
+            if(!sq.options) sq.options = [];
+            const newIdx = sq.options.length;
+            sq.options.push({ id: `sq_opt${newIdx + 1}`, text: '', media: [] });
+            renderSubQuestions(q);
+            updateJsonView();
+        }
+
+        function deleteSubQuestionOption(sqIdx, optIdx) {
+            const q = activeData[activeIndex];
+            q.subquestions[sqIdx].options.splice(optIdx, 1);
+            renderSubQuestions(q);
+            updateJsonView();
         }
         
         // --- PREVIOUS HELPERS (Parsing, Rendering, etc.) ---
@@ -934,15 +2282,27 @@
         }
 
         function updateLayoutButtons(mode) {
+            const currentMode = mode || 'stack';
+            
+            // Update toolbar buttons (legacy)
             const btnStack = document.getElementById('btn-layout-stack');
             const btnGrid = document.getElementById('btn-layout-grid');
-            const currentMode = mode || 'stack';
+            if (btnStack && btnGrid) {
             if(currentMode === 'stack') {
                 btnStack.classList.add('btn-primary');
                 btnGrid.classList.remove('btn-primary');
             } else {
                 btnStack.classList.remove('btn-primary');
                 btnGrid.classList.add('btn-primary');
+                }
+            }
+            
+            // Update subquestions section toggle
+            const toggleContainer = document.getElementById('subquestions-layout-toggle');
+            if (toggleContainer) {
+                toggleContainer.querySelectorAll('.section-layout-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.layout === currentMode);
+                });
             }
         }
         
@@ -951,25 +2311,72 @@
             container.innerHTML = '';
             const mode = q.layout || 'stack';
             container.className = `sub-questions-wrapper ${mode === 'grid' ? 'layout-grid' : ''}`;
+            
             if(q.subquestions && q.subquestions.length > 0) {
                 q.subquestions.forEach((sq, sqIdx) => {
                     const card = document.createElement('div');
                     card.className = 'sub-question-card';
-                    const header = document.createElement('div');
-                    header.className = 'sub-q-header';
+                    
+                    // Header with controls
+                    const headerRow = document.createElement('div');
+                    headerRow.className = 'sub-question-header-row';
+                    
+                    const leftControls = document.createElement('div');
+                    leftControls.style.display = 'flex';
+                    leftControls.style.alignItems = 'center';
+                    leftControls.style.gap = '8px';
+                    
                     const badge = document.createElement('div');
                     badge.className = 'sub-id-badge';
                     badge.innerText = sq.sub_id || String.fromCharCode(97 + sqIdx);
-                    const marksWrapper = document.createElement('div');
-                    marksWrapper.style.display = 'flex';
-                    marksWrapper.style.alignItems = 'center';
-                    marksWrapper.style.gap = '8px';
+                    
+                    // Type selector
+                    const typeSelect = document.createElement('select');
+                    typeSelect.className = 'sub-question-type-select';
+                    typeSelect.innerHTML = `
+                        <option value="short_answer" ${sq.type === 'short_answer' ? 'selected' : ''}>Short Answer</option>
+                        <option value="long_answer" ${sq.type === 'long_answer' ? 'selected' : ''}>Long Answer</option>
+                        <option value="mcq_single" ${sq.type === 'mcq_single' ? 'selected' : ''}>MCQ Single</option>
+                        <option value="mcq_multi" ${sq.type === 'mcq_multi' ? 'selected' : ''}>MCQ Multi</option>
+                        <option value="fill_blank" ${sq.type === 'fill_blank' ? 'selected' : ''}>Fill Blank</option>
+                    `;
+                    typeSelect.onchange = (e) => updateSubQuestionType(sqIdx, e.target.value);
+                    
+                    // Layout toggle for sub-question
+                    const sqLayout = sq.layout || 'stack';
+                    const layoutToggle = document.createElement('div');
+                    layoutToggle.className = 'layout-toggle-group';
+                    layoutToggle.style.marginLeft = '4px';
+                    layoutToggle.innerHTML = `
+                        <button class="layout-toggle-btn ${sqLayout === 'stack' ? 'active' : ''}" data-layout="stack" title="Stack layout">☰</button>
+                        <button class="layout-toggle-btn ${sqLayout === 'grid' ? 'active' : ''}" data-layout="grid" title="Grid layout">⊞</button>
+                    `;
+                    layoutToggle.querySelectorAll('.layout-toggle-btn').forEach(btn => {
+                        btn.onclick = () => {
+                            sq.layout = btn.dataset.layout;
+                            renderSubQuestions(q);
+                            updateJsonView();
+                        };
+                    });
+                    
+                    leftControls.appendChild(badge);
+                    leftControls.appendChild(typeSelect);
+                    leftControls.appendChild(layoutToggle);
+                    
+                    const rightControls = document.createElement('div');
+                    rightControls.style.display = 'flex';
+                    rightControls.style.alignItems = 'center';
+                    rightControls.style.gap = '8px';
+                    
+                    // Marks toggle and input
                     const label = document.createElement('label');
                     label.className = 'toggle-wrapper';
-                    label.innerHTML = `<span>Show Marks</span><input type="checkbox" class="toggle-input" ${sq.points ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
+                    label.innerHTML = `<span>Marks</span><input type="checkbox" class="toggle-input" ${sq.points ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
+                    
                     const marksInput = document.createElement('input');
                     marksInput.type = 'number';
                     marksInput.className = 'sub-marks-input';
+                    marksInput.step = '0.5';
                     if(sq.points) { marksInput.value = sq.points; marksInput.classList.add('visible'); }
                     marksInput.placeholder = '0.5';
                     marksInput.oninput = (e) => { sq.points = parseFloat(e.target.value) || 0; recalculateTotalMarks(); };
@@ -978,104 +2385,261 @@
                         else { marksInput.classList.remove('visible'); delete sq.points; }
                         recalculateTotalMarks();
                     };
-                    marksWrapper.appendChild(label);
-                    marksWrapper.appendChild(marksInput);
-                    header.appendChild(badge);
-                    header.appendChild(marksWrapper);
-                    card.appendChild(header);
+                    
+                    // Delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-sub-btn';
+                    deleteBtn.innerText = '✕';
+                    deleteBtn.onclick = () => deleteSubQuestion(sqIdx);
+                    
+                    rightControls.appendChild(label);
+                    rightControls.appendChild(marksInput);
+                    rightControls.appendChild(deleteBtn);
+                    
+                    headerRow.appendChild(leftControls);
+                    headerRow.appendChild(rightControls);
+                    card.appendChild(headerRow);
+                    
+                    // Content wrapper with layout support
+                    const contentWrapper = document.createElement('div');
+                    const sqLayoutMode = sq.layout || 'stack';
+                    contentWrapper.className = sqLayoutMode === 'grid' ? 'sq-content-grid' : 'sq-content-stack';
+                    
+                    // Text area container
+                    const textArea = document.createElement('div');
+                    textArea.className = 'sq-text-area';
+                    
+                    // Prompt text input
                     const input = document.createElement('textarea');
                     input.className = 'input-bare sub-input';
-                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
+                    const sqText = getTextValue(sq.prompt);
                     input.value = sqText;
-                    input.placeholder = 'Sub-question text...';
+                    input.placeholder = 'Enter text...';
                     input.oninput = (e) => { 
                         if(typeof sq.prompt === 'string') sq.prompt = { text: e.target.value, media: [] };
                         else sq.prompt.text = e.target.value;
                         updateJsonView(); 
                     };
-                    card.appendChild(input);
+                    textArea.appendChild(input);
+                    contentWrapper.appendChild(textArea);
+                    
+                    // Asset container for prompt (media area)
                     const assetCont = document.createElement('div');
-                    assetCont.className = 'asset-container';
-                    card.appendChild(assetCont);
+                    assetCont.className = sqLayoutMode === 'grid' ? 'sq-media-area' : 'asset-container';
                     const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
                     renderAssetList(sqMedia, assetCont, (newMedia) => {
                         if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
                         sq.prompt.media = newMedia;
                         updateJsonView(); 
                     });
-                    if (sq.options && sq.options.length > 0) {
+                    contentWrapper.appendChild(assetCont);
+                    
+                    card.appendChild(contentWrapper);
+                    
+                    // Options for MCQ types
+                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi') && sq.options && sq.options.length > 0) {
                         const optDiv = document.createElement('div');
                         optDiv.className = 'options-editor';
-                        optDiv.innerHTML = `<label style="font-size:0.7rem; font-weight:700; color:#6b7280; text-transform:uppercase;">Options</label>`;
+                        optDiv.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <label style="font-size:0.7rem; font-weight:700; color:#6b7280; text-transform:uppercase;">Options</label>
+                                <button class="btn btn-sm" style="font-size:0.65rem;" onclick="addSubQuestionOption(${sqIdx})">+ Add</button>
+                            </div>
+                        `;
                         sq.options.forEach((opt, oIdx) => {
                             const optRow = document.createElement('div');
                             optRow.className = 'option-row';
                             const radio = document.createElement('div');
                             radio.className = 'option-radio';
+                            if(sq.type === 'mcq_multi') radio.style.borderRadius = '2px'; // Checkbox style
                             const optInput = document.createElement('input');
                             optInput.className = 'option-input';
-                            const optVal = typeof opt === 'string' ? opt : opt.text;
+                            const optVal = getTextValue(opt);
                             optInput.value = optVal;
+                            optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
                                 if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = e.target.value;
                                 else sq.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
+                            const delOptBtn = document.createElement('button');
+                            delOptBtn.className = 'btn btn-sm';
+                            delOptBtn.style.padding = '2px 6px';
+                            delOptBtn.style.fontSize = '0.65rem';
+                            delOptBtn.style.color = '#991b1b';
+                            delOptBtn.innerText = '✕';
+                            delOptBtn.onclick = () => deleteSubQuestionOption(sqIdx, oIdx);
+                            
                             optRow.appendChild(radio);
                             optRow.appendChild(optInput);
+                            optRow.appendChild(delOptBtn);
                             optDiv.appendChild(optRow);
                         });
                         card.appendChild(optDiv);
                     }
-                    const addBtn = document.createElement('button');
-                    addBtn.className = 'btn btn-sm';
-                    addBtn.style.marginTop = '0.5rem';
-                    addBtn.innerText = '+ Img';
-                    addBtn.onclick = () => {
+                    
+                    // Action buttons row
+                    const actionsRow = document.createElement('div');
+                    actionsRow.style.display = 'flex';
+                    actionsRow.style.gap = '0.5rem';
+                    actionsRow.style.marginTop = '0.5rem';
+                    
+                    const addImgBtn = document.createElement('button');
+                    addImgBtn.className = 'btn btn-sm';
+                    addImgBtn.innerText = '+ Image';
+                    addImgBtn.onclick = () => {
                          if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
                          if(!sq.prompt.media) sq.prompt.media = [];
                          sq.prompt.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
                          selectQuestion(activeIndex);
                     };
-                    card.appendChild(addBtn);
+                    actionsRow.appendChild(addImgBtn);
+                    
+                    // Add options button for MCQ types without options yet
+                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi') && (!sq.options || sq.options.length === 0)) {
+                        const addOptBtn = document.createElement('button');
+                        addOptBtn.className = 'btn btn-sm';
+                        addOptBtn.innerText = '+ Options';
+                        addOptBtn.onclick = () => {
+                            sq.options = [
+                                { id: 'sq_opt1', text: '', media: [] },
+                                { id: 'sq_opt2', text: '', media: [] }
+                            ];
+                            renderSubQuestions(q);
+                            updateJsonView();
+                        };
+                        actionsRow.appendChild(addOptBtn);
+                    }
+                    
+                    card.appendChild(actionsRow);
+                    
+                    // Add Answer/Rubric buttons section (only show buttons for sections not present)
+                    const addSectionsDiv = document.createElement('div');
+                    addSectionsDiv.style.marginTop = '0.5rem';
+                    addSectionsDiv.style.display = 'flex';
+                    addSectionsDiv.style.gap = '0.5rem';
+                    
+                    if (!sq.answer) {
+                        const addAnsBtn = document.createElement('button');
+                        addAnsBtn.className = 'btn btn-sm';
+                        addAnsBtn.style.fontSize = '0.65rem';
+                        addAnsBtn.style.color = '#047857';
+                        addAnsBtn.innerText = '+ Answer';
+                        addAnsBtn.onclick = () => {
+                            sq.answer = { kind: 'text', value: '' };
+                            renderSubQuestions(q);
+                            updateJsonView();
+                        };
+                        addSectionsDiv.appendChild(addAnsBtn);
+                    }
+                    
+                    if (!sq.rubric) {
+                        const addRubBtn = document.createElement('button');
+                        addRubBtn.className = 'btn btn-sm';
+                        addRubBtn.style.fontSize = '0.65rem';
+                        addRubBtn.style.color = '#92400e';
+                        addRubBtn.innerText = '+ Rubric';
+                        addRubBtn.onclick = () => {
+                            sq.rubric = { scoring: 'auto' };
+                            renderSubQuestions(q);
+                            updateJsonView();
+                        };
+                        addSectionsDiv.appendChild(addRubBtn);
+                    }
+                    
+                    if (addSectionsDiv.children.length > 0) {
+                        card.appendChild(addSectionsDiv);
+                    }
+                    
+                    // Answer section (only if answer exists)
+                    if (sq.answer) {
                     const ansDiv = document.createElement('div');
-                    ansDiv.style.marginTop = '0.5rem';
-                    ansDiv.style.borderTop = '1px solid #f3f4f6';
+                        ansDiv.style.marginTop = '0.75rem';
+                        ansDiv.style.borderTop = '1px solid #e5e7eb';
                     ansDiv.style.paddingTop = '0.5rem';
-                    ansDiv.innerHTML = `<span style="font-size:0.75rem; color:green; font-weight:bold;">ANSWER:</span>`;
+                        
+                        const ansHeader = document.createElement('div');
+                        ansHeader.style.display = 'flex';
+                        ansHeader.style.alignItems = 'center';
+                        ansHeader.style.gap = '0.5rem';
+                        ansHeader.style.marginBottom = '0.25rem';
+                        ansHeader.innerHTML = `<span style="font-size:0.7rem; color:#047857; font-weight:700;">ANSWER</span>`;
+                        
+                        const ansKindSelect = document.createElement('select');
+                        ansKindSelect.style.fontSize = '0.7rem';
+                        ansKindSelect.style.padding = '2px 4px';
+                        ansKindSelect.style.border = '1px solid #6ee7b7';
+                        ansKindSelect.style.borderRadius = '4px';
+                        const ansKind = sq.answer?.kind || 'text';
+                        ansKindSelect.innerHTML = `
+                            <option value="text" ${ansKind === 'text' ? 'selected' : ''}>Text</option>
+                            <option value="single_selection" ${ansKind === 'single_selection' ? 'selected' : ''}>Single Selection</option>
+                            <option value="multi_selection" ${ansKind === 'multi_selection' ? 'selected' : ''}>Multi Selection</option>
+                        `;
+                        ansKindSelect.onchange = (e) => {
+                            sq.answer.kind = e.target.value;
+                            updateJsonView();
+                        };
+                        
+                        // Remove answer button
+                        const removeAnsBtn = document.createElement('button');
+                        removeAnsBtn.className = 'btn btn-sm';
+                        removeAnsBtn.style.fontSize = '0.6rem';
+                        removeAnsBtn.style.padding = '2px 6px';
+                        removeAnsBtn.style.color = '#991b1b';
+                        removeAnsBtn.innerText = '✕';
+                        removeAnsBtn.onclick = () => {
+                            delete sq.answer;
+                            renderSubQuestions(q);
+                            updateJsonView();
+                        };
+                        
+                        ansHeader.appendChild(ansKindSelect);
+                        ansHeader.appendChild(removeAnsBtn);
+                        ansDiv.appendChild(ansHeader);
+                        
                     const ansInput = document.createElement('input');
                     ansInput.className = 'input-bare';
-                    ansInput.style.color = 'green';
-                    let ansVal = '';
-                    if(sq.answer) ansVal = (typeof sq.answer === 'string') ? sq.answer : sq.answer.value;
+                        ansInput.style.color = '#047857';
+                        ansInput.style.fontSize = '0.9rem';
+                        const ansVal = getTextValue(sq.answer);
                     ansInput.value = ansVal;
+                        ansInput.placeholder = ansKind === 'single_selection' ? 'Enter option ID (e.g., sq_opt1)' : 'Enter text...';
                     ansInput.oninput = (e) => { 
-                        if(!sq.answer) sq.answer = { kind: 'text', value: '' };
                         if(typeof sq.answer === 'string') sq.answer = e.target.value;
                         else sq.answer.value = e.target.value;
                         updateJsonView(); 
                     };
                     ansDiv.appendChild(ansInput);
+                        
                     card.appendChild(ansDiv);
+                    }
+                    
+                    // Sub-question rubric (only if rubric exists)
+                    if (sq.rubric) {
+                        const rubricDiv = document.createElement('div');
+                        rubricDiv.style.marginTop = '0.5rem';
+                        rubricDiv.style.padding = '0.5rem';
+                        rubricDiv.style.background = '#fef3c7';
+                        rubricDiv.style.borderRadius = '4px';
+                        rubricDiv.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                <span style="font-size:0.65rem; font-weight:700; color:#92400e;">RUBRIC</span>
+                                <button class="btn btn-sm" style="font-size:0.6rem; padding:2px 6px; color:#991b1b;" onclick="delete activeData[${activeIndex}].subquestions[${sqIdx}].rubric; renderSubQuestions(activeData[${activeIndex}]); updateJsonView();">✕</button>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <label style="font-size:0.65rem; color:#92400e;">Scoring:</label>
+                                <select style="font-size:0.7rem; padding:2px;" onchange="activeData[${activeIndex}].subquestions[${sqIdx}].rubric.scoring = this.value; updateJsonView();">
+                                    <option value="auto" ${sq.rubric?.scoring === 'auto' ? 'selected' : ''}>Auto</option>
+                                    <option value="manual" ${sq.rubric?.scoring === 'manual' ? 'selected' : ''}>Manual</option>
+                                </select>
+                            </div>
+                        `;
+                        card.appendChild(rubricDiv);
+                    }
+                    
                     container.appendChild(card);
                 });
-            } else {
-                const ansDiv = document.createElement('div');
-                ansDiv.className = 'sub-question-card';
-                ansDiv.innerHTML = `<label style="font-size:0.8rem; font-weight:bold;">Answer Key</label>`;
-                const ansInput = document.createElement('textarea');
-                ansInput.className = 'input-bare';
-                let ansVal = '';
-                if(q.answer) ansVal = (typeof q.answer === 'string') ? q.answer : q.answer.value;
-                ansInput.value = ansVal;
-                ansInput.oninput = (e) => {
-                     if(!q.answer) q.answer = { kind: 'text', value: '' };
-                     if(typeof q.answer === 'string') q.answer = e.target.value;
-                     else q.answer.value = e.target.value;
-                     updateJsonView();
-                };
-                ansDiv.appendChild(ansInput);
-                container.appendChild(ansDiv);
             }
         }
 
@@ -1085,25 +2649,83 @@
             if(!mediaArray) return;
             mediaArray.forEach((m, idx) => {
                 const el = document.createElement('div');
+                // Check for truthy uri value (not null, undefined, or empty string)
+                const hasImage = m.uri && m.uri.length > 0;
+                
+                if (hasImage) {
+                    // Compact view: just the image with hover controls
+                    el.className = 'asset-item-compact';
+                    
+                    // Get stored dimensions or use defaults
+                    const width = m.width || 150;
+                    const height = m.height || 120;
+                    
+                    el.innerHTML = `
+                        <div class="asset-image-container" style="width:${width}px; height:${height}px;">
+                            <img src="${m.uri}" alt="Image">
+                            <div class="asset-hover-controls">
+                                <button class="asset-hover-btn replace-btn" title="Replace Image">🔄</button>
+                                <button class="asset-hover-btn delete-btn" title="Delete">✕</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Track resize and save dimensions
+                    const imgContainer = el.querySelector('.asset-image-container');
+                    const resizeObserver = new ResizeObserver((entries) => {
+                        for (const entry of entries) {
+                            const newWidth = Math.round(entry.contentRect.width);
+                            const newHeight = Math.round(entry.contentRect.height);
+                            if (newWidth > 0 && newHeight > 0) {
+                                m.width = newWidth;
+                                m.height = newHeight;
+                                updateJsonView();
+                            }
+                        }
+                    });
+                    resizeObserver.observe(imgContainer);
+                    
+                    el.querySelector('.delete-btn').onclick = () => { 
+                        resizeObserver.disconnect();
+                        mediaArray.splice(idx, 1); 
+                        updateCallback(mediaArray); 
+                        renderAssetList(mediaArray, container, updateCallback); 
+                        updateJsonView(); 
+                    };
+                    el.querySelector('.replace-btn').onclick = () => {
+                        triggerImageUpload((dataUrl) => { 
+                            m.uri = dataUrl;
+                            // Keep existing dimensions when replacing
+                            updateCallback(mediaArray); 
+                            renderAssetList(mediaArray, container, updateCallback); 
+                            updateJsonView(); 
+                        });
+                    };
+                } else {
+                    // Full controls view: for pending images
                 el.className = 'asset-item';
-                const isGenerated = m.uri !== null;
-                const icon = isGenerated ? `<img src="${m.uri}">` : '🖼️';
-                const statusColor = isGenerated ? 'var(--success)' : 'var(--warning)';
                 el.innerHTML = `
-                    <div class="asset-preview" style="border-color:${statusColor}">${icon}</div>
+                        <div class="asset-preview" style="border-color:var(--warning); border-width:2px; border-style:dashed;">
+                            <span style="color:#94a3b8;">🖼️</span>
+                        </div>
                     <div class="asset-details">
                         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <span style="font-size:0.7rem; font-weight:700; color:${statusColor}">${isGenerated ? 'GENERATED' : 'PENDING GEN'}</span>
+                                <span style="font-size:0.7rem; font-weight:700; color:var(--warning);">PENDING</span>
                             <button class="btn btn-sm btn-danger" style="padding:2px 6px; font-size:0.7rem;">×</button>
                         </div>
                         <input class="asset-prompt-input" value="${m.ai_generation_prompt || ''}" placeholder="AI Prompt description...">
                         <div style="margin-top:4px; display:flex; gap:0.5rem;">
-                            <button class="btn btn-sm gen-btn" style="background:var(--warning); color:white; border:none;">${isGenerated ? 'Regenerate' : 'Generate Now'}</button>
-                            <button class="btn btn-sm upload-btn" style="background:white; border:1px solid #ccc;">Insert Image</button>
+                                <button class="btn btn-sm gen-btn" style="background:var(--warning); color:white; border:none;">Generate</button>
+                                <button class="btn btn-sm upload-btn" style="background:var(--primary); color:white; border:none;">Insert Image</button>
                         </div>
                     </div>
                 `;
-                el.querySelector('.btn-danger').onclick = () => { mediaArray.splice(idx, 1); updateCallback(mediaArray); renderAssetList(mediaArray, container, updateCallback); };
+                    el.querySelector('.btn-danger').onclick = () => { 
+                        mediaArray.splice(idx, 1); 
+                        updateCallback(mediaArray); 
+                        renderAssetList(mediaArray, container, updateCallback); 
+                        updateJsonView(); 
+                    };
                 el.querySelector('.asset-prompt-input').oninput = (e) => { m.ai_generation_prompt = e.target.value; updateJsonView(); };
                 el.querySelector('.gen-btn').onclick = (e) => {
                     e.target.innerText = 'Generating...';
@@ -1116,41 +2738,64 @@
                     }, 1500);
                 };
                 el.querySelector('.upload-btn').onclick = () => {
-                    triggerImageUpload((dataUrl) => { m.uri = dataUrl; updateCallback(mediaArray); renderAssetList(mediaArray, container, updateCallback); updateJsonView(); });
-                };
+                        triggerImageUpload((dataUrl) => { 
+                            m.uri = dataUrl; 
+                            updateCallback(mediaArray); 
+                            renderAssetList(mediaArray, container, updateCallback); 
+                            updateJsonView(); 
+                        });
+                    };
+                }
                 container.appendChild(el);
             });
         }
         
+        // Store the current upload callback globally to handle file selection
+        let currentImageUploadCallback = null;
+        
         function triggerImageUpload(callback) {
             const input = document.getElementById('image-upload-input');
             
-            // Set up a one-time event listener for file selection
-            const handleFileSelect = (e) => {
-                const file = e.target.files[0];
-                if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        callback(event.target.result);
-                    };
-                    reader.onerror = () => {
-                        alert('Error reading image file');
-                    };
-                    reader.readAsDataURL(file);
-                } else if (file) {
-                    alert('Please select an image file');
-                }
-                // Reset the input so the same file can be selected again
-                input.value = '';
-            };
+            // Store the callback
+            currentImageUploadCallback = callback;
             
-            // Remove any existing listeners and add new one
-            input.removeEventListener('change', handleFileSelect);
-            input.addEventListener('change', handleFileSelect);
+            // Reset the input value so the same file can be selected again
+            input.value = '';
             
             // Trigger the file input click
             input.click();
         }
+        
+        // Set up a single event listener for the image upload input
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('image-upload-input');
+            if (input) {
+                input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                            if (currentImageUploadCallback) {
+                                currentImageUploadCallback(event.target.result);
+                                currentImageUploadCallback = null; // Clear after use
+                            }
+                    };
+                    reader.onerror = () => {
+                        alert('Error reading image file');
+                            currentImageUploadCallback = null;
+                    };
+                    reader.readAsDataURL(file);
+                    } else {
+                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
+                    }
+                    
+                    // Reset the input
+                    e.target.value = '';
+                });
+            }
+        });
         
         function downloadJSONL() {
             let jsonl = activeData.map(q => JSON.stringify(q)).join('\n');
@@ -1166,16 +2811,28 @@
             const poolSelect = document.getElementById('meta-pool-type');
             const diffSelect = document.getElementById('meta-difficulty');
             const pointInput = document.getElementById('meta-points');
-            if (tab === 'preview') { poolSelect.disabled = true; diffSelect.disabled = true; pointInput.disabled = true; } 
-            else { poolSelect.disabled = false; diffSelect.disabled = false; pointInput.disabled = false; }
-            if (tab === 'edit') { selectQuestion(activeIndex); }
+            
+            // Update tab button classes first
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            // Update view containers
             document.querySelectorAll('.edit-view-container, .preview-view-container').forEach(v => v.classList.remove('active'));
-            if(tab === 'preview') document.getElementById('view-preview').classList.add('active');
-            else document.getElementById('view-edit').classList.add('active');
-
-            if(tab === 'preview') { renderPreview(activeData[activeIndex], activeIndex); }
+            
+            if (tab === 'preview') {
+                poolSelect.disabled = true;
+                diffSelect.disabled = true;
+                pointInput.disabled = true;
+                document.getElementById('view-preview').classList.add('active');
+                renderPreview(activeData[activeIndex], activeIndex);
+            } else {
+                poolSelect.disabled = false;
+                diffSelect.disabled = false;
+                pointInput.disabled = false;
+                document.getElementById('view-edit').classList.add('active');
+                // Re-populate the editor to ensure it's up to date
+                populateEditor(activeData[activeIndex]);
+            }
         }
 
         function switchSubView(subview) {
@@ -1223,30 +2880,104 @@
 
         function renderPreview(q, idx) {
             const container = document.getElementById('a4-content');
+            const layouts = q.section_layouts || {};
+            
+            // Helper to render media array
+            const renderMediaArray = (media) => {
+                if (!media || media.length === 0) return '';
+                return media.map(m => {
+                    if (m.uri) {
+                        // Use stored dimensions if available
+                        const style = (m.width && m.height) 
+                            ? `style="width:${m.width}px; height:${m.height}px; object-fit:contain;"` 
+                            : '';
+                        return `<div class="p-asset"><img src="${m.uri}" ${style}></div>`;
+                    }
+                    return `<div class="p-asset"><div class="p-asset-placeholder">[IMAGE]</div></div>`;
+                }).join('');
+            };
+            
+            // Prompt section with layout support
+            const pText = getTextValue(q.prompt);
+            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
+            const promptLayout = layouts.prompt || 'stack';
+            let promptHtml = '';
+            if (promptLayout === 'grid' && pMedia.length > 0) {
+                promptHtml = `<div class="p-section-grid">
+                    <div class="p-section-text"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div>
+                    <div class="p-section-media">${renderMediaArray(pMedia)}</div>
+                </div>`;
+            } else {
+                promptHtml = `<div class="p-section-stack">
+                    <div class="p-section-text"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div>
+                    ${pMedia.length > 0 ? `<div class="p-section-media">${renderMediaArray(pMedia)}</div>` : ''}
+                </div>`;
+            }
+            
+            // Stimulus section with layout support
             let stimHtml = '';
             if(q.stimulus) {
-                let assetsHtml = '';
-                if(q.stimulus.media) {
-                    assetsHtml = q.stimulus.media.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
+                const stimMedia = q.stimulus.media || [];
+                const stimLayout = layouts.stimulus || 'stack';
+                const stimText = q.stimulus.text || '';
+                
+                if (stimLayout === 'grid' && stimMedia.length > 0) {
+                    stimHtml = `<div class="p-stimulus p-section-grid">
+                        <div class="p-section-text">${stimText}</div>
+                        <div class="p-section-media">${renderMediaArray(stimMedia)}</div>
+                    </div>`;
+                } else {
+                    stimHtml = `<div class="p-stimulus p-section-stack">
+                        <div class="p-section-text">${stimText}</div>
+                        ${stimMedia.length > 0 ? `<div class="p-section-media">${renderMediaArray(stimMedia)}</div>` : ''}
+                    </div>`;
                 }
-                stimHtml = `<div class="p-stimulus">${q.stimulus.text || ''}${assetsHtml}</div>`;
             }
-            let promptAssets = '';
-            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
-            if(pMedia.length > 0) {
-                promptAssets = pMedia.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
+            
+            // Options section (for MCQ types) with layout support
+            let optionsHtml = '';
+            if(q.options && q.options.length > 0) {
+                const optLayout = layouts.options || 'stack';
+                const optClass = optLayout === 'grid' ? 'p-options-grid' : 'p-options-stack';
+                const optItems = q.options.map((opt, k) => {
+                    const optText = typeof opt === 'string' ? opt : (opt.text || '');
+                    const optMedia = (typeof opt === 'object' && opt.media) ? opt.media : [];
+                    const letter = String.fromCharCode(65 + k); // A, B, C, D...
+                    
+                    if (optLayout === 'grid' && optMedia.length > 0) {
+                        return `<div class="p-option-item">
+                            <span>(${letter}) ${optText}</span>
+                            <div class="p-option-media">${optMedia.map(m => {
+                                if (!m.uri) return '';
+                                const style = (m.width && m.height) ? `width:${m.width}px; height:${m.height}px; object-fit:contain;` : '';
+                                return `<img src="${m.uri}" style="${style}">`;
+                            }).join('')}</div>
+                        </div>`;
+                    } else {
+                        const mediaStr = optMedia.length > 0 ? optMedia.map(m => {
+                            if (!m.uri) return '';
+                            const style = (m.width && m.height) ? `width:${Math.min(m.width, 80)}px; height:${Math.min(m.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
+                            return `<img src="${m.uri}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
+                        }).join('') : '';
+                        return `<div class="p-option-item">(${letter}) ${optText}${mediaStr}</div>`;
+                    }
+                }).join('');
+                optionsHtml = `<div class="p-options ${optClass}">${optItems}</div>`;
             }
-            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
+            
+            // Sub-questions section with layout support
             let subHtml = '';
             if(q.subquestions) {
-                const isGrid = q.layout === 'grid';
+                const sectionSubLayout = layouts.subquestions || 'stack';
+                const isSectionGrid = sectionSubLayout === 'grid';
                 const subs = q.subquestions.map((sq, i) => {
                     const label = sq.sub_id || String.fromCharCode(97 + i);
-                    let sqAssets = '';
                     const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
-                    if(sqMedia.length > 0) {
-                        sqAssets = sqMedia.map(m => `<div class="p-asset">${m.uri ? `<img src="${m.uri}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`).join('');
-                    }
+                    
+                    // Use individual sub-question layout if set, otherwise use section layout
+                    const sqLayout = sq.layout || 'stack';
+                    const isSqGrid = sqLayout === 'grid';
+                    
                     let optHtml = '';
                     if(sq.options) {
                         optHtml = sq.options.map((o, k) => {
@@ -1256,13 +2987,43 @@
                     }
                     let sqMarks = '';
                     if(sq.points) { sqMarks = `<span style="float:right; font-weight:bold; font-size:10pt;">(${sq.points} marks)</span>`; }
-                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
-                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}</div></div>`;
+                    const sqText = getTextValue(sq.prompt);
+                    
+                    // Render content based on sub-question's individual layout
+                    let contentHtml;
+                    if (isSqGrid && sqMedia.length > 0) {
+                        // Grid layout: text left, media right
+                        contentHtml = `
+                            <div style="display:grid; grid-template-columns:1fr auto; gap:0.75rem; align-items:start; width:100%;">
+                                <div>
+                                    ${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}${sqMarks}
+                                    ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                                </div>
+                                <div style="max-width:150px;">${renderMediaArray(sqMedia)}</div>
+                            </div>`;
+                    } else {
+                        // Stack layout: text above media
+                        contentHtml = `
+                            <div style="width:100%">
+                                ${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}${sqMarks}
+                                ${renderMediaArray(sqMedia)}
+                                ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                            </div>`;
+                    }
+                    
+                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span>${contentHtml}</div>`;
                 }).join('');
-                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+                subHtml = isSectionGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
             }
+            
             const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
-            container.innerHTML = `<div class="p-q-block"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+            container.innerHTML = `<div class="p-q-block">
+                <div class="p-q-header">
+                    <div class="p-q-content">${promptHtml}</div>
+                    <div class="p-q-marks">${marksText}</div>
+                </div>
+                ${stimHtml}${optionsHtml}${subHtml}
+            </div>`;
         }
 
         // Initialize with default view
