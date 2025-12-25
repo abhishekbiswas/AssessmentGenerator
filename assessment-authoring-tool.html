@@ -509,12 +509,12 @@
 
         /* OPTIONS EDITOR (Main Level) */
         .options-section {
-            background: #faf5ff;
+            background: white;
             padding: 1rem;
             border-radius: 6px;
-            border: 1px dashed #c4b5fd;
+            border: 1px solid var(--border);
         }
-        .options-section .section-label { color: #6d28d9; }
+        .options-section .section-label { color: var(--text-muted); }
         .option-item {
             display: flex;
             align-items: center;
@@ -605,26 +605,27 @@
             background: white;
         }
 
-        /* ANSWER EDITOR */
-        .answer-section {
+        /* GRADING EDITOR */
+        .grading-section {
             background: #ecfdf5;
             padding: 1rem;
             border-radius: 6px;
             border: 1px dashed #6ee7b7;
         }
-        .answer-section .section-label { color: #047857; }
-        .answer-kind-row {
-            display: flex;
-            align-items: center;
+        .grading-section .section-label { color: #047857; }
+        .grading-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 0.75rem;
-            margin-bottom: 0.5rem;
         }
-        .answer-kind-row label { font-size: 0.7rem; font-weight: 600; color: #047857; }
-        .answer-kind-row select {
+        .grading-field { display: flex; flex-direction: column; gap: 0.25rem; }
+        .grading-field label { font-size: 0.7rem; font-weight: 600; color: #047857; }
+        .grading-field select, .grading-field input, .grading-field textarea {
             padding: 0.4rem;
             border: 1px solid #6ee7b7;
             border-radius: 4px;
             font-size: 0.85rem;
+            background: white;
         }
 
         /* WORD BANK EDITOR */
@@ -727,36 +728,6 @@
             cursor: pointer;
         }
         .delete-sub-btn:hover { background: #fecaca; }
-        
-        /* SKILL TAGS */
-        .skill-tags-section {
-            margin-top: 0.75rem;
-        }
-        .skill-tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        .skill-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            background: #eff6ff;
-            border: 1px solid #93c5fd;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            color: #1d4ed8;
-        }
-        .skill-tag button {
-            background: none;
-            border: none;
-            color: #991b1b;
-            cursor: pointer;
-            padding: 0;
-            font-size: 0.8rem;
-        }
     </style>
 </head>
 <body>
@@ -855,13 +826,11 @@
                                 <div class="meta-group">
                                     <span class="badge-draft" id="meta-id" style="background:#eff6ff; color:var(--primary); padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.8rem;">ID</span>
                                     <select class="btn btn-sm" id="meta-type" onchange="updateMeta('type', this.value)" title="Question Type">
+                                        <option value="mcq">MCQ</option>
                                         <option value="short_answer">Short Answer</option>
                                         <option value="long_answer">Long Answer</option>
-                                        <option value="mcq_single">MCQ Single</option>
-                                        <option value="mcq_multi">MCQ Multi</option>
                                         <option value="fill_blank">Fill Blank</option>
                                         <option value="composite">Composite</option>
-                                        <option value="picture_prompt">Picture Prompt</option>
                                     </select>
                                     <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
                                         <option value="practice">Practice Pool</option>
@@ -903,6 +872,12 @@
                                             <option value="D">D</option>
                                         </select>
                                     </div>
+                                    <div style="display:flex; align-items:center; gap:4px; margin-left:1rem; padding-left:1rem; border-left:1px solid var(--border);">
+                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Skills:</label>
+                                        <div id="skill-tags-display" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+                                        <input type="text" id="new-skill-input" class="btn btn-sm" style="width:100px;" placeholder="Add skill..." onkeypress="if(event.key==='Enter'){addSkillTag(); event.preventDefault();}">
+                                        <button class="btn btn-sm" onclick="addSkillTag()" style="padding:2px 6px;">+</button>
+                                    </div>
                                 </div>
                             </div>
                             <!-- TABS -->
@@ -927,7 +902,8 @@
                                         <!-- SUB VIEW TOGGLE -->
                                         <div class="view-toggle">
                                             <button class="view-toggle-btn active" id="subview-graphical" onclick="switchSubView('graphical')">Graphical</button>
-                                            <button class="view-toggle-btn" id="subview-json" onclick="switchSubView('json')">JSON</button>
+                                            <button class="view-toggle-btn" id="subview-json" onclick="switchSubView('json')">Content JSON</button>
+                                            <button class="view-toggle-btn" id="subview-layout" onclick="switchSubView('layout')">Layout JSON</button>
                                         </div>
                                     </div>
                                 </div>
@@ -941,8 +917,7 @@
                                         <button class="add-section-btn" id="add-stimulus-btn" onclick="addStimulusSection()">+ Stimulus</button>
                                         <button class="add-section-btn" id="add-options-btn" onclick="addOptionsSection()">+ Options (MCQ)</button>
                                         <button class="add-section-btn" id="add-subquestions-btn" onclick="addSubquestionsSection()">+ Sub-Questions</button>
-                                        <button class="add-section-btn" id="add-answer-btn" onclick="addAnswerSection()">+ Answer</button>
-                                        <button class="add-section-btn" id="add-rubric-btn" onclick="addRubricSection()">+ Rubric</button>
+                                        <button class="add-section-btn" id="add-grading-btn" onclick="addGradingSection()">+ Grading</button>
                                         <button class="add-section-btn" id="add-metadata-btn" onclick="addMetadataSection()">+ Metadata</button>
                                     </div>
 
@@ -951,10 +926,6 @@
                                         <div class="section-header">
                                             <label class="section-label">QUESTION PROMPT</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <div class="section-layout-toggle" id="prompt-layout-toggle">
-                                                    <button class="section-layout-btn active" onclick="setSectionLayout('prompt', 'stack')" data-layout="stack">☰ Stack</button>
-                                                    <button class="section-layout-btn" onclick="setSectionLayout('prompt', 'grid')" data-layout="grid">⊞ Grid</button>
-                                                </div>
                                                 <button class="btn btn-sm" onclick="addAssetToPrompt()">+ Add Image</button>
                                             </div>
                                         </div>
@@ -973,10 +944,6 @@
                                         <div class="section-header">
                                             <label class="section-label">SHARED CONTEXT (STIMULUS)</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <div class="section-layout-toggle" id="stimulus-layout-toggle">
-                                                    <button class="section-layout-btn active" onclick="setSectionLayout('stimulus', 'stack')" data-layout="stack">☰ Stack</button>
-                                                    <button class="section-layout-btn" onclick="setSectionLayout('stimulus', 'grid')" data-layout="grid">⊞ Grid</button>
-                                        </div>
                                                 <button class="btn btn-sm" onclick="addAssetToStimulus()">+ Add Image</button>
                                                 <button class="btn btn-sm" onclick="toggleWordBank()" id="toggle-wordbank-btn">+ Word Bank</button>
                                                 <button class="remove-section-btn" onclick="removeSection('stimulus')">✕ Remove</button>
@@ -1006,10 +973,6 @@
                                         <div class="section-header">
                                             <label class="section-label">OPTIONS (MCQ)</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <div class="section-layout-toggle" id="options-layout-toggle">
-                                                    <button class="section-layout-btn active" onclick="setSectionLayout('options', 'stack')" data-layout="stack">☰ Stack</button>
-                                                    <button class="section-layout-btn" onclick="setSectionLayout('options', 'grid')" data-layout="grid">⊞ Grid</button>
-                                                </div>
                                                 <button class="btn btn-sm" onclick="addOption()">+ Add Option</button>
                                                 <button class="remove-section-btn" onclick="removeSection('options')">✕ Remove</button>
                                             </div>
@@ -1023,8 +986,8 @@
                                             <label class="section-label">SUB-QUESTIONS</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                                 <div class="section-layout-toggle" id="subquestions-layout-toggle">
-                                                    <button class="section-layout-btn active" onclick="setLayout('stack')" data-layout="stack">☰ Stack</button>
-                                                    <button class="section-layout-btn" onclick="setLayout('grid')" data-layout="grid">⊞ Grid</button>
+                                                    <button class="section-layout-btn" onclick="setLayout('stack')" data-layout="stack">☰ Stack</button>
+                                                    <button class="section-layout-btn active" onclick="setLayout('grid')" data-layout="grid">⊞ Grid</button>
                                                 </div>
                                                 <button class="btn btn-sm" onclick="addSubQuestion()">+ Add Sub-Question</button>
                                                 <button class="remove-section-btn" onclick="removeSection('subquestions')">✕ Remove</button>
@@ -1033,55 +996,34 @@
                                         <div id="sub-questions-list" class="sub-questions-wrapper"></div>
                                     </div>
 
-                                    <!-- Answer Section (for non-composite questions) -->
-                                    <div id="answer-section" class="content-section answer-section" style="display:none;">
+                                    <!-- Grading Section (for non-composite questions) -->
+                                    <div id="grading-section" class="content-section grading-section" style="display:none;">
                                         <div class="section-header">
-                                            <label class="section-label">ANSWER</label>
-                                            <button class="remove-section-btn" onclick="removeSection('answer')">✕ Remove</button>
+                                            <label class="section-label">GRADING</label>
+                                            <button class="remove-section-btn" onclick="removeSection('grading')">✕ Remove</button>
                                         </div>
-                                        <div class="answer-kind-row">
-                                            <label>Kind:</label>
-                                            <select id="answer-kind" onchange="updateAnswerKind(this.value)">
+                                        <div class="grading-grid">
+                                            <div class="grading-field">
+                                                <label>Kind</label>
+                                                <select id="grading-kind" onchange="updateGrading('kind', this.value)">
                                                 <option value="text">Text</option>
                                                 <option value="single_selection">Single Selection</option>
-                                                <option value="multi_selection">Multi Selection</option>
+                                                    <option value="multiple_selection">Multiple Selection</option>
                                                 <option value="sample_text">Sample Text</option>
-                                                <option value="json">JSON</option>
                                             </select>
                                         </div>
-                                        <textarea class="input-bare" id="input-answer" oninput="updateAnswerValue(this.value)" placeholder="Enter text..." style="color:green;"></textarea>
+                                            <div class="grading-field">
+                                                <label>Points</label>
+                                                <input type="text" id="grading-points" oninput="updateGrading('points', this.value)" placeholder="1">
                                     </div>
-
-                                    <!-- Rubric Section -->
-                                    <div id="rubric-section" class="content-section rubric-section" style="display:none;">
-                                        <div class="section-header">
-                                            <label class="section-label">RUBRIC (Scoring Rules)</label>
-                                            <button class="remove-section-btn" onclick="removeSection('rubric')">✕ Remove</button>
                                         </div>
-                                        <div class="rubric-grid">
-                                            <div class="rubric-field">
-                                                <label>Scoring Type</label>
-                                                <select id="rubric-scoring" onchange="updateRubric('scoring', this.value)">
-                                                    <option value="auto">Auto</option>
-                                                    <option value="manual">Manual</option>
-                                                    <option value="mixed">Mixed</option>
-                                                </select>
+                                        <div class="grading-field" style="margin-top:0.75rem;">
+                                            <label>Values (comma-separated for multiple answers)</label>
+                                            <textarea class="input-bare" id="grading-values" oninput="updateGradingValues(this.value)" placeholder="Enter correct answer(s)..." style="color:#047857; min-height:60px;"></textarea>
                                             </div>
-                                            <div class="rubric-field">
-                                                <label>Add Check</label>
-                                                <div style="display:flex; gap:0.25rem;">
-                                                    <input type="text" id="new-check-input" placeholder="e.g., grammar" style="flex:1;">
-                                                    <button class="btn btn-sm" onclick="addRubricCheck()">+</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="rubric-field" style="margin-top:0.75rem;">
-                                            <label>Checks (Auto-grading criteria)</label>
-                                            <div id="rubric-checks-list" class="checks-list"></div>
-                                        </div>
-                                        <div class="rubric-field" style="margin-top:0.75rem; grid-column: span 2;">
+                                        <div class="grading-field" style="margin-top:0.75rem;">
                                             <label>Explanation (Optional)</label>
-                                            <textarea id="rubric-explanation" oninput="updateRubric('explanation', this.value)" placeholder="Enter text..." rows="2"></textarea>
+                                            <textarea class="input-bare" id="grading-explanation" oninput="updateGrading('explanation', this.value)" placeholder="Explain the correct answer..." rows="2"></textarea>
                                         </div>
                                     </div>
 
@@ -1111,24 +1053,23 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <!-- Skill Tags -->
-                                        <div class="skill-tags-section">
-                                            <label style="font-size:0.7rem; font-weight:600; color:#166534;">Skill Tags</label>
-                                            <div style="display:flex; gap:0.25rem; margin-top:0.25rem;">
-                                                <input type="text" id="new-skill-tag-input" placeholder="e.g., reading" style="flex:1; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-size:0.85rem;">
-                                                <button class="btn btn-sm" onclick="addSkillTag()">+ Add</button>
-                                            </div>
-                                            <div id="skill-tags-list" class="skill-tags-container"></div>
-                                        </div>
                                     </div>
 
                                 </div>
 
-                                <!-- SUB-VIEW: JSON (Read Only) -->
+                                <!-- SUB-VIEW: Content JSON (Read Only) -->
                                 <div id="sub-view-json" class="json-view">
                                     <textarea id="json-ro-textarea" class="json-editor" readonly spellcheck="false"></textarea>
                                     <div class="json-footer">
                                         <span style="color:#aaa;">● Read-only (Updates automatically)</span>
+                                    </div>
+                                </div>
+
+                                <!-- SUB-VIEW: Layout JSON (Read Only) -->
+                                <div id="sub-view-layout" class="json-view" style="display:none;">
+                                    <textarea id="layout-json-textarea" class="json-editor" readonly spellcheck="false"></textarea>
+                                    <div class="json-footer">
+                                        <span style="color:#aaa;">● Read-only (Layout configuration)</span>
                                     </div>
                                 </div>
                             </div>
@@ -1165,11 +1106,35 @@
         let activeWorkflow = 'import'; // 'import' or 'library'
         let activeUploadCallback = null;
 
-        // MOCK DATABASE
+        // MOCK DATABASE (using new schema format)
         const mockDatabase = [
-             { question_id:"db_q1", grade_id:"grade_3", subject_id:"mathematics", unit_id:"ch_measurement", section_id:"A", pool:"practice", type:"composite", difficulty:"easy", points:2, prompt:{text:"Fill in the blanks. Choose words from brackets."}, subquestions:[{sub_id:"a", prompt:{text:"Standard unit for length is ____ (m/kg)"}, points:1}] },
-            { question_id:"db_q2", grade_id:"grade_3", subject_id:"mathematics", unit_id:"ch_addition", section_id:"B", pool:"exam", type:"short_answer", difficulty:"medium", points:3, prompt:{text:"Solve 345 + 123"} },
-            { question_id:"db_q3", grade_id:"grade_3", subject_id:"english", unit_id:"ch1", section_id:"A", pool:"practice", type:"mcq_single", difficulty:"easy", points:1, prompt:{text:"Tick the noun."}, options:["Run", "Cat", "Blue"] }
+            { 
+                question_id: "db_q1", 
+                taxonomy: { grade_id: "grade_3", subject_id: "mathematics", unit_id: "ch_measurement", section_id: "A", type: "composite", difficulty: "easy", pool: "practice", skill_tags: [] },
+                content: { 
+                    prompt: { text: "Fill in the blanks. Choose words from brackets.", assets: [] }, 
+                    subquestions: [{ sub_id: "a", type: "fill_blank", prompt: { text: "Standard unit for length is ____ (m/kg)", assets: [] }, grading: { kind: "text", values: ["m"], points: "1" } }] 
+                },
+                grading: { kind: "text", values: [], points: "2" },
+                metadata: { ui_hint: "", version: 1, source: "Manual" }
+            },
+            { 
+                question_id: "db_q2", 
+                taxonomy: { grade_id: "grade_3", subject_id: "mathematics", unit_id: "ch_addition", section_id: "B", type: "short_answer", difficulty: "medium", pool: "exam", skill_tags: ["addition"] },
+                content: { prompt: { text: "Solve 345 + 123", assets: [] } },
+                grading: { kind: "text", values: ["468"], points: "3" },
+                metadata: { ui_hint: "", version: 1, source: "Manual" }
+            },
+            { 
+                question_id: "db_q3", 
+                taxonomy: { grade_id: "grade_3", subject_id: "english", unit_id: "ch1", section_id: "A", type: "mcq", difficulty: "easy", pool: "practice", skill_tags: ["grammar"] },
+                content: { 
+                    prompt: { text: "Tick the noun.", assets: [] }, 
+                    options: [{ id: "opt_a", text: "Run", assets: [] }, { id: "opt_b", text: "Cat", assets: [] }, { id: "opt_c", text: "Blue", assets: [] }] 
+                },
+                grading: { kind: "single_selection", values: ["opt_b"], points: "1" },
+                metadata: { ui_hint: "", version: 1, source: "Manual" }
+            }
         ];
 
         // --- WORKFLOW SWITCHING ---
@@ -1232,15 +1197,16 @@
 
             setTimeout(() => {
                 const filtered = mockDatabase.filter(q => {
-                    const matchGrade = q.grade_id === grade;
-                    const matchSubject = q.subject_id === subject;
-                    // Support both unit_id (new) and chapter_id (legacy)
-                    const unitId = q.unit_id || q.chapter_id;
+                    const taxonomy = q.taxonomy || {};
+                    const matchGrade = taxonomy.grade_id === grade;
+                    const matchSubject = taxonomy.subject_id === subject;
+                    const unitId = taxonomy.unit_id || '';
                     const matchChapter = chapter === 'all' ? true : unitId === chapter;
                     return matchGrade && matchSubject && matchChapter;
                 });
                 
-                libraryData = JSON.parse(JSON.stringify(filtered)); // Deep copy
+                // Deep copy and ensure defaults
+                libraryData = filtered.map(q => ensureSchemaDefaults(JSON.parse(JSON.stringify(q))));
                 activeData = libraryData; // Update reference
 
                 document.getElementById('library-count').innerText = `${libraryData.length} Items`;
@@ -1302,23 +1268,27 @@
                     ? '<span class="status-indicator pending"><span class="dot"></span> Has Assets</span>' 
                     : '<span class="status-indicator valid"><span class="dot"></span> Text Only</span>';
 
-                // Support both unit_id (new) and chapter_id (legacy)
-                const unitId = q.unit_id || q.chapter_id;
-                const chap = unitId ? unitId.replace('ch_', '').replace(/_/g, ' ') : 'General';
-                const sec = q.section_id ? `Sec ${q.section_id}` : '';
+                // Read from new nested schema
+                const taxonomy = q.taxonomy || {};
+                const content = q.content || {};
                 
-                const poolBadge = q.pool === 'exam' 
+                const unitId = taxonomy.unit_id || '';
+                const chap = unitId ? unitId.replace('ch_', '').replace(/_/g, ' ') : 'General';
+                const sec = taxonomy.section_id ? `Sec ${taxonomy.section_id}` : '';
+                
+                const poolBadge = taxonomy.pool === 'exam' 
                     ? '<span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:3px; border:1px solid #fcd34d;">EXAM</span>'
                     : '<span style="font-size:0.65rem; background:#ecfdf5; color:#065f46; padding:1px 4px; border-radius:3px; border:1px solid #6ee7b7;">PRACTICE</span>';
 
-                const promptText = (q.prompt && typeof q.prompt === 'object') ? q.prompt.text : (q.prompt || 'No prompt');
+                const prompt = content.prompt || {};
+                const promptText = prompt.text || 'No prompt';
 
                 item.innerHTML = `
                     <div class="q-item-header">
                         <span class="q-id">Q${idx + 1}</span>
                         <div style="display:flex; gap:4px; align-items:center;">
                             ${poolBadge}
-                            <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(q.difficulty||'').toUpperCase()}</span>
+                            <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(taxonomy.difficulty||'').toUpperCase()}</span>
                         </div>
                     </div>
                     <div class="q-location">${chap} • ${sec}</div>
@@ -1375,127 +1345,135 @@
             document.getElementById('stimulus-section').style.display = 'none';
             document.getElementById('options-section').style.display = 'none';
             document.getElementById('subquestions-section').style.display = 'none';
-            document.getElementById('answer-section').style.display = 'none';
-            document.getElementById('rubric-section').style.display = 'none';
+            document.getElementById('grading-section').style.display = 'none';
             document.getElementById('metadata-section').style.display = 'none';
             document.getElementById('word-bank-section').style.display = 'none';
             
-            document.getElementById('meta-id').innerText = q.question_id || `Q${activeIndex+1}`;
-            document.getElementById('meta-type').value = q.type || 'short_answer';
-            document.getElementById('meta-pool-type').value = q.pool || q.pool_type || 'practice';
-            document.getElementById('meta-difficulty').value = q.difficulty || 'medium';
-            document.getElementById('meta-points').value = q.points || 1;
+            // Read from new nested schema structure
+            const taxonomy = q.taxonomy || {};
+            const content = q.content || {};
+            const grading = q.grading || {};
+            const metadata = q.metadata || {};
             
-            // Location metadata
-            document.getElementById('meta-grade').value = q.grade_id || '';
-            document.getElementById('meta-subject').value = q.subject_id || '';
-            document.getElementById('meta-unit').value = q.unit_id || q.chapter_id || '';
-            document.getElementById('meta-section').value = q.section_id || 'A';
+            document.getElementById('meta-id').innerText = q.question_id || `Q${activeIndex+1}`;
+            document.getElementById('meta-type').value = taxonomy.type || 'short_answer';
+            document.getElementById('meta-pool-type').value = taxonomy.pool || 'practice';
+            document.getElementById('meta-difficulty').value = taxonomy.difficulty || 'medium';
+            document.getElementById('meta-points').value = grading.points || '1';
+            
+            // Location metadata from taxonomy
+            document.getElementById('meta-grade').value = taxonomy.grade_id || '';
+            document.getElementById('meta-subject').value = taxonomy.subject_id || '';
+            document.getElementById('meta-unit').value = taxonomy.unit_id || '';
+            document.getElementById('meta-section').value = taxonomy.section_id || 'A';
+            
+            // Skill tags
+            renderSkillTags(taxonomy.skill_tags || []);
 
-            const pText = getTextValue(q.prompt);
-            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
+            // Prompt from content
+            const prompt = content.prompt || { text: '', assets: [] };
+            const pText = prompt.text || '';
+            const pAssets = prompt.assets || [];
 
             document.getElementById('input-prompt').value = pText;
-            renderAssetList(pMedia, 'prompt-assets', (newMedia) => {
-                if(typeof q.prompt === 'string') q.prompt = { text: q.prompt, media: [] };
-                q.prompt.media = newMedia;
+            renderAssetList(pAssets, 'prompt-assets', (newAssets) => {
+                if (!q.content) q.content = {};
+                if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
+                q.content.prompt.assets = newAssets;
                 updateJsonView(); 
             });
 
-            // Stimulus Section
+            // Stimulus Section from content
             const stimArea = document.getElementById('stimulus-section');
             const stimInput = document.getElementById('input-stimulus');
+            const stimulus = content.stimulus;
             
-            if(q.stimulus) {
+            if(stimulus) {
                 stimArea.style.display = 'block';
-                stimInput.value = q.stimulus.text || '';
-                renderAssetList(q.stimulus.media || [], 'stimulus-assets', (newMedia) => {
-                    q.stimulus.media = newMedia;
+                stimInput.value = stimulus.text || '';
+                renderAssetList(stimulus.assets || [], 'stimulus-assets', (newAssets) => {
+                    q.content.stimulus.assets = newAssets;
                     updateJsonView(); 
                 });
                 // Word Bank
-                renderWordBank(q.stimulus.word_bank || []);
-                document.getElementById('word-bank-section').style.display = (q.stimulus.word_bank && q.stimulus.word_bank.length > 0) ? 'block' : 'none';
+                renderWordBank(stimulus.word_bank || []);
+                document.getElementById('word-bank-section').style.display = (stimulus.word_bank && stimulus.word_bank.length > 0) ? 'block' : 'none';
             } else {
                 stimArea.style.display = 'none';
             }
 
             // Get question type for conditional rendering
-            const qType = q.type || 'short_answer';
-            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi';
+            const qType = taxonomy.type || 'short_answer';
+            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
             const isCompositeType = qType === 'composite';
 
-            // Options Section (only for MCQ types)
+            // Options Section (for MCQ types) from content
             const optionsSection = document.getElementById('options-section');
-            if(isMcqType && q.options && q.options.length > 0) {
+            const options = content.options;
+            if(isMcqType) {
                 optionsSection.style.display = 'block';
-                renderMainOptions(q.options);
+                if (options && options.length > 0) {
+                    renderMainOptions(options);
+                } else {
+                    // Initialize empty options list
+                    document.getElementById('options-list').innerHTML = '<div style="padding:0.5rem; color:#999; font-size:0.85rem;">No options yet. Click "+ Add Option" to add.</div>';
+                }
             } else {
                 optionsSection.style.display = 'none';
             }
 
-            // Sub-Questions Section (only for composite type)
+            // Sub-Questions Section (only for composite type) from content
             const subqSection = document.getElementById('subquestions-section');
-            if(isCompositeType && q.subquestions && q.subquestions.length > 0) {
+            const subquestions = content.subquestions;
+            if(isCompositeType && subquestions && subquestions.length > 0) {
                 subqSection.style.display = 'block';
             renderSubQuestions(q);
             } else {
                 subqSection.style.display = 'none';
             }
 
-            // Answer Section (only for non-composite questions)
-            const ansSection = document.getElementById('answer-section');
-            if(!isCompositeType && q.answer) {
-                ansSection.style.display = 'block';
-                const ansKind = q.answer.kind || 'text';
-                const ansVal = getTextValue(q.answer);
-                document.getElementById('answer-kind').value = ansKind;
-                document.getElementById('input-answer').value = ansVal;
+            // Grading Section (for non-composite questions)
+            const gradingSection = document.getElementById('grading-section');
+            if(!isCompositeType && grading && (grading.values?.length > 0 || grading.kind)) {
+                gradingSection.style.display = 'block';
+                document.getElementById('grading-kind').value = grading.kind || 'text';
+                document.getElementById('grading-points').value = grading.points || '1';
+                document.getElementById('grading-values').value = (grading.values || []).join(', ');
+                document.getElementById('grading-explanation').value = grading.explanation || '';
             } else {
-                ansSection.style.display = 'none';
-            }
-
-            // Rubric Section
-            const rubricSection = document.getElementById('rubric-section');
-            if(q.rubric) {
-                rubricSection.style.display = 'block';
-                document.getElementById('rubric-scoring').value = q.rubric.scoring || 'auto';
-                document.getElementById('rubric-explanation').value = q.rubric.explanation || '';
-                renderRubricChecks(q.rubric.checks || []);
-            } else {
-                rubricSection.style.display = 'none';
+                gradingSection.style.display = 'none';
             }
 
             // Metadata Section
             const metaSection = document.getElementById('metadata-section');
-            if(q.metadata) {
+            if(metadata) {
                 metaSection.style.display = 'block';
-                document.getElementById('meta-ui-hint').value = q.metadata.ui_hint || '';
-                document.getElementById('meta-version').value = q.metadata.version || '';
-                document.getElementById('meta-source').value = q.metadata.source || '';
+                document.getElementById('meta-ui-hint').value = metadata.ui_hint || '';
+                document.getElementById('meta-version').value = metadata.version || '';
+                document.getElementById('meta-source').value = metadata.source || '';
             } else {
                 metaSection.style.display = 'none';
             }
 
-            // Skill Tags (stored at question level)
-            renderSkillTags(q.skill_tags || []);
-
             // Update "Add Section" buttons visibility
             updateAddSectionButtons(q);
 
-            updateLayoutButtons(q.layout);
+            // Update subquestions layout buttons (default to grid)
+            updateLayoutButtons(q.content?.subquestions_layout || 'grid');
             restoreSectionLayouts(q);
             updateJsonView();
         }
 
         // Update visibility of "Add Section" buttons based on what's present and question type
         function updateAddSectionButtons(q) {
-            const qType = q.type || 'short_answer';
-            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi';
+            const taxonomy = q.taxonomy || {};
+            const content = q.content || {};
+            const qType = taxonomy.type || 'short_answer';
+            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
             const isCompositeType = qType === 'composite';
             
             // Stimulus - always available
-            document.getElementById('add-stimulus-btn').classList.toggle('disabled', !!q.stimulus);
+            document.getElementById('add-stimulus-btn').classList.toggle('disabled', !!content.stimulus);
             
             // Options - only for MCQ types
             const optionsBtn = document.getElementById('add-options-btn');
@@ -1503,7 +1481,7 @@
                 optionsBtn.style.display = 'none';
             } else {
                 optionsBtn.style.display = 'inline-block';
-                optionsBtn.classList.toggle('disabled', !!(q.options && q.options.length > 0));
+                optionsBtn.classList.toggle('disabled', !!(content.options && content.options.length > 0));
             }
             
             // Sub-Questions - only for composite type
@@ -1512,212 +1490,233 @@
                 subqBtn.style.display = 'none';
             } else {
                 subqBtn.style.display = 'inline-block';
-                subqBtn.classList.toggle('disabled', !!(q.subquestions && q.subquestions.length > 0));
+                subqBtn.classList.toggle('disabled', !!(content.subquestions && content.subquestions.length > 0));
             }
             
-            // Answer - only for non-composite types (composite uses sub-question answers)
-            const answerBtn = document.getElementById('add-answer-btn');
+            // Grading - only for non-composite types
+            const gradingBtn = document.getElementById('add-grading-btn');
             if (isCompositeType) {
-                answerBtn.style.display = 'none';
+                gradingBtn.style.display = 'none';
             } else {
-                answerBtn.style.display = 'inline-block';
-                answerBtn.classList.toggle('disabled', !!q.answer);
+                gradingBtn.style.display = 'inline-block';
+                const hasGrading = q.grading && q.grading.values && q.grading.values.length > 0;
+                gradingBtn.classList.toggle('disabled', hasGrading);
             }
-            
-            // Rubric - always available
-            document.getElementById('add-rubric-btn').classList.toggle('disabled', !!q.rubric);
             
             // Metadata - always available
             document.getElementById('add-metadata-btn').classList.toggle('disabled', !!q.metadata);
         }
 
-        // --- DATA HELPERS (Same as before, adapted to use activeData) ---
+        // --- DATA HELPERS (Adapted for new nested schema) ---
         function updatePrompt(val) {
             const q = activeData[activeIndex];
-            if(typeof q.prompt === 'string') q.prompt = val;
-            else q.prompt.text = val;
+            if (!q.content) q.content = {};
+            if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
+            q.content.prompt.text = val;
             renderList();
             updateJsonView(); 
         }
 
         function updateMeta(field, val) {
             const q = activeData[activeIndex];
+            // Ensure nested structures exist
+            if (!q.taxonomy) q.taxonomy = {};
+            if (!q.content) q.content = {};
+            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            
             if(field === 'pool_type') {
-                q.pool = val;
+                q.taxonomy.pool = val;
             } else if(field === 'points') {
-                q.points = parseFloat(val);
+                q.grading.points = String(val);
                 distributeTotalMarks(parseFloat(val)); 
             } else if(field === 'grade_id') {
-                q.grade_id = val;
+                q.taxonomy.grade_id = val;
             } else if(field === 'subject_id') {
-                q.subject_id = val;
+                q.taxonomy.subject_id = val;
             } else if(field === 'unit_id') {
-                q.unit_id = val;
-                // Also update chapter_id for legacy compatibility
-                if(q.chapter_id) q.chapter_id = val;
+                q.taxonomy.unit_id = val;
             } else if(field === 'section_id') {
-                q.section_id = val;
+                q.taxonomy.section_id = val;
+            } else if(field === 'difficulty') {
+                q.taxonomy.difficulty = val;
             } else if(field === 'type') {
-                const oldType = q.type;
-                q.type = val;
+                const oldType = q.taxonomy.type;
+                q.taxonomy.type = val;
                 
-                const isMcqType = val === 'mcq_single' || val === 'mcq_multi';
+                const isMcqType = val === 'mcq_single' || val === 'mcq_multi' || val === 'mcq';
                 const isCompositeType = val === 'composite';
                 
                 // Auto-add options for MCQ types if not present
-                if(isMcqType && !q.options) {
-                    q.options = [
-                        { id: 'opt_a', text: 'Option A', media: [] },
-                        { id: 'opt_b', text: 'Option B', media: [] }
+                if(isMcqType && !q.content.options) {
+                    q.content.options = [
+                        { id: 'opt_a', text: 'Option A', assets: [] },
+                        { id: 'opt_b', text: 'Option B', assets: [] }
                     ];
                 }
                 
                 // Remove options for non-MCQ types (with confirmation if data exists)
-                if(!isMcqType && q.options && q.options.length > 0) {
+                if(!isMcqType && q.content.options && q.content.options.length > 0) {
                     if(confirm('Changing to this type will remove the Options section. Continue?')) {
-                        delete q.options;
+                        delete q.content.options;
             } else {
-                        q.type = oldType; // Revert
+                        q.taxonomy.type = oldType; // Revert
                         document.getElementById('meta-type').value = oldType;
                         return;
                     }
                 }
                 
                 // Auto-add subquestions for composite type if not present
-                if(isCompositeType && !q.subquestions) {
-                    q.subquestions = [
-                        { sub_id: 'a', type: 'short_answer', points: 1, prompt: { text: '', media: [] } }
+                if(isCompositeType && !q.content.subquestions) {
+                    q.content.subquestions = [
+                        { sub_id: 'a', type: 'short_answer', prompt: { text: '', assets: [] }, grading: { kind: 'text', values: [], points: '1' } }
                     ];
                 }
                 
                 // Remove subquestions for non-composite types (with confirmation if data exists)
-                if(!isCompositeType && q.subquestions && q.subquestions.length > 0) {
+                if(!isCompositeType && q.content.subquestions && q.content.subquestions.length > 0) {
                     if(confirm('Changing to this type will remove the Sub-Questions section. Continue?')) {
-                        delete q.subquestions;
+                        delete q.content.subquestions;
                     } else {
-                        q.type = oldType; // Revert
+                        q.taxonomy.type = oldType; // Revert
                         document.getElementById('meta-type').value = oldType;
                         return;
                     }
                 }
                 
-                // For composite type, remove main-level answer (answers are at sub-question level)
-                if(isCompositeType && q.answer) {
-                    delete q.answer;
+                // For composite type, grading at root is read-only aggregate
+                if(isCompositeType) {
+                    // Points will be calculated from sub-questions
                 }
                 
                 selectQuestion(activeIndex); // Refresh to show/hide relevant sections
                 return;
             } else {
+                // Generic field update - check if it's taxonomy or other
+                if (['grade_id', 'subject_id', 'unit_id', 'section_id', 'type', 'difficulty', 'pool'].includes(field)) {
+                    q.taxonomy[field] = val;
+            } else {
                 q[field] = val;
+                }
             }
             renderList();
             updateJsonView(); 
         }
 
+        // Skill Tags Functions
+        function renderSkillTags(tags) {
+            const container = document.getElementById('skill-tags-display');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!tags || tags.length === 0) {
+                container.innerHTML = '<span style="font-size:0.7rem; color:#999; font-style:italic;">No skills</span>';
+                return;
+            }
+            tags.forEach((tag, idx) => {
+                const tagEl = document.createElement('span');
+                tagEl.style.cssText = 'display:inline-flex; align-items:center; gap:2px; padding:2px 6px; background:#dbeafe; color:#1e40af; border-radius:4px; font-size:0.7rem; font-weight:500;';
+                tagEl.innerHTML = `${tag}<button onclick="deleteSkillTag(${idx})" style="background:none; border:none; color:#1e40af; cursor:pointer; padding:0 2px; margin-left:2px; font-size:0.8rem; opacity:0.7;">×</button>`;
+                container.appendChild(tagEl);
+            });
+        }
+
+        function addSkillTag() {
+            const input = document.getElementById('new-skill-input');
+            const val = input.value.trim();
+            if (!val) return;
+            const q = activeData[activeIndex];
+            if (!q.taxonomy) q.taxonomy = {};
+            if (!q.taxonomy.skill_tags) q.taxonomy.skill_tags = [];
+            if (!q.taxonomy.skill_tags.includes(val)) {
+                q.taxonomy.skill_tags.push(val);
+                renderSkillTags(q.taxonomy.skill_tags);
+                updateJsonView();
+            }
+            input.value = '';
+        }
+
+        function deleteSkillTag(idx) {
+            const q = activeData[activeIndex];
+            if (!q.taxonomy?.skill_tags) return;
+            q.taxonomy.skill_tags.splice(idx, 1);
+            renderSkillTags(q.taxonomy.skill_tags);
+            updateJsonView(); 
+        }
+
         function updateStimulus(val) {
-            if(!activeData[activeIndex].stimulus) activeData[activeIndex].stimulus = { text: '', media: [] };
-            activeData[activeIndex].stimulus.text = val;
+            const q = activeData[activeIndex];
+            if (!q.content) q.content = {};
+            if (!q.content.stimulus) q.content.stimulus = { text: '', assets: [], word_bank: [] };
+            q.content.stimulus.text = val;
             updateJsonView(); 
         }
         
         function addAssetToPrompt() {
             const q = activeData[activeIndex];
-            if(typeof q.prompt === 'string') q.prompt = { text: q.prompt, media: [] };
-            if(!q.prompt.media) q.prompt.media = [];
-            q.prompt.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
+            if (!q.content) q.content = {};
+            if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
+            if (!q.content.prompt.assets) q.content.prompt.assets = [];
+            q.content.prompt.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
             selectQuestion(activeIndex);
         }
 
         function addAssetToStimulus() {
             const q = activeData[activeIndex];
-            if(!q.stimulus) q.stimulus = { text: "", media: [] };
-            if(!q.stimulus.media) q.stimulus.media = [];
-            q.stimulus.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
+            if (!q.content) q.content = {};
+            if (!q.content.stimulus) q.content.stimulus = { text: '', assets: [], word_bank: [] };
+            if (!q.content.stimulus.assets) q.content.stimulus.assets = [];
+            q.content.stimulus.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
             selectQuestion(activeIndex);
         }
 
         function distributeTotalMarks(newTotal) {
             const q = activeData[activeIndex];
-            if(!q.subquestions || q.subquestions.length === 0) return;
-            const count = q.subquestions.length;
+            const subquestions = q.content?.subquestions;
+            if(!subquestions || subquestions.length === 0) return;
+            const count = subquestions.length;
             const newPerSub = Math.round((newTotal / count) * 100) / 100; 
-            q.subquestions.forEach(sq => { sq.points = newPerSub; });
+            subquestions.forEach(sq => { 
+                if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
+                sq.grading.points = String(newPerSub); 
+            });
             renderSubQuestions(q);
             updateJsonView();
         }
 
         function recalculateTotalMarks() {
             const q = activeData[activeIndex];
-            if(!q.subquestions) return;
+            const subquestions = q.content?.subquestions;
+            if(!subquestions) return;
             let total = 0;
-            q.subquestions.forEach(sq => {
-                if(sq.points) total += parseFloat(sq.points);
+            subquestions.forEach(sq => {
+                if(sq.grading?.points) total += parseFloat(sq.grading.points);
             });
             total = Math.round(total * 100) / 100;
-            q.points = total;
+            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            q.grading.points = String(total);
             document.getElementById('meta-points').value = total;
             updateJsonView(); 
         }
         
         function setLayout(mode) {
-            activeData[activeIndex].layout = mode;
+            const q = activeData[activeIndex];
+            if (!q.content) q.content = {};
+            q.content.subquestions_layout = mode;
             updateLayoutButtons(mode);
-            renderSubQuestions(activeData[activeIndex]);
+            renderSubQuestions(q);
             updateJsonView(); 
         }
 
-        // Set layout for individual sections (prompt, stimulus, options)
+        // Set layout for individual sections - now only used for sub-questions
         function setSectionLayout(section, mode) {
-            const q = activeData[activeIndex];
-            
-            // Store layout preference in question data
-            if (!q.section_layouts) q.section_layouts = {};
-            q.section_layouts[section] = mode;
-            
-            // Update toggle button states
-            const toggleContainer = document.getElementById(`${section}-layout-toggle`);
-            if (toggleContainer) {
-                toggleContainer.querySelectorAll('.section-layout-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.layout === mode);
-                });
-            }
-            
-            // Update content container class
-            const contentContainer = document.getElementById(`${section}-content`);
-            if (contentContainer) {
-                contentContainer.className = mode === 'grid' ? 'section-content-grid' : 'section-content-stack';
-            }
-            
-            // For options, re-render to apply layout
-            if (section === 'options' && q.options) {
-                renderMainOptions(q.options);
-            }
-            
+            // Layout toggles have been removed from prompt, stimulus, options
+            // This function is kept for potential future use
             updateJsonView();
         }
 
         // Restore section layout states when loading a question
         function restoreSectionLayouts(q) {
-            const layouts = q.section_layouts || {};
-            
-            ['prompt', 'stimulus', 'options'].forEach(section => {
-                const mode = layouts[section] || 'stack';
-                
-                // Update toggle button states
-                const toggleContainer = document.getElementById(`${section}-layout-toggle`);
-                if (toggleContainer) {
-                    toggleContainer.querySelectorAll('.section-layout-btn').forEach(btn => {
-                        btn.classList.toggle('active', btn.dataset.layout === mode);
-                    });
-                }
-                
-                // Update content container class
-                const contentContainer = document.getElementById(`${section}-content`);
-                if (contentContainer) {
-                    contentContainer.className = mode === 'grid' ? 'section-content-grid' : 'section-content-stack';
-                }
-            });
+            // Layout toggles have been removed from prompt, stimulus, options
+            // Only sub-questions have layout controls now
         }
         
         function deleteQuestion() {
@@ -1756,16 +1755,41 @@
         function createNewQuestion() {
             const newQuestion = {
                 question_id: `q_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+                
+                // 1. Taxonomy
+                taxonomy: {
                 grade_id: 'grade_3',
                 subject_id: 'mathematics',
                 unit_id: 'ch1',
                 section_id: 'A',
-                pool: 'practice',
                 type: 'short_answer',
                 difficulty: 'medium',
-                points: 1,
+                    pool: 'practice',
+                    skill_tags: []
+                },
+                
+                // 2. Content
+                content: {
+                    prompt: { text: '', assets: [] }
+                },
+                
+                // 3. Grading
+                grading: {
+                    kind: 'text',
+                    values: [],
+                    points: '1'
+                },
+                
+                // 4. Metadata
+                metadata: {
+                    ui_hint: '',
+                    version: 1,
+                    source: 'AI_Generated'
+                },
+                
+                // UI state
                 layout: 'stack',
-                prompt: { text: '', media: [] }
+                section_layouts: {}
             };
             
             activeData.push(newQuestion);
@@ -1793,6 +1817,11 @@
             const q = activeData[activeIndex];
             if (q) {
                 document.getElementById('json-ro-textarea').value = JSON.stringify(q, null, 2);
+                // Also update layout JSON if that view is active
+                const layoutView = document.getElementById('sub-view-layout');
+                if (layoutView && layoutView.style.display !== 'none') {
+                    updateLayoutJsonView();
+                }
             }
         }
 
@@ -1811,24 +1840,26 @@
         
         function addStimulusSection() {
             const q = activeData[activeIndex];
-            if(!q.stimulus) {
-                q.stimulus = { text: '', media: [], word_bank: [] };
+            if (!q.content) q.content = {};
+            if(!q.content.stimulus) {
+                q.content.stimulus = { text: '', assets: [], word_bank: [] };
                 selectQuestion(activeIndex);
             }
         }
 
         function addOptionsSection() {
             const q = activeData[activeIndex];
-            const qType = q.type || 'short_answer';
+            const qType = q.taxonomy?.type || 'short_answer';
             // Only allow options for MCQ types
-            if(qType !== 'mcq_single' && qType !== 'mcq_multi') {
+            if(qType !== 'mcq_single' && qType !== 'mcq_multi' && qType !== 'mcq') {
                 alert('Options are only available for MCQ question types.');
                 return;
             }
-            if(!q.options || q.options.length === 0) {
-                q.options = [
-                    { id: 'opt_a', text: 'Option A', media: [] },
-                    { id: 'opt_b', text: 'Option B', media: [] }
+            if (!q.content) q.content = {};
+            if(!q.content.options || q.content.options.length === 0) {
+                q.content.options = [
+                    { id: 'opt_a', text: 'Option A', assets: [] },
+                    { id: 'opt_b', text: 'Option B', assets: [] }
                 ];
                 selectQuestion(activeIndex);
             }
@@ -1836,40 +1867,34 @@
 
         function addSubquestionsSection() {
             const q = activeData[activeIndex];
-            const qType = q.type || 'short_answer';
+            const qType = q.taxonomy?.type || 'short_answer';
             // Only allow sub-questions for composite type
             if(qType !== 'composite') {
                 alert('Sub-questions are only available for Composite question types.');
                 return;
             }
-            if(!q.subquestions || q.subquestions.length === 0) {
-                q.subquestions = [
-                    { sub_id: 'a', type: 'short_answer', points: 1, prompt: { text: '', media: [] } }
+            if (!q.content) q.content = {};
+            if(!q.content.subquestions || q.content.subquestions.length === 0) {
+                q.content.subquestions = [
+                    { sub_id: 'a', type: 'short_answer', prompt: { text: '', assets: [] }, grading: { kind: 'text', values: [], points: '1' } }
                 ];
                 selectQuestion(activeIndex);
             }
         }
 
-        function addAnswerSection() {
+        function addGradingSection() {
             const q = activeData[activeIndex];
-            const qType = q.type || 'short_answer';
-            // Answer at question level is not available for composite (uses sub-question answers)
+            const qType = q.taxonomy?.type || 'short_answer';
+            // Grading at question level is not available for composite (uses sub-question grading)
             if(qType === 'composite') {
-                alert('Composite questions use answers at the sub-question level, not at the main question level.');
+                alert('Composite questions use grading at the sub-question level, not at the main question level.');
                 return;
             }
-            if(!q.answer) {
-                q.answer = { kind: 'text', value: '' };
-                selectQuestion(activeIndex);
+            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            if (!q.grading.values || q.grading.values.length === 0) {
+                q.grading.values = [''];
             }
-        }
-
-        function addRubricSection() {
-            const q = activeData[activeIndex];
-            if(!q.rubric) {
-                q.rubric = { scoring: 'auto', checks: [], explanation: '' };
                 selectQuestion(activeIndex);
-            }
         }
 
         function addMetadataSection() {
@@ -1887,7 +1912,17 @@
         function removeSection(sectionName) {
             const q = activeData[activeIndex];
             if(confirm(`Are you sure you want to remove the ${sectionName} section?`)) {
+                // Handle nested content sections
+                if (['stimulus', 'options', 'subquestions'].includes(sectionName)) {
+                    if (q.content) {
+                        delete q.content[sectionName];
+                    }
+                } else if (sectionName === 'grading') {
+                    // Reset grading to empty state
+                    q.grading = { kind: 'text', values: [], points: '1' };
+                } else {
                 delete q[sectionName];
+                }
                 selectQuestion(activeIndex);
             }
         }
@@ -1900,18 +1935,14 @@
             const container = document.getElementById('options-list');
             container.innerHTML = '';
             
-            const q = activeData[activeIndex];
-            const isGridLayout = q.section_layouts?.options === 'grid';
-            
             options.forEach((opt, idx) => {
                 const optId = opt.id || `opt_${String.fromCharCode(97 + idx)}`;
                 const optText = getTextValue(opt);
-                const optMedia = (typeof opt === 'object' && opt.media) ? opt.media : [];
+                const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
                 const item = document.createElement('div');
                 item.className = 'option-item';
-                item.style.flexDirection = isGridLayout && optMedia.length > 0 ? 'row' : 'row';
-                item.style.flexWrap = isGridLayout ? 'nowrap' : 'wrap';
+                item.style.flexWrap = 'wrap';
                 item.style.alignItems = 'flex-start';
                 
                 // Create text/input section
@@ -1931,74 +1962,70 @@
                     </div>
                 `;
                 item.appendChild(textSection);
+                container.appendChild(item);
                 
-                // Create media section if grid layout and has media
-                if (optMedia.length > 0) {
-                    const mediaSection = document.createElement('div');
-                    mediaSection.className = 'asset-container';
+                // Create assets section below the option (stack layout only)
+                if (optAssets.length > 0) {
+                    const assetSection = document.createElement('div');
+                    assetSection.className = 'asset-container';
+                    assetSection.style.width = '100%';
+                    assetSection.style.marginLeft = '50px';
+                    assetSection.style.marginTop = '0.5rem';
+                    assetSection.style.marginBottom = '0.5rem';
                     
-                    if (isGridLayout) {
-                        mediaSection.style.width = '150px';
-                        mediaSection.style.flexShrink = '0';
-                        mediaSection.style.marginLeft = '0.5rem';
-                    } else {
-                        mediaSection.style.width = '100%';
-                        mediaSection.style.marginLeft = '50px';
-                        mediaSection.style.marginTop = '0.5rem';
-                    }
-                    
-                    renderAssetList(optMedia, mediaSection, (newMedia) => {
-                        activeData[activeIndex].options[idx].media = newMedia;
+                    renderAssetList(optAssets, assetSection, (newAssets) => {
+                        activeData[activeIndex].content.options[idx].assets = newAssets;
                         updateJsonView();
                     });
                     
-                    if (isGridLayout) {
-                        item.appendChild(mediaSection);
-                    } else {
-                        container.appendChild(item);
-                        container.appendChild(mediaSection);
-                        return; // Skip the default append below
-                    }
+                    container.appendChild(assetSection);
                 }
-                
-                container.appendChild(item);
             });
         }
 
         function addOption() {
             const q = activeData[activeIndex];
-            if(!q.options) q.options = [];
-            const newIdx = q.options.length;
+            if (!q.content) q.content = {};
+            if(!q.content.options) q.content.options = [];
+            const newIdx = q.content.options.length;
             const newId = `opt_${String.fromCharCode(97 + newIdx)}`;
-            q.options.push({ id: newId, text: '', media: [] });
-            renderMainOptions(q.options);
+            q.content.options.push({ id: newId, text: '', assets: [] });
+            renderMainOptions(q.content.options);
             updateJsonView();
         }
 
         function updateOption(idx, value) {
             const q = activeData[activeIndex];
-            if(typeof q.options[idx] === 'string') {
-                q.options[idx] = value;
+            const opt = q.content?.options?.[idx];
+            if (!opt) return;
+            if(typeof opt === 'string') {
+                q.content.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
             } else {
-                q.options[idx].text = value;
+                q.content.options[idx].text = value;
             }
             updateJsonView();
         }
 
         function deleteOption(idx) {
             const q = activeData[activeIndex];
-            q.options.splice(idx, 1);
-            renderMainOptions(q.options);
+            if (q.content?.options) {
+                q.content.options.splice(idx, 1);
+                renderMainOptions(q.content.options);
+            }
             updateJsonView();
         }
 
         function addOptionMedia(idx) {
             const q = activeData[activeIndex];
-            if(typeof q.options[idx] === 'string') {
-                q.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: q.options[idx], media: [] };
+            if (!q.content) q.content = {};
+            if (!q.content.options) q.content.options = [];
+            
+            const opt = q.content.options[idx];
+            if(typeof opt === 'string') {
+                q.content.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
             }
-            if(!q.options[idx].media) q.options[idx].media = [];
-            q.options[idx].media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
+            if(!q.content.options[idx].assets) q.content.options[idx].assets = [];
+            q.content.options[idx].assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
             selectQuestion(activeIndex);
         }
 
@@ -2008,13 +2035,14 @@
         
         function toggleWordBank() {
             const q = activeData[activeIndex];
-            if(!q.stimulus) return;
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
             
             const section = document.getElementById('word-bank-section');
             if(section.style.display === 'none') {
                 section.style.display = 'block';
-                if(!q.stimulus.word_bank) q.stimulus.word_bank = [];
-                if(q.stimulus.word_bank.length === 0) {
+                if(!stimulus.word_bank) stimulus.word_bank = [];
+                if(stimulus.word_bank.length === 0) {
                     addWordBankItem();
                 }
             } else {
@@ -2041,87 +2069,57 @@
 
         function addWordBankItem() {
             const q = activeData[activeIndex];
-            if(!q.stimulus) return;
-            if(!q.stimulus.word_bank) q.stimulus.word_bank = [];
-            const newIdx = q.stimulus.word_bank.length;
-            q.stimulus.word_bank.push({ id: `wb_${newIdx + 1}`, text: '', media: [] });
-            renderWordBank(q.stimulus.word_bank);
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
+            if(!stimulus.word_bank) stimulus.word_bank = [];
+            const newIdx = stimulus.word_bank.length;
+            stimulus.word_bank.push({ id: `wb_${newIdx + 1}`, text: '', assets: [] });
+            renderWordBank(stimulus.word_bank);
             document.getElementById('word-bank-section').style.display = 'block';
             updateJsonView();
         }
 
         function updateWordBankItem(idx, value) {
             const q = activeData[activeIndex];
-            q.stimulus.word_bank[idx].text = value;
+            const stimulus = q.content?.stimulus;
+            if (stimulus?.word_bank?.[idx]) {
+                stimulus.word_bank[idx].text = value;
+            }
             updateJsonView();
         }
 
         function deleteWordBankItem(idx) {
             const q = activeData[activeIndex];
-            q.stimulus.word_bank.splice(idx, 1);
-            renderWordBank(q.stimulus.word_bank);
+            const stimulus = q.content?.stimulus;
+            if (stimulus?.word_bank) {
+                stimulus.word_bank.splice(idx, 1);
+                renderWordBank(stimulus.word_bank);
+            }
             updateJsonView();
         }
 
         // =====================================================
-        // ANSWER MANAGEMENT
-        // =====================================================
-        
-        function updateAnswerKind(kind) {
-            const q = activeData[activeIndex];
-            if(!q.answer) q.answer = { kind: kind, value: '' };
-            else q.answer.kind = kind;
-            updateJsonView();
-        }
-
-        function updateAnswerValue(value) {
-            const q = activeData[activeIndex];
-            if(!q.answer) q.answer = { kind: 'text', value: '' };
-            q.answer.value = value;
-            updateJsonView();
-        }
-
-        // =====================================================
-        // RUBRIC MANAGEMENT
+        // GRADING MANAGEMENT
         // =====================================================
         
-        function updateRubric(field, value) {
+        function updateGrading(field, value) {
             const q = activeData[activeIndex];
-            if(!q.rubric) q.rubric = { scoring: 'auto', checks: [] };
-            q.rubric[field] = value;
+            if(!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            q.grading[field] = value;
+            
+            // Also update the points in the header if points field changed
+            if (field === 'points') {
+                document.getElementById('meta-points').value = value;
+            }
+            
             updateJsonView();
         }
 
-        function renderRubricChecks(checks) {
-            const container = document.getElementById('rubric-checks-list');
-            container.innerHTML = '';
-            
-            checks.forEach((check, idx) => {
-                const tag = document.createElement('span');
-                tag.className = 'check-tag';
-                tag.innerHTML = `${check}<button onclick="deleteRubricCheck(${idx})">✕</button>`;
-                container.appendChild(tag);
-            });
-        }
-
-        function addRubricCheck() {
+        function updateGradingValues(value) {
             const q = activeData[activeIndex];
-            const input = document.getElementById('new-check-input');
-            const value = input.value.trim();
-            if(!value) return;
-            
-            if(!q.rubric) q.rubric = { scoring: 'auto', checks: [] };
-            if(!q.rubric.checks) q.rubric.checks = [];
-            q.rubric.checks.push(value);
-            input.value = '';
-            renderRubricChecks(q.rubric.checks);
-            updateJsonView();
-        }
-
-        function deleteRubricCheck(idx) {
-            const q = activeData[activeIndex];
-            q.rubric.checks.splice(idx, 1);
-            renderRubricChecks(q.rubric.checks);
+            if(!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            // Parse comma-separated values for multi-value answers
+            q.grading.values = value.split(',').map(v => v.trim()).filter(v => v);
             updateJsonView();
         }
 
@@ -2131,62 +2129,27 @@
         
         function updateMetadata(field, value) {
             const q = activeData[activeIndex];
-            if(!q.metadata) q.metadata = {};
+            if(!q.metadata) q.metadata = { ui_hint: '', version: 1, source: 'AI_Generated' };
             q.metadata[field] = value;
             updateJsonView();
         }
 
-        // =====================================================
-        // SKILL TAGS MANAGEMENT
-        // =====================================================
-        
-        function renderSkillTags(tags) {
-            const container = document.getElementById('skill-tags-list');
-            container.innerHTML = '';
-            
-            tags.forEach((tag, idx) => {
-                const el = document.createElement('span');
-                el.className = 'skill-tag';
-                el.innerHTML = `${tag}<button onclick="deleteSkillTag(${idx})">✕</button>`;
-                container.appendChild(el);
-            });
-        }
-
-        function addSkillTag() {
-            const q = activeData[activeIndex];
-            const input = document.getElementById('new-skill-tag-input');
-            const value = input.value.trim();
-            if(!value) return;
-            
-            if(!q.skill_tags) q.skill_tags = [];
-            q.skill_tags.push(value);
-            input.value = '';
-            renderSkillTags(q.skill_tags);
-            updateJsonView();
-        }
-
-        function deleteSkillTag(idx) {
-            const q = activeData[activeIndex];
-            q.skill_tags.splice(idx, 1);
-            renderSkillTags(q.skill_tags);
-            updateJsonView();
-        }
 
         // =====================================================
-        // SUB-QUESTION MANAGEMENT (Enhanced)
+        // SUB-QUESTION MANAGEMENT (Enhanced for new schema)
         // =====================================================
         
         function addSubQuestion() {
             const q = activeData[activeIndex];
-            if(!q.subquestions) q.subquestions = [];
-            const newIdx = q.subquestions.length;
+            if (!q.content) q.content = {};
+            if(!q.content.subquestions) q.content.subquestions = [];
+            const newIdx = q.content.subquestions.length;
             const newSubId = String.fromCharCode(97 + newIdx); // a, b, c, ...
-            q.subquestions.push({
+            q.content.subquestions.push({
                 sub_id: newSubId,
                 type: 'short_answer',
-                points: 1,
-                prompt: { text: '', media: [] }
-                // Note: answer and rubric are NOT added by default - use "Add" buttons
+                prompt: { text: '', assets: [] },
+                grading: { kind: 'text', values: [], points: '1' }
             });
             renderSubQuestions(q);
             updateJsonView();
@@ -2194,9 +2157,10 @@
 
         function deleteSubQuestion(idx) {
             const q = activeData[activeIndex];
-            q.subquestions.splice(idx, 1);
+            if (!q.content?.subquestions) return;
+            q.content.subquestions.splice(idx, 1);
             // Re-index sub_ids
-            q.subquestions.forEach((sq, i) => {
+            q.content.subquestions.forEach((sq, i) => {
                 sq.sub_id = String.fromCharCode(97 + i);
             });
             renderSubQuestions(q);
@@ -2206,13 +2170,14 @@
 
         function updateSubQuestionType(idx, type) {
             const q = activeData[activeIndex];
-            q.subquestions[idx].type = type;
+            if (!q.content?.subquestions?.[idx]) return;
+            q.content.subquestions[idx].type = type;
             // Add/remove options based on type
-            if(type === 'mcq_single' || type === 'mcq_multi') {
-                if(!q.subquestions[idx].options) {
-                    q.subquestions[idx].options = [
-                        { id: 'sq_opt1', text: 'Option 1', media: [] },
-                        { id: 'sq_opt2', text: 'Option 2', media: [] }
+            if(type === 'mcq') {
+                if(!q.content.subquestions[idx].options) {
+                    q.content.subquestions[idx].options = [
+                        { id: 'sq_opt1', text: 'Option 1', assets: [] },
+                        { id: 'sq_opt2', text: 'Option 2', assets: [] }
                     ];
                 }
             }
@@ -2222,17 +2187,20 @@
 
         function addSubQuestionOption(sqIdx) {
             const q = activeData[activeIndex];
-            const sq = q.subquestions[sqIdx];
+            const sq = q.content?.subquestions?.[sqIdx];
+            if(!sq) return;
             if(!sq.options) sq.options = [];
             const newIdx = sq.options.length;
-            sq.options.push({ id: `sq_opt${newIdx + 1}`, text: '', media: [] });
+            sq.options.push({ id: `sq_opt${newIdx + 1}`, text: '', assets: [] });
             renderSubQuestions(q);
             updateJsonView();
         }
 
         function deleteSubQuestionOption(sqIdx, optIdx) {
             const q = activeData[activeIndex];
-            q.subquestions[sqIdx].options.splice(optIdx, 1);
+            if (q.content?.subquestions?.[sqIdx]?.options) {
+                q.content.subquestions[sqIdx].options.splice(optIdx, 1);
+            }
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -2261,12 +2229,13 @@
                         if (braceCount === 0) {
                             try {
                                 const obj = JSON.parse(buffer);
-                                if(!obj.pool) obj.pool = 'practice';
-                                if(!obj.layout) obj.layout = 'stack';
-                                if(!obj.question_id) obj.question_id = `q_${Date.now()}_${Math.floor(Math.random()*1000)}`;
-                                results.push(obj);
+                                // Normalize to new schema format
+                                const normalized = normalizeToNewSchema(obj);
+                                results.push(normalized);
                                 buffer = ""; 
-                            } catch (e) {}
+                            } catch (e) {
+                                console.error('Parse error:', e);
+                            }
                         }
                     }
                 }
@@ -2274,15 +2243,192 @@
             return results;
         }
 
+        // Normalize incoming data to new schema structure
+        function normalizeToNewSchema(obj) {
+            // If already in new schema format (has taxonomy object), just ensure defaults
+            if (obj.taxonomy) {
+                return ensureSchemaDefaults(obj);
+            }
+            
+            // Convert from old flat schema to new nested schema
+            const normalized = {
+                question_id: obj.question_id || `q_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+                
+                // 1. Taxonomy
+                taxonomy: {
+                    grade_id: obj.grade_id || 'grade_3',
+                    subject_id: obj.subject_id || 'mathematics',
+                    unit_id: obj.unit_id || obj.chapter_id || 'ch1',
+                    section_id: obj.section_id || 'A',
+                    type: obj.type || 'short_answer',
+                    difficulty: obj.difficulty || 'medium',
+                    pool: obj.pool || obj.pool_type || 'practice',
+                    skill_tags: obj.skill_tags || []
+                },
+                
+                // 2. Content
+                content: {
+                    prompt: convertToNewPromptFormat(obj.prompt),
+                    stimulus: obj.stimulus ? convertToNewStimulusFormat(obj.stimulus) : null,
+                    options: obj.options ? obj.options.map(convertToNewOptionFormat) : null,
+                    subquestions: obj.subquestions ? obj.subquestions.map(convertSubquestionToNewFormat) : null
+                },
+                
+                // 3. Grading
+                grading: convertToNewGradingFormat(obj.answer, obj.rubric, obj.points),
+                
+                // 4. Metadata
+                metadata: {
+                    ui_hint: obj.metadata?.ui_hint || '',
+                    version: obj.metadata?.version || 1,
+                    source: obj.metadata?.source || 'AI_Generated'
+                },
+                
+                // Preserve layout info for UI
+                layout: obj.layout || 'stack',
+                section_layouts: obj.section_layouts || {}
+            };
+            
+            // Clean up null content fields
+            if (!normalized.content.stimulus) delete normalized.content.stimulus;
+            if (!normalized.content.options) delete normalized.content.options;
+            if (!normalized.content.subquestions) delete normalized.content.subquestions;
+            
+            return normalized;
+        }
+
+        function ensureSchemaDefaults(obj) {
+            // Ensure all required fields have defaults
+            if (!obj.question_id) obj.question_id = `q_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+            
+            if (!obj.taxonomy) obj.taxonomy = {};
+            obj.taxonomy.grade_id = obj.taxonomy.grade_id || 'grade_3';
+            obj.taxonomy.subject_id = obj.taxonomy.subject_id || 'mathematics';
+            obj.taxonomy.unit_id = obj.taxonomy.unit_id || 'ch1';
+            obj.taxonomy.section_id = obj.taxonomy.section_id || 'A';
+            obj.taxonomy.type = obj.taxonomy.type || 'short_answer';
+            obj.taxonomy.difficulty = obj.taxonomy.difficulty || 'medium';
+            obj.taxonomy.pool = obj.taxonomy.pool || 'practice';
+            obj.taxonomy.skill_tags = obj.taxonomy.skill_tags || [];
+            
+            if (!obj.content) obj.content = {};
+            if (!obj.content.prompt) obj.content.prompt = { text: '', assets: [] };
+            
+            if (!obj.grading) obj.grading = { kind: 'text', values: [], points: '1' };
+            
+            if (!obj.metadata) obj.metadata = {};
+            obj.metadata.ui_hint = obj.metadata.ui_hint || '';
+            obj.metadata.version = obj.metadata.version || 1;
+            obj.metadata.source = obj.metadata.source || 'AI_Generated';
+            
+            obj.layout = obj.layout || 'stack';
+            obj.section_layouts = obj.section_layouts || {};
+            
+            return obj;
+        }
+
+        function convertToNewPromptFormat(prompt) {
+            if (!prompt) return { text: '', assets: [] };
+            if (typeof prompt === 'string') {
+                return { text: prompt, assets: [] };
+            }
+            return {
+                text: prompt.text || '',
+                assets: (prompt.media || prompt.assets || []).map(convertToNewAssetFormat)
+            };
+        }
+
+        function convertToNewStimulusFormat(stimulus) {
+            if (!stimulus) return null;
+            return {
+                text: stimulus.text || '',
+                assets: (stimulus.media || stimulus.assets || []).map(convertToNewAssetFormat),
+                word_bank: stimulus.word_bank || []
+            };
+        }
+
+        function convertToNewOptionFormat(opt) {
+            if (typeof opt === 'string') {
+                return { id: '', text: opt, assets: [] };
+            }
+            return {
+                id: opt.id || '',
+                text: opt.text || '',
+                assets: (opt.media || opt.assets || []).map(convertToNewAssetFormat)
+            };
+        }
+
+        function convertToNewAssetFormat(asset) {
+            return {
+                asset_id: asset.asset_id || '#',
+                uri: asset.uri || '',
+                ai_generation_prompt: asset.ai_generation_prompt || '',
+                alt: asset.alt || '',
+                // Preserve dimensions for UI
+                width: asset.width,
+                height: asset.height
+            };
+        }
+
+        function convertSubquestionToNewFormat(sq) {
+            const converted = {
+                sub_id: sq.sub_id || 'a',
+                type: sq.type || 'short_answer',
+                prompt: convertToNewPromptFormat(sq.prompt),
+                grading: convertToNewGradingFormat(sq.answer, sq.rubric, sq.points)
+            };
+            
+            if (sq.stimulus) {
+                converted.stimulus = convertToNewStimulusFormat(sq.stimulus);
+            }
+            if (sq.options) {
+                converted.options = sq.options.map(convertToNewOptionFormat);
+            }
+            
+            // Preserve layout for UI
+            converted.layout = sq.layout || 'stack';
+            
+            return converted;
+        }
+
+        function convertToNewGradingFormat(answer, rubric, points) {
+            let kind = 'text';
+            let values = [];
+            let explanation = '';
+            
+            if (answer) {
+                if (typeof answer === 'string') {
+                    values = [answer];
+                } else {
+                    kind = answer.kind || 'text';
+                    values = answer.value ? [answer.value] : (answer.values || []);
+                }
+            }
+            
+            if (rubric) {
+                explanation = rubric.explanation || '';
+            }
+            
+            return {
+                kind: kind,
+                values: values,
+                points: String(points || 1),
+                explanation: explanation
+            };
+        }
+
         function hasMedia(q) {
-            if(q.prompt?.media?.length) return true;
-            if(q.stimulus?.media?.length) return true; 
-            if(q.subquestions) { return q.subquestions.some(sq => sq.prompt?.media?.length); }
+            const content = q.content || {};
+            if(content.prompt?.assets?.length) return true;
+            if(content.stimulus?.assets?.length) return true; 
+            if(content.subquestions) { 
+                return content.subquestions.some(sq => sq.prompt?.assets?.length); 
+            }
             return false;
         }
 
         function updateLayoutButtons(mode) {
-            const currentMode = mode || 'stack';
+            const currentMode = mode || 'grid';  // Default to grid for subquestions
             
             // Update toolbar buttons (legacy)
             const btnStack = document.getElementById('btn-layout-stack');
@@ -2309,11 +2455,13 @@
         function renderSubQuestions(q) {
             const container = document.getElementById('sub-questions-list');
             container.innerHTML = '';
-            const mode = q.layout || 'stack';
+            // Use content.subquestions_layout, default to grid
+            const mode = q.content?.subquestions_layout || 'grid';
             container.className = `sub-questions-wrapper ${mode === 'grid' ? 'layout-grid' : ''}`;
             
-            if(q.subquestions && q.subquestions.length > 0) {
-                q.subquestions.forEach((sq, sqIdx) => {
+            const subquestions = q.content?.subquestions;
+            if(subquestions && subquestions.length > 0) {
+                subquestions.forEach((sq, sqIdx) => {
                     const card = document.createElement('div');
                     card.className = 'sub-question-card';
                     
@@ -2334,55 +2482,47 @@
                     const typeSelect = document.createElement('select');
                     typeSelect.className = 'sub-question-type-select';
                     typeSelect.innerHTML = `
+                        <option value="mcq" ${sq.type === 'mcq' ? 'selected' : ''}>MCQ</option>
                         <option value="short_answer" ${sq.type === 'short_answer' ? 'selected' : ''}>Short Answer</option>
                         <option value="long_answer" ${sq.type === 'long_answer' ? 'selected' : ''}>Long Answer</option>
-                        <option value="mcq_single" ${sq.type === 'mcq_single' ? 'selected' : ''}>MCQ Single</option>
-                        <option value="mcq_multi" ${sq.type === 'mcq_multi' ? 'selected' : ''}>MCQ Multi</option>
                         <option value="fill_blank" ${sq.type === 'fill_blank' ? 'selected' : ''}>Fill Blank</option>
                     `;
                     typeSelect.onchange = (e) => updateSubQuestionType(sqIdx, e.target.value);
                     
-                    // Layout toggle for sub-question
-                    const sqLayout = sq.layout || 'stack';
-                    const layoutToggle = document.createElement('div');
-                    layoutToggle.className = 'layout-toggle-group';
-                    layoutToggle.style.marginLeft = '4px';
-                    layoutToggle.innerHTML = `
-                        <button class="layout-toggle-btn ${sqLayout === 'stack' ? 'active' : ''}" data-layout="stack" title="Stack layout">☰</button>
-                        <button class="layout-toggle-btn ${sqLayout === 'grid' ? 'active' : ''}" data-layout="grid" title="Grid layout">⊞</button>
-                    `;
-                    layoutToggle.querySelectorAll('.layout-toggle-btn').forEach(btn => {
-                        btn.onclick = () => {
-                            sq.layout = btn.dataset.layout;
-                            renderSubQuestions(q);
-                            updateJsonView();
-                        };
-                    });
-                    
                     leftControls.appendChild(badge);
                     leftControls.appendChild(typeSelect);
-                    leftControls.appendChild(layoutToggle);
                     
                     const rightControls = document.createElement('div');
                     rightControls.style.display = 'flex';
                     rightControls.style.alignItems = 'center';
                     rightControls.style.gap = '8px';
                     
-                    // Marks toggle and input
+                    // Marks toggle and input (now from grading.points)
+                    const hasPoints = sq.grading?.points;
                     const label = document.createElement('label');
                     label.className = 'toggle-wrapper';
-                    label.innerHTML = `<span>Marks</span><input type="checkbox" class="toggle-input" ${sq.points ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
+                    label.innerHTML = `<span>Marks</span><input type="checkbox" class="toggle-input" ${hasPoints ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
                     
                     const marksInput = document.createElement('input');
                     marksInput.type = 'number';
                     marksInput.className = 'sub-marks-input';
                     marksInput.step = '0.5';
-                    if(sq.points) { marksInput.value = sq.points; marksInput.classList.add('visible'); }
+                    if(hasPoints) { marksInput.value = sq.grading.points; marksInput.classList.add('visible'); }
                     marksInput.placeholder = '0.5';
-                    marksInput.oninput = (e) => { sq.points = parseFloat(e.target.value) || 0; recalculateTotalMarks(); };
+                    marksInput.oninput = (e) => { 
+                        if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
+                        sq.grading.points = e.target.value; 
+                        recalculateTotalMarks(); 
+                    };
                     label.querySelector('input').onchange = (e) => {
-                        if(e.target.checked) { marksInput.classList.add('visible'); sq.points = parseFloat(marksInput.value) || 0.5; marksInput.value = sq.points; } 
-                        else { marksInput.classList.remove('visible'); delete sq.points; }
+                        if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
+                        if(e.target.checked) { 
+                            marksInput.classList.add('visible'); 
+                            sq.grading.points = marksInput.value || '1'; 
+                        } else { 
+                            marksInput.classList.remove('visible'); 
+                            sq.grading.points = '0'; 
+                        }
                         recalculateTotalMarks();
                     };
                     
@@ -2400,10 +2540,9 @@
                     headerRow.appendChild(rightControls);
                     card.appendChild(headerRow);
                     
-                    // Content wrapper with layout support
+                    // Content wrapper (stack layout only - layout control removed from individual sub-questions)
                     const contentWrapper = document.createElement('div');
-                    const sqLayoutMode = sq.layout || 'stack';
-                    contentWrapper.className = sqLayoutMode === 'grid' ? 'sq-content-grid' : 'sq-content-stack';
+                    contentWrapper.className = 'sq-content-stack';
                     
                     // Text area container
                     const textArea = document.createElement('div');
@@ -2416,20 +2555,20 @@
                     input.value = sqText;
                     input.placeholder = 'Enter text...';
                     input.oninput = (e) => { 
-                        if(typeof sq.prompt === 'string') sq.prompt = { text: e.target.value, media: [] };
+                        if(typeof sq.prompt === 'string') sq.prompt = { text: e.target.value, assets: [] };
                         else sq.prompt.text = e.target.value;
                         updateJsonView(); 
                     };
                     textArea.appendChild(input);
                     contentWrapper.appendChild(textArea);
                     
-                    // Asset container for prompt (media area)
+                    // Asset container for prompt
                     const assetCont = document.createElement('div');
-                    assetCont.className = sqLayoutMode === 'grid' ? 'sq-media-area' : 'asset-container';
-                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
-                    renderAssetList(sqMedia, assetCont, (newMedia) => {
-                        if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
-                        sq.prompt.media = newMedia;
+                    assetCont.className = 'asset-container';
+                    const sqAssets = (sq.prompt && sq.prompt.assets) ? sq.prompt.assets : [];
+                    renderAssetList(sqAssets, assetCont, (newAssets) => {
+                        if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, assets: [] };
+                        sq.prompt.assets = newAssets;
                         updateJsonView(); 
                     });
                     contentWrapper.appendChild(assetCont);
@@ -2437,7 +2576,7 @@
                     card.appendChild(contentWrapper);
                     
                     // Options for MCQ types
-                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi') && sq.options && sq.options.length > 0) {
+                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi' || sq.type === 'mcq') && sq.options && sq.options.length > 0) {
                         const optDiv = document.createElement('div');
                         optDiv.className = 'options-editor';
                         optDiv.innerHTML = `
@@ -2458,7 +2597,7 @@
                             optInput.value = optVal;
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
-                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = e.target.value;
+                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { id: `sq_opt${oIdx+1}`, text: e.target.value, assets: [] };
                                 else sq.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
@@ -2488,22 +2627,22 @@
                     addImgBtn.className = 'btn btn-sm';
                     addImgBtn.innerText = '+ Image';
                     addImgBtn.onclick = () => {
-                         if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, media: [] };
-                         if(!sq.prompt.media) sq.prompt.media = [];
-                         sq.prompt.media.push({ asset_id: null, ai_generation_prompt: "Describe...", uri: null });
+                         if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, assets: [] };
+                         if(!sq.prompt.assets) sq.prompt.assets = [];
+                         sq.prompt.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
                          selectQuestion(activeIndex);
                     };
                     actionsRow.appendChild(addImgBtn);
                     
                     // Add options button for MCQ types without options yet
-                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi') && (!sq.options || sq.options.length === 0)) {
+                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi' || sq.type === 'mcq') && (!sq.options || sq.options.length === 0)) {
                         const addOptBtn = document.createElement('button');
                         addOptBtn.className = 'btn btn-sm';
                         addOptBtn.innerText = '+ Options';
                         addOptBtn.onclick = () => {
                             sq.options = [
-                                { id: 'sq_opt1', text: '', media: [] },
-                                { id: 'sq_opt2', text: '', media: [] }
+                                { id: 'sq_opt1', text: '', assets: [] },
+                                { id: 'sq_opt2', text: '', assets: [] }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();
@@ -2513,129 +2652,95 @@
                     
                     card.appendChild(actionsRow);
                     
-                    // Add Answer/Rubric buttons section (only show buttons for sections not present)
+                    // Grading section (replaces Answer/Rubric)
+                    const grading = sq.grading || { kind: 'text', values: [], points: '1' };
+                    const hasGradingValues = grading.values && grading.values.length > 0;
+                    
+                    // Add Grading button if no values yet
                     const addSectionsDiv = document.createElement('div');
                     addSectionsDiv.style.marginTop = '0.5rem';
                     addSectionsDiv.style.display = 'flex';
                     addSectionsDiv.style.gap = '0.5rem';
                     
-                    if (!sq.answer) {
-                        const addAnsBtn = document.createElement('button');
-                        addAnsBtn.className = 'btn btn-sm';
-                        addAnsBtn.style.fontSize = '0.65rem';
-                        addAnsBtn.style.color = '#047857';
-                        addAnsBtn.innerText = '+ Answer';
-                        addAnsBtn.onclick = () => {
-                            sq.answer = { kind: 'text', value: '' };
+                    if (!hasGradingValues) {
+                        const addGradingBtn = document.createElement('button');
+                        addGradingBtn.className = 'btn btn-sm';
+                        addGradingBtn.style.fontSize = '0.65rem';
+                        addGradingBtn.style.color = '#047857';
+                        addGradingBtn.innerText = '+ Grading';
+                        addGradingBtn.onclick = () => {
+                            if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
+                            sq.grading.values = [''];
                             renderSubQuestions(q);
                             updateJsonView();
                         };
-                        addSectionsDiv.appendChild(addAnsBtn);
-                    }
-                    
-                    if (!sq.rubric) {
-                        const addRubBtn = document.createElement('button');
-                        addRubBtn.className = 'btn btn-sm';
-                        addRubBtn.style.fontSize = '0.65rem';
-                        addRubBtn.style.color = '#92400e';
-                        addRubBtn.innerText = '+ Rubric';
-                        addRubBtn.onclick = () => {
-                            sq.rubric = { scoring: 'auto' };
-                            renderSubQuestions(q);
-                            updateJsonView();
-                        };
-                        addSectionsDiv.appendChild(addRubBtn);
+                        addSectionsDiv.appendChild(addGradingBtn);
                     }
                     
                     if (addSectionsDiv.children.length > 0) {
                         card.appendChild(addSectionsDiv);
                     }
                     
-                    // Answer section (only if answer exists)
-                    if (sq.answer) {
-                    const ansDiv = document.createElement('div');
-                        ansDiv.style.marginTop = '0.75rem';
-                        ansDiv.style.borderTop = '1px solid #e5e7eb';
-                    ansDiv.style.paddingTop = '0.5rem';
+                    // Grading section (only if has values)
+                    if (hasGradingValues) {
+                        const gradingDiv = document.createElement('div');
+                        gradingDiv.style.marginTop = '0.75rem';
+                        gradingDiv.style.borderTop = '1px solid #e5e7eb';
+                        gradingDiv.style.paddingTop = '0.5rem';
                         
-                        const ansHeader = document.createElement('div');
-                        ansHeader.style.display = 'flex';
-                        ansHeader.style.alignItems = 'center';
-                        ansHeader.style.gap = '0.5rem';
-                        ansHeader.style.marginBottom = '0.25rem';
-                        ansHeader.innerHTML = `<span style="font-size:0.7rem; color:#047857; font-weight:700;">ANSWER</span>`;
+                        const gradingHeader = document.createElement('div');
+                        gradingHeader.style.display = 'flex';
+                        gradingHeader.style.alignItems = 'center';
+                        gradingHeader.style.gap = '0.5rem';
+                        gradingHeader.style.marginBottom = '0.25rem';
+                        gradingHeader.innerHTML = `<span style="font-size:0.7rem; color:#047857; font-weight:700;">GRADING</span>`;
                         
-                        const ansKindSelect = document.createElement('select');
-                        ansKindSelect.style.fontSize = '0.7rem';
-                        ansKindSelect.style.padding = '2px 4px';
-                        ansKindSelect.style.border = '1px solid #6ee7b7';
-                        ansKindSelect.style.borderRadius = '4px';
-                        const ansKind = sq.answer?.kind || 'text';
-                        ansKindSelect.innerHTML = `
-                            <option value="text" ${ansKind === 'text' ? 'selected' : ''}>Text</option>
-                            <option value="single_selection" ${ansKind === 'single_selection' ? 'selected' : ''}>Single Selection</option>
-                            <option value="multi_selection" ${ansKind === 'multi_selection' ? 'selected' : ''}>Multi Selection</option>
+                        const kindSelect = document.createElement('select');
+                        kindSelect.style.fontSize = '0.7rem';
+                        kindSelect.style.padding = '2px 4px';
+                        kindSelect.style.border = '1px solid #6ee7b7';
+                        kindSelect.style.borderRadius = '4px';
+                        kindSelect.innerHTML = `
+                            <option value="text" ${grading.kind === 'text' ? 'selected' : ''}>Text</option>
+                            <option value="single_selection" ${grading.kind === 'single_selection' ? 'selected' : ''}>Single Selection</option>
+                            <option value="multiple_selection" ${grading.kind === 'multiple_selection' ? 'selected' : ''}>Multiple Selection</option>
+                            <option value="sample_text" ${grading.kind === 'sample_text' ? 'selected' : ''}>Sample Text</option>
                         `;
-                        ansKindSelect.onchange = (e) => {
-                            sq.answer.kind = e.target.value;
+                        kindSelect.onchange = (e) => {
+                            sq.grading.kind = e.target.value;
                             updateJsonView();
                         };
                         
-                        // Remove answer button
-                        const removeAnsBtn = document.createElement('button');
-                        removeAnsBtn.className = 'btn btn-sm';
-                        removeAnsBtn.style.fontSize = '0.6rem';
-                        removeAnsBtn.style.padding = '2px 6px';
-                        removeAnsBtn.style.color = '#991b1b';
-                        removeAnsBtn.innerText = '✕';
-                        removeAnsBtn.onclick = () => {
-                            delete sq.answer;
+                        // Remove grading button
+                        const removeGradingBtn = document.createElement('button');
+                        removeGradingBtn.className = 'btn btn-sm';
+                        removeGradingBtn.style.fontSize = '0.6rem';
+                        removeGradingBtn.style.padding = '2px 6px';
+                        removeGradingBtn.style.color = '#991b1b';
+                        removeGradingBtn.innerText = '✕';
+                        removeGradingBtn.onclick = () => {
+                            sq.grading.values = [];
                             renderSubQuestions(q);
                             updateJsonView();
                         };
                         
-                        ansHeader.appendChild(ansKindSelect);
-                        ansHeader.appendChild(removeAnsBtn);
-                        ansDiv.appendChild(ansHeader);
+                        gradingHeader.appendChild(kindSelect);
+                        gradingHeader.appendChild(removeGradingBtn);
+                        gradingDiv.appendChild(gradingHeader);
                         
-                    const ansInput = document.createElement('input');
-                    ansInput.className = 'input-bare';
-                        ansInput.style.color = '#047857';
-                        ansInput.style.fontSize = '0.9rem';
-                        const ansVal = getTextValue(sq.answer);
-                    ansInput.value = ansVal;
-                        ansInput.placeholder = ansKind === 'single_selection' ? 'Enter option ID (e.g., sq_opt1)' : 'Enter text...';
-                    ansInput.oninput = (e) => { 
-                        if(typeof sq.answer === 'string') sq.answer = e.target.value;
-                        else sq.answer.value = e.target.value;
+                        const valuesInput = document.createElement('input');
+                        valuesInput.className = 'input-bare';
+                        valuesInput.style.color = '#047857';
+                        valuesInput.style.fontSize = '0.9rem';
+                        valuesInput.value = grading.values.join(', ');
+                        valuesInput.placeholder = grading.kind === 'single_selection' ? 'Enter option ID' : 'Enter values (comma-separated)';
+                        valuesInput.oninput = (e) => { 
+                            sq.grading.values = e.target.value.split(',').map(v => v.trim()).filter(v => v);
                         updateJsonView(); 
                     };
-                    ansDiv.appendChild(ansInput);
+                        gradingDiv.appendChild(valuesInput);
                         
-                    card.appendChild(ansDiv);
-                    }
-                    
-                    // Sub-question rubric (only if rubric exists)
-                    if (sq.rubric) {
-                        const rubricDiv = document.createElement('div');
-                        rubricDiv.style.marginTop = '0.5rem';
-                        rubricDiv.style.padding = '0.5rem';
-                        rubricDiv.style.background = '#fef3c7';
-                        rubricDiv.style.borderRadius = '4px';
-                        rubricDiv.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                                <span style="font-size:0.65rem; font-weight:700; color:#92400e;">RUBRIC</span>
-                                <button class="btn btn-sm" style="font-size:0.6rem; padding:2px 6px; color:#991b1b;" onclick="delete activeData[${activeIndex}].subquestions[${sqIdx}].rubric; renderSubQuestions(activeData[${activeIndex}]); updateJsonView();">✕</button>
-                            </div>
-                            <div style="display:flex; gap:0.5rem; align-items:center;">
-                                <label style="font-size:0.65rem; color:#92400e;">Scoring:</label>
-                                <select style="font-size:0.7rem; padding:2px;" onchange="activeData[${activeIndex}].subquestions[${sqIdx}].rubric.scoring = this.value; updateJsonView();">
-                                    <option value="auto" ${sq.rubric?.scoring === 'auto' ? 'selected' : ''}>Auto</option>
-                                    <option value="manual" ${sq.rubric?.scoring === 'manual' ? 'selected' : ''}>Manual</option>
-                                </select>
-                            </div>
-                        `;
-                        card.appendChild(rubricDiv);
+                        card.appendChild(gradingDiv);
                     }
                     
                     container.appendChild(card);
@@ -2643,26 +2748,27 @@
             }
         }
 
-        function renderAssetList(mediaArray, containerOrId, updateCallback) {
+        function renderAssetList(assetsArray, containerOrId, updateCallback) {
             const container = typeof containerOrId === 'string' ? document.getElementById(containerOrId) : containerOrId;
             container.innerHTML = '';
-            if(!mediaArray) return;
-            mediaArray.forEach((m, idx) => {
+            if(!assetsArray) return;
+            assetsArray.forEach((asset, idx) => {
                 const el = document.createElement('div');
                 // Check for truthy uri value (not null, undefined, or empty string)
-                const hasImage = m.uri && m.uri.length > 0;
+                const hasImage = asset.uri && asset.uri.length > 0;
                 
                 if (hasImage) {
                     // Compact view: just the image with hover controls
                     el.className = 'asset-item-compact';
                     
                     // Get stored dimensions or use defaults
-                    const width = m.width || 150;
-                    const height = m.height || 120;
+                    const width = asset.width || 150;
+                    const height = asset.height || 120;
+                    const altText = asset.alt || 'Image';
                     
                     el.innerHTML = `
                         <div class="asset-image-container" style="width:${width}px; height:${height}px;">
-                            <img src="${m.uri}" alt="Image">
+                            <img src="${asset.uri}" alt="${altText}">
                             <div class="asset-hover-controls">
                                 <button class="asset-hover-btn replace-btn" title="Replace Image">🔄</button>
                                 <button class="asset-hover-btn delete-btn" title="Delete">✕</button>
@@ -2677,8 +2783,8 @@
                             const newWidth = Math.round(entry.contentRect.width);
                             const newHeight = Math.round(entry.contentRect.height);
                             if (newWidth > 0 && newHeight > 0) {
-                                m.width = newWidth;
-                                m.height = newHeight;
+                                asset.width = newWidth;
+                                asset.height = newHeight;
                                 updateJsonView();
                             }
                         }
@@ -2687,17 +2793,17 @@
                     
                     el.querySelector('.delete-btn').onclick = () => { 
                         resizeObserver.disconnect();
-                        mediaArray.splice(idx, 1); 
-                        updateCallback(mediaArray); 
-                        renderAssetList(mediaArray, container, updateCallback); 
+                        assetsArray.splice(idx, 1); 
+                        updateCallback(assetsArray); 
+                        renderAssetList(assetsArray, container, updateCallback); 
                         updateJsonView(); 
                     };
                     el.querySelector('.replace-btn').onclick = () => {
                         triggerImageUpload((dataUrl) => { 
-                            m.uri = dataUrl;
+                            asset.uri = dataUrl;
                             // Keep existing dimensions when replacing
-                            updateCallback(mediaArray); 
-                            renderAssetList(mediaArray, container, updateCallback); 
+                            updateCallback(assetsArray); 
+                            renderAssetList(assetsArray, container, updateCallback); 
                             updateJsonView(); 
                         });
                     };
@@ -2713,7 +2819,8 @@
                                 <span style="font-size:0.7rem; font-weight:700; color:var(--warning);">PENDING</span>
                             <button class="btn btn-sm btn-danger" style="padding:2px 6px; font-size:0.7rem;">×</button>
                         </div>
-                        <input class="asset-prompt-input" value="${m.ai_generation_prompt || ''}" placeholder="AI Prompt description...">
+                            <input class="asset-prompt-input" value="${asset.ai_generation_prompt || ''}" placeholder="AI Prompt description...">
+                            <input class="asset-alt-input" value="${asset.alt || ''}" placeholder="Alt text (accessibility)..." style="margin-top:4px; width:100%; font-size:0.8rem; color:#4b5563; font-family:monospace; border:1px solid #e5e7eb; padding:4px; border-radius:4px;">
                         <div style="margin-top:4px; display:flex; gap:0.5rem;">
                                 <button class="btn btn-sm gen-btn" style="background:var(--warning); color:white; border:none;">Generate</button>
                                 <button class="btn btn-sm upload-btn" style="background:var(--primary); color:white; border:none;">Insert Image</button>
@@ -2721,27 +2828,30 @@
                     </div>
                 `;
                     el.querySelector('.btn-danger').onclick = () => { 
-                        mediaArray.splice(idx, 1); 
-                        updateCallback(mediaArray); 
-                        renderAssetList(mediaArray, container, updateCallback); 
+                        assetsArray.splice(idx, 1); 
+                        updateCallback(assetsArray); 
+                        renderAssetList(assetsArray, container, updateCallback); 
                         updateJsonView(); 
                     };
-                el.querySelector('.asset-prompt-input').oninput = (e) => { m.ai_generation_prompt = e.target.value; updateJsonView(); };
+                    el.querySelector('.asset-prompt-input').oninput = (e) => { asset.ai_generation_prompt = e.target.value; updateJsonView(); };
+                    el.querySelector('.asset-alt-input').oninput = (e) => { asset.alt = e.target.value; updateJsonView(); };
                 el.querySelector('.gen-btn').onclick = (e) => {
                     e.target.innerText = 'Generating...';
                     setTimeout(() => {
-                        const safeText = encodeURIComponent((m.ai_generation_prompt || 'image').substring(0, 20));
-                        m.uri = `https://placehold.co/400x300/e0f2fe/0284c7?text=${safeText}`;
-                        updateCallback(mediaArray);
-                        renderAssetList(mediaArray, container, updateCallback);
+                            const safeText = encodeURIComponent((asset.ai_generation_prompt || 'image').substring(0, 20));
+                            asset.uri = `https://placehold.co/400x300/e0f2fe/0284c7?text=${safeText}`;
+                            asset.asset_id = '#'; // Will be calculated on server
+                            updateCallback(assetsArray);
+                            renderAssetList(assetsArray, container, updateCallback);
                         updateJsonView(); 
                     }, 1500);
                 };
                 el.querySelector('.upload-btn').onclick = () => {
                         triggerImageUpload((dataUrl) => { 
-                            m.uri = dataUrl; 
-                            updateCallback(mediaArray); 
-                            renderAssetList(mediaArray, container, updateCallback); 
+                            asset.uri = dataUrl;
+                            asset.asset_id = '#'; // Will be calculated on server
+                            updateCallback(assetsArray); 
+                            renderAssetList(assetsArray, container, updateCallback); 
                             updateJsonView(); 
                         });
                     };
@@ -2798,7 +2908,36 @@
         });
         
         function downloadJSONL() {
-            let jsonl = activeData.map(q => JSON.stringify(q)).join('\n');
+            // Prepare data for export (remove UI-only fields)
+            const exportData = activeData.map(q => {
+                const exported = JSON.parse(JSON.stringify(q));
+                // Remove UI-only fields that shouldn't be in the export
+                delete exported.layout;
+                delete exported.section_layouts;
+                // Clean up assets - remove width/height (UI only)
+                const cleanAssets = (assets) => {
+                    if (!assets) return;
+                    assets.forEach(a => {
+                        delete a.width;
+                        delete a.height;
+                    });
+                };
+                if (exported.content?.prompt?.assets) cleanAssets(exported.content.prompt.assets);
+                if (exported.content?.stimulus?.assets) cleanAssets(exported.content.stimulus.assets);
+                if (exported.content?.options) {
+                    exported.content.options.forEach(opt => cleanAssets(opt.assets));
+                }
+                if (exported.content?.subquestions) {
+                    exported.content.subquestions.forEach(sq => {
+                        delete sq.layout;
+                        if (sq.prompt?.assets) cleanAssets(sq.prompt.assets);
+                        if (sq.options) sq.options.forEach(opt => cleanAssets(opt.assets));
+                    });
+                }
+                return exported;
+            });
+            
+            let jsonl = exportData.map(q => JSON.stringify(q)).join('\n');
             const blob = new Blob([jsonl], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2838,16 +2977,108 @@
         function switchSubView(subview) {
             const btnGraph = document.getElementById('subview-graphical');
             const btnJson = document.getElementById('subview-json');
+            const btnLayout = document.getElementById('subview-layout');
             const viewGraph = document.getElementById('sub-view-graphical');
             const viewJson = document.getElementById('sub-view-json');
+            const viewLayout = document.getElementById('sub-view-layout');
+            
+            // Remove active from all buttons
+            btnGraph.classList.remove('active');
+            btnJson.classList.remove('active');
+            btnLayout.classList.remove('active');
+            
+            // Hide all views
+            viewGraph.style.display = 'none';
+            viewJson.style.display = 'none';
+            viewLayout.style.display = 'none';
+            
             if(subview === 'graphical') {
-                btnGraph.classList.add('active'); btnJson.classList.remove('active');
-                viewGraph.style.display = 'block'; viewJson.style.display = 'none';
-            } else {
-                btnGraph.classList.remove('active'); btnJson.classList.add('active');
-                viewGraph.style.display = 'none'; viewJson.style.display = 'flex';
+                btnGraph.classList.add('active');
+                viewGraph.style.display = 'block';
+            } else if(subview === 'json') {
+                btnJson.classList.add('active');
+                viewJson.style.display = 'flex';
                 updateJsonView();
+            } else if(subview === 'layout') {
+                btnLayout.classList.add('active');
+                viewLayout.style.display = 'flex';
+                updateLayoutJsonView();
             }
+        }
+        
+        function updateLayoutJsonView() {
+            const q = activeData[activeIndex];
+            if (!q) return;
+            
+            const questionId = q.question_id || 'q_xxx';
+            const layoutConfig = getLayoutConfig(q);
+            
+            // Build layout JSON in the specified format
+            const layoutData = {
+                layout_id: `lyt_${questionId}_print`,
+                question_id: questionId,
+                page_layout: "A4",
+                
+                theme: layoutConfig.theme,
+                regions: layoutConfig.regions,
+                print_settings: layoutConfig.print_settings
+            };
+            
+            const textarea = document.getElementById('layout-json-textarea');
+            if (textarea) {
+                textarea.value = JSON.stringify(layoutData, null, 2);
+            }
+        }
+        
+        // Helper function to get layout configuration for a question
+        function getLayoutConfig(q) {
+            const content = q.content || {};
+            
+            // Default theme settings
+            const theme = {
+                font_family: "Noto Sans, sans-serif",
+                base_font_size: "11pt",
+                line_height: "1.5"
+            };
+            
+            // Build regions only for sections that exist
+            const regions = {};
+            
+            // Check if prompt exists (has text or assets)
+            const hasPrompt = content.prompt && (content.prompt.text || (content.prompt.assets && content.prompt.assets.length > 0));
+            if (hasPrompt) {
+                regions.prompt = { display: content.prompt.layout || 'stack' };
+            }
+            
+            // Check if stimulus exists (has text, assets, or word_bank)
+            const hasStimulus = content.stimulus && (
+                content.stimulus.text || 
+                (content.stimulus.assets && content.stimulus.assets.length > 0) ||
+                (content.stimulus.word_bank && content.stimulus.word_bank.length > 0)
+            );
+            if (hasStimulus) {
+                regions.stimulus = { display: content.stimulus.layout || 'stack' };
+            }
+            
+            // Check if options exist
+            const hasOptions = content.options && content.options.length > 0;
+            if (hasOptions) {
+                regions.options = { display: content.options_layout || 'stack' };
+            }
+            
+            // Check if subquestions exist
+            const hasSubquestions = content.subquestions && content.subquestions.length > 0;
+            if (hasSubquestions) {
+                regions.subquestions = { display: content.subquestions_layout || 'grid' };
+            }
+            
+            // Print settings
+            const print_settings = {
+                page_break_inside: "avoid",
+                keep_with_next: false
+            };
+            
+            return { theme, regions, print_settings };
         }
         
         function getBlankStyle(text, options) {
@@ -2880,103 +3111,80 @@
 
         function renderPreview(q, idx) {
             const container = document.getElementById('a4-content');
-            const layouts = q.section_layouts || {};
+            const content = q.content || {};
+            const grading = q.grading || {};
             
-            // Helper to render media array
-            const renderMediaArray = (media) => {
-                if (!media || media.length === 0) return '';
-                return media.map(m => {
-                    if (m.uri) {
+            // Get layout configuration and apply theme to A4 container
+            const layoutConfig = getLayoutConfig(q);
+            const theme = layoutConfig.theme;
+            container.style.fontFamily = theme.font_family;
+            container.style.fontSize = theme.base_font_size;
+            container.style.lineHeight = theme.line_height;
+            
+            // Helper to render assets array
+            const renderAssetsArray = (assets) => {
+                if (!assets || assets.length === 0) return '';
+                return assets.map(a => {
+                    if (a.uri) {
                         // Use stored dimensions if available
-                        const style = (m.width && m.height) 
-                            ? `style="width:${m.width}px; height:${m.height}px; object-fit:contain;"` 
+                        const style = (a.width && a.height) 
+                            ? `style="width:${a.width}px; height:${a.height}px; object-fit:contain;"` 
                             : '';
-                        return `<div class="p-asset"><img src="${m.uri}" ${style}></div>`;
+                        const alt = a.alt || 'Image';
+                        return `<div class="p-asset"><img src="${a.uri}" alt="${alt}" ${style}></div>`;
                     }
                     return `<div class="p-asset"><div class="p-asset-placeholder">[IMAGE]</div></div>`;
                 }).join('');
             };
             
-            // Prompt section with layout support
-            const pText = getTextValue(q.prompt);
-            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
-            const promptLayout = layouts.prompt || 'stack';
-            let promptHtml = '';
-            if (promptLayout === 'grid' && pMedia.length > 0) {
-                promptHtml = `<div class="p-section-grid">
+            // Prompt section (stack layout only)
+            const prompt = content.prompt || { text: '', assets: [] };
+            const pText = prompt.text || '';
+            const pAssets = prompt.assets || [];
+            let promptHtml = `<div class="p-section-stack">
                     <div class="p-section-text"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div>
-                    <div class="p-section-media">${renderMediaArray(pMedia)}</div>
+                ${pAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(pAssets)}</div>` : ''}
                 </div>`;
-            } else {
-                promptHtml = `<div class="p-section-stack">
-                    <div class="p-section-text"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div>
-                    ${pMedia.length > 0 ? `<div class="p-section-media">${renderMediaArray(pMedia)}</div>` : ''}
-                </div>`;
-            }
             
-            // Stimulus section with layout support
+            // Stimulus section (stack layout only)
             let stimHtml = '';
-            if(q.stimulus) {
-                const stimMedia = q.stimulus.media || [];
-                const stimLayout = layouts.stimulus || 'stack';
-                const stimText = q.stimulus.text || '';
+            if(content.stimulus) {
+                const stimAssets = content.stimulus.assets || [];
+                const stimText = content.stimulus.text || '';
                 
-                if (stimLayout === 'grid' && stimMedia.length > 0) {
-                    stimHtml = `<div class="p-stimulus p-section-grid">
-                        <div class="p-section-text">${stimText}</div>
-                        <div class="p-section-media">${renderMediaArray(stimMedia)}</div>
-                    </div>`;
-                } else {
                     stimHtml = `<div class="p-stimulus p-section-stack">
                         <div class="p-section-text">${stimText}</div>
-                        ${stimMedia.length > 0 ? `<div class="p-section-media">${renderMediaArray(stimMedia)}</div>` : ''}
+                    ${stimAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(stimAssets)}</div>` : ''}
                     </div>`;
-                }
             }
             
-            // Options section (for MCQ types) with layout support
+            // Options section (for MCQ types) - stack layout only
             let optionsHtml = '';
-            if(q.options && q.options.length > 0) {
-                const optLayout = layouts.options || 'stack';
-                const optClass = optLayout === 'grid' ? 'p-options-grid' : 'p-options-stack';
-                const optItems = q.options.map((opt, k) => {
+            if(content.options && content.options.length > 0) {
+                const optItems = content.options.map((opt, k) => {
                     const optText = typeof opt === 'string' ? opt : (opt.text || '');
-                    const optMedia = (typeof opt === 'object' && opt.media) ? opt.media : [];
+                    const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                     const letter = String.fromCharCode(65 + k); // A, B, C, D...
                     
-                    if (optLayout === 'grid' && optMedia.length > 0) {
-                        return `<div class="p-option-item">
-                            <span>(${letter}) ${optText}</span>
-                            <div class="p-option-media">${optMedia.map(m => {
-                                if (!m.uri) return '';
-                                const style = (m.width && m.height) ? `width:${m.width}px; height:${m.height}px; object-fit:contain;` : '';
-                                return `<img src="${m.uri}" style="${style}">`;
-                            }).join('')}</div>
-                        </div>`;
-                    } else {
-                        const mediaStr = optMedia.length > 0 ? optMedia.map(m => {
-                            if (!m.uri) return '';
-                            const style = (m.width && m.height) ? `width:${Math.min(m.width, 80)}px; height:${Math.min(m.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
-                            return `<img src="${m.uri}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
+                    const assetStr = optAssets.length > 0 ? optAssets.map(a => {
+                        if (!a.uri) return '';
+                        const style = (a.width && a.height) ? `width:${Math.min(a.width, 80)}px; height:${Math.min(a.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
+                        return `<img src="${a.uri}" alt="${a.alt || ''}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
                         }).join('') : '';
-                        return `<div class="p-option-item">(${letter}) ${optText}${mediaStr}</div>`;
-                    }
+                    return `<div class="p-option-item">(${letter}) ${optText}${assetStr}</div>`;
                 }).join('');
-                optionsHtml = `<div class="p-options ${optClass}">${optItems}</div>`;
+                optionsHtml = `<div class="p-options p-options-stack">${optItems}</div>`;
             }
             
-            // Sub-questions section with layout support
+            // Sub-questions section with layout support (sub-questions retain layout controls)
             let subHtml = '';
-            if(q.subquestions) {
-                const sectionSubLayout = layouts.subquestions || 'stack';
+            if(content.subquestions && content.subquestions.length > 0) {
+                // Use subquestions_layout from content, default to grid
+                const sectionSubLayout = content.subquestions_layout || 'grid';
                 const isSectionGrid = sectionSubLayout === 'grid';
-                const subs = q.subquestions.map((sq, i) => {
+                const subs = content.subquestions.map((sq, i) => {
                     const label = sq.sub_id || String.fromCharCode(97 + i);
-                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
-                    
-                    // Use individual sub-question layout if set, otherwise use section layout
-                    const sqLayout = sq.layout || 'stack';
-                    const isSqGrid = sqLayout === 'grid';
+                    const sqAssets = (sq.prompt && sq.prompt.assets) ? sq.prompt.assets : [];
                     
                     let optHtml = '';
                     if(sq.options) {
@@ -2986,38 +3194,34 @@
                         }).join('');
                     }
                     let sqMarks = '';
-                    if(sq.points) { sqMarks = `<span style="float:right; font-weight:bold; font-size:10pt;">(${sq.points} marks)</span>`; }
+                    const sqPoints = sq.grading?.points;
+                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">(${sqPoints} marks)</span>`; }
                     const sqText = getTextValue(sq.prompt);
                     
-                    // Render content based on sub-question's individual layout
-                    let contentHtml;
-                    if (isSqGrid && sqMedia.length > 0) {
-                        // Grid layout: text left, media right
-                        contentHtml = `
-                            <div style="display:grid; grid-template-columns:1fr auto; gap:0.75rem; align-items:start; width:100%;">
-                                <div>
-                                    ${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}${sqMarks}
-                                    ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
-                                </div>
-                                <div style="max-width:150px;">${renderMediaArray(sqMedia)}</div>
-                            </div>`;
-                    } else {
-                        // Stack layout: text above media
-                        contentHtml = `
+                    // Stack layout for individual sub-questions
+                    const contentHtml = `
                             <div style="width:100%">
-                                ${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}${sqMarks}
-                                ${renderMediaArray(sqMedia)}
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+                                <div style="flex:1;">${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}</div>
+                                ${sqMarks ? `<div>${sqMarks}</div>` : ''}
+                            </div>
+                            ${renderAssetsArray(sqAssets)}
                                 ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
                             </div>`;
-                    }
                     
                     return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span>${contentHtml}</div>`;
                 }).join('');
                 subHtml = isSectionGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
             }
             
-            const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
-            container.innerHTML = `<div class="p-q-block">
+            const points = grading.points || '1';
+            const marksText = `(${points} ${points == 1 ? 'mark' : 'marks'})`;
+            
+            // Apply print settings
+            const printSettings = layoutConfig.print_settings;
+            const printStyles = `page-break-inside: ${printSettings.page_break_inside}; ${printSettings.keep_with_next ? 'page-break-after: avoid;' : ''}`;
+            
+            container.innerHTML = `<div class="p-q-block" style="${printStyles}">
                 <div class="p-q-header">
                     <div class="p-q-content">${promptHtml}</div>
                     <div class="p-q-marks">${marksText}</div>
