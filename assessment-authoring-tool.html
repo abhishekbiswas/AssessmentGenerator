@@ -295,6 +295,7 @@
         .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
         .p-stimulus { background: #f9fafb; padding: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1rem; font-style: italic; text-align: justify; }
+        .p-word-bank { background: white; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 0.75rem; font-style: normal; font-size: 10pt; text-align: center; }
         .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .p-sub-item { margin-bottom: 0.75rem; text-align: justify; padding-left: 1.5rem; display: flex; align-items: baseline; }
         .p-sub-label { font-weight: bold; margin-right: 0.5rem; flex-shrink: 0; }
@@ -1359,7 +1360,15 @@
             document.getElementById('meta-type').value = taxonomy.type || 'short_answer';
             document.getElementById('meta-pool-type').value = taxonomy.pool || 'practice';
             document.getElementById('meta-difficulty').value = taxonomy.difficulty || 'medium';
-            document.getElementById('meta-points').value = grading.points || '1';
+            
+            // Points - readonly for composite questions (total is sum of sub-questions)
+            const pointsInput = document.getElementById('meta-points');
+            const isComposite = (taxonomy.type === 'composite');
+            pointsInput.value = grading.points || '1';
+            pointsInput.readOnly = isComposite;
+            pointsInput.style.opacity = isComposite ? '0.6' : '1';
+            pointsInput.style.cursor = isComposite ? 'not-allowed' : 'text';
+            pointsInput.title = isComposite ? 'Total marks are calculated from sub-questions' : 'Points';
             
             // Location metadata from taxonomy
             document.getElementById('meta-grade').value = taxonomy.grade_id || '';
@@ -1527,6 +1536,12 @@
             if(field === 'pool_type') {
                 q.taxonomy.pool = val;
             } else if(field === 'points') {
+                // For composite questions, points are calculated from sub-questions
+                if (q.taxonomy?.type === 'composite') {
+                    // Restore the calculated value
+                    recalculateTotalMarks();
+                    return;
+                }
                 q.grading.points = String(val);
                 distributeTotalMarks(parseFloat(val)); 
             } else if(field === 'grade_id') {
@@ -3151,11 +3166,20 @@
             if(content.stimulus) {
                 const stimAssets = content.stimulus.assets || [];
                 const stimText = content.stimulus.text || '';
+                const wordBank = content.stimulus.word_bank || [];
                 
-                    stimHtml = `<div class="p-stimulus p-section-stack">
-                        <div class="p-section-text">${stimText}</div>
+                // Render word bank if present
+                let wordBankHtml = '';
+                if (wordBank.length > 0) {
+                    const words = wordBank.map(w => w.text || w).filter(w => w).join(' &nbsp;|&nbsp; ');
+                    wordBankHtml = `<div class="p-word-bank">${words}</div>`;
+                }
+                
+                stimHtml = `<div class="p-stimulus p-section-stack">
+                    <div class="p-section-text">${stimText}</div>
                     ${stimAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(stimAssets)}</div>` : ''}
-                    </div>`;
+                    ${wordBankHtml}
+                </div>`;
             }
             
             // Options section (for MCQ types) - stack layout only
@@ -3195,7 +3219,7 @@
                     }
                     let sqMarks = '';
                     const sqPoints = sq.grading?.points;
-                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">(${sqPoints} marks)</span>`; }
+                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">(${sqPoints} ${sqPoints == 1 ? 'mark' : 'marks'})</span>`; }
                     const sqText = getTextValue(sq.prompt);
                     
                     // Stack layout for individual sub-questions
