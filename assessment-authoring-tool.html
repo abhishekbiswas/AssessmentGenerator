@@ -1469,7 +1469,6 @@
 
             // Update subquestions layout buttons (default to grid)
             updateLayoutButtons(q.content?.subquestions_layout || 'grid');
-            restoreSectionLayouts(q);
             updateJsonView();
         }
 
@@ -1727,12 +1726,6 @@
             // This function is kept for potential future use
             updateJsonView();
         }
-
-        // Restore section layout states when loading a question
-        function restoreSectionLayouts(q) {
-            // Layout toggles have been removed from prompt, stimulus, options
-            // Only sub-questions have layout controls now
-        }
         
         function deleteQuestion() {
             if(!confirm('Are you sure you want to delete this question?')) return;
@@ -1800,11 +1793,7 @@
                     ui_hint: '',
                     version: 1,
                     source: 'AI_Generated'
-                },
-                
-                // UI state
-                layout: 'stack',
-                section_layouts: {}
+                }
             };
             
             activeData.push(newQuestion);
@@ -2297,11 +2286,7 @@
                     ui_hint: obj.metadata?.ui_hint || '',
                     version: obj.metadata?.version || 1,
                     source: obj.metadata?.source || 'AI_Generated'
-                },
-                
-                // Preserve layout info for UI
-                layout: obj.layout || 'stack',
-                section_layouts: obj.section_layouts || {}
+                }
             };
             
             // Clean up null content fields
@@ -2335,9 +2320,6 @@
             obj.metadata.ui_hint = obj.metadata.ui_hint || '';
             obj.metadata.version = obj.metadata.version || 1;
             obj.metadata.source = obj.metadata.source || 'AI_Generated';
-            
-            obj.layout = obj.layout || 'stack';
-            obj.section_layouts = obj.section_layouts || {};
             
             return obj;
         }
@@ -2399,9 +2381,6 @@
             if (sq.options) {
                 converted.options = sq.options.map(convertToNewOptionFormat);
             }
-            
-            // Preserve layout for UI
-            converted.layout = sq.layout || 'stack';
             
             return converted;
         }
@@ -2926,9 +2905,6 @@
             // Prepare data for export (remove UI-only fields)
             const exportData = activeData.map(q => {
                 const exported = JSON.parse(JSON.stringify(q));
-                // Remove UI-only fields that shouldn't be in the export
-                delete exported.layout;
-                delete exported.section_layouts;
                 // Clean up assets - remove width/height (UI only)
                 const cleanAssets = (assets) => {
                     if (!assets) return;
@@ -2944,7 +2920,6 @@
                 }
                 if (exported.content?.subquestions) {
                     exported.content.subquestions.forEach(sq => {
-                        delete sq.layout;
                         if (sq.prompt?.assets) cleanAssets(sq.prompt.assets);
                         if (sq.options) sq.options.forEach(opt => cleanAssets(opt.assets));
                     });
