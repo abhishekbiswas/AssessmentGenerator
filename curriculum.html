@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum | Bryt</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+            clip-path: polygon(100% 0, 0 0, 100% 100%);
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            font-style: italic;
+            letter-spacing: -1px;
+        }
+
+        .logo::before {
+            content: '🎓';
+            margin-right: 0.25rem;
+        }
+
+        .nav-section {
+            padding: 0 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.75rem;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 200px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 60%, #1e3a8a 100%);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.08);
+            transform: rotate(45deg);
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 60px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.05);
+            transform: rotate(45deg);
+        }
+
+        .page-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .school-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255,255,255,0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .school-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .school-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .school-name {
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .school-location {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .dropdown-arrow {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #a78bfa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+        }
+
+        .tab {
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .tab:hover {
+            color: #3b82f6;
+        }
+
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 1.5rem;
+            flex: 1;
+            background: #f8fafc;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Card */
+        .content-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-width: 900px;
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: #0369a1;
+            line-height: 1.5;
+        }
+
+        .info-banner strong {
+            color: #0c4a6e;
+        }
+
+        /* Filter Row */
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .filter-select {
+            padding: 0.6rem 2rem 0.6rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #374151;
+            background: white;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1rem;
+            min-width: 180px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .go-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .go-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Assessment Generator Tab Content */
+        .assessment-launcher {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .launcher-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .launcher-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .launcher-description {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .launch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .launch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .launch-btn-icon {
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">Bryt</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">School</div>
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🏫</span>
+                <span>School Details</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📅</span>
+                <span>School Schedule</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">👩‍🏫</span>
+                <span>Teachers</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">👨‍🎓</span>
+                <span>Students</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span>Manage Users</span>
+            </a>
+            <a href="curriculum.html" class="nav-item active">
+                <span class="nav-icon">📚</span>
+                <span>Curriculum</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📷</span>
+                <span>Classroom Photos</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Admin Tools</div>
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">📖</span>
+                <span>Curriculum/Training</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📝</span>
+                <span>Surveys</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span>AC Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🏢</span>
+                <span>Manage Schools</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🔐</span>
+                <span>Bryt User Accounts</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚠️</span>
+                <span>Inactive Users</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="page-title">Curriculum</h1>
+            <div class="header-right">
+                <div class="school-selector">
+                    <div class="school-icon">🏫</div>
+                    <div class="school-info">
+                        <span class="school-name">A Bryt School</span>
+                        <span class="school-location">GACHIBOWLI</span>
+                    </div>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="user-avatar">A</div>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <a href="#" class="tab active" data-tab="syllabus" onclick="switchTab('syllabus', event)">Syllabus Completion Status</a>
+                <a href="#" class="tab" data-tab="resources" onclick="switchTab('resources', event)">Assessment Resources</a>
+                <a href="#" class="tab" data-tab="generator" onclick="switchTab('generator', event)">Assessment Generator</a>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            
+            <!-- Tab 1: Syllabus Completion Status -->
+            <div id="tab-syllabus" class="tab-content active">
+                <div class="content-card">
+                    <div class="info-banner">
+                        Review the status of syllabus completion for classes in your school using the options below. If the scheduled Lesson Plan for any given teacher is behind where she has actually reached, then you can mark the Lesson Plans as <em>Completed</em> as needed. <strong>Please avoid making any syllabus status changes during your school's teaching hours.</strong>
+                        <br><br>
+                        Note that we do not recommend making changes to syllabus completion status as it will likely impact Implementation Status scores for your teachers and school. Please reach out to your Academic Coach if you have any questions.
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">Grade</label>
+                            <select class="filter-select" id="filter-grade">
+                                <option value="">Select Grade</option>
+                                <option value="nursery">Nursery</option>
+                                <option value="lkg">LKG</option>
+                                <option value="ukg">UKG</option>
+                                <option value="1">Grade 1</option>
+                                <option value="2">Grade 2</option>
+                                <option value="3">Grade 3</option>
+                                <option value="4">Grade 4</option>
+                                <option value="5">Grade 5</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Section</label>
+                            <select class="filter-select" id="filter-section">
+                                <option value="">Select Grade</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Subject</label>
+                            <select class="filter-select" id="filter-subject">
+                                <option value="">Select Grade and Section</option>
+                                <option value="mathematics">Mathematics</option>
+                                <option value="english">English</option>
+                                <option value="evs">EVS</option>
+                                <option value="hindi">Hindi</option>
+                            </select>
+                        </div>
+
+                        <button class="go-btn">
+                            🔍 Go
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Assessment Resources -->
+            <div id="tab-resources" class="tab-content">
+                <div class="content-card">
+                    <div class="info-banner">
+                        Access assessment resources including sample papers, question banks, and marking schemes for various grades and subjects.
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">Grade</label>
+                            <select class="filter-select">
+                                <option value="">Select Grade</option>
+                                <option value="1">Grade 1</option>
+                                <option value="2">Grade 2</option>
+                                <option value="3">Grade 3</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Subject</label>
+                            <select class="filter-select">
+                                <option value="">Select Subject</option>
+                                <option value="mathematics">Mathematics</option>
+                                <option value="english">English</option>
+                                <option value="evs">EVS</option>
+                            </select>
+                        </div>
+
+                        <button class="go-btn">
+                            🔍 Go
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Assessment Generator -->
+            <div id="tab-generator" class="tab-content">
+                <div class="content-card">
+                    <div class="assessment-launcher">
+                        <div class="launcher-icon">📝</div>
+                        <h2 class="launcher-title">Assessment Generator</h2>
+                        <p class="launcher-description">
+                            Create customized assessments by selecting questions from the question bank. 
+                            Configure papers for Formative Assessments, Summative Assessments, Mid-Terms, and Term Exams.
+                        </p>
+                        <a href="assessment-selection-tool.html" class="launch-btn">
+                            <span class="launch-btn-icon">🚀</span>
+                            Launch Assessment Generator
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId, event) {
+            event.preventDefault();
+            
+            // Update tab styles
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Check URL hash on load to activate correct tab
+        document.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash && ['syllabus', 'resources', 'generator'].includes(hash)) {
+                const tab = document.querySelector(`[data-tab="${hash}"]`);
+                if (tab) {
+                    tab.click();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
+
