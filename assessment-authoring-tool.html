@@ -898,6 +898,46 @@
             cursor: pointer;
         }
         .delete-sub-btn:hover { background: #fecaca; }
+
+        /* SAVE BUTTON STATES */
+        .btn-save {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-save:hover:not(:disabled) { 
+            background: #15803d; 
+            border-color: #15803d;
+        }
+        .btn-save:disabled {
+            background: #d1d5db;
+            border-color: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .btn-save.has-changes {
+            animation: pulse-save 2s infinite;
+        }
+        @keyframes pulse-save {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+        }
+        .unsaved-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--warning);
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
     </style>
 </head>
 <body>
@@ -1132,8 +1172,8 @@
                             </div>
                             <!-- TABS -->
                             <div class="card-tabs">
-                                <div class="tab-btn active" id="tab-edit" onclick="switchTab('edit')">Edit</div>
-                                <div class="tab-btn" id="tab-preview" onclick="switchTab('preview')">Preview (A4)</div>
+                                <div class="tab-btn active" id="tab-preview" onclick="switchTab('preview')">Preview (A4)</div>
+                                <div class="tab-btn" id="tab-edit" onclick="switchTab('edit')">Edit</div>
                             </div>
                         </div>
 
@@ -1146,9 +1186,16 @@
                                 <div class="editor-toolbar">
                                     <div class="toolbar-left">
                                         <span style="font-size:0.75rem; color:var(--text-muted);">Use layout toggles in each section below</span>
+                                        <span id="unsaved-status" style="display:none; font-size:0.75rem; color:var(--warning); margin-left:1rem;">
+                                            <span class="unsaved-indicator"></span>Unsaved changes
+                                        </span>
                                     </div>
                                     
                                     <div class="toolbar-right">
+                                        <!-- SAVE BUTTON -->
+                                        <button class="btn btn-save" id="btn-save-changes" onclick="saveChanges()" disabled>
+                                            💾 Save Changes
+                                        </button>
                                         <!-- SUB VIEW TOGGLE -->
                                         <div class="view-toggle">
                                             <button class="view-toggle-btn active" id="subview-graphical" onclick="switchSubView('graphical')">Graphical</button>
@@ -1343,6 +1390,9 @@
     <!-- Hidden Input for Image Upload -->
     <input type="file" id="image-upload-input" accept="image/*">
 
+    <!-- SHARED PARSING MODULE -->
+    <script src="question-parser.js"></script>
+
     <!-- SCRIPT -->
     <script>
         // --- GLOBAL STATE ---
@@ -1356,6 +1406,10 @@
         let activeIndex = null;
         let activeWorkflow = 'import'; // 'import' or 'library'
         let activeUploadCallback = null;
+        
+        // 4. Change tracking for save functionality
+        let hasUnsavedChanges = false;
+        let originalQuestionSnapshot = null; // Stores the original state when editing begins
 
         // MOCK DATABASE (using new schema format)
         const mockDatabase = [
@@ -1381,9 +1435,9 @@
                 taxonomy: { grade_id: "grade_3", subject_id: "english", unit_id: "ch1", section_id: "A", type: "mcq", difficulty: "easy", pool: "practice", skill_tags: ["grammar"] },
                 content: { 
                     prompt: { text: "Tick the noun.", assets: [] }, 
-                    options: [{ id: "opt_a", text: "Run", assets: [] }, { id: "opt_b", text: "Cat", assets: [] }, { id: "opt_c", text: "Blue", assets: [] }] 
+                    options: [{ id: "a", text: "Run", assets: [] }, { id: "b", text: "Cat", assets: [] }, { id: "c", text: "Blue", assets: [] }] 
                 },
-                grading: { kind: "single_selection", values: ["opt_b"], points: "1" },
+                grading: { kind: "single_selection", values: ["b"], points: "1" },
                 metadata: { ui_hint: "", version: 1, source: "Manual" }
             }
         ];
@@ -1552,6 +1606,11 @@
 
         // --- SHARED: SELECT QUESTION ---
         function selectQuestion(idx) {
+            // Check for unsaved changes before switching
+            if (activeIndex !== null && activeIndex !== idx && !confirmUnsavedChanges()) {
+                return; // User cancelled, don't switch
+            }
+            
             activeIndex = idx;
             const q = activeData[idx]; // Use activeData reference
             
@@ -1567,12 +1626,8 @@
             populateEditor(q);
             
             // 2. Force Active Tab
-            const isPreviewActive = document.getElementById('tab-preview').classList.contains('active');
-            if (isPreviewActive) {
-                 document.getElementById('view-preview').classList.add('active');
-                 document.getElementById('view-edit').classList.remove('active');
-                 renderPreview(q, idx);
-            } else {
+            const isEditActive = document.getElementById('tab-edit').classList.contains('active');
+            if (isEditActive) {
                  // Force Edit View
                  document.getElementById('tab-edit').classList.add('active');
                  document.getElementById('tab-preview').classList.remove('active');
@@ -1587,11 +1642,21 @@
                  poolSelect.disabled = false;
                  diffSelect.disabled = false;
                  pointInput.disabled = false;
+            } else {
+                 // Default to Preview View
+                 document.getElementById('view-preview').classList.add('active');
+                 document.getElementById('view-edit').classList.remove('active');
+                 renderPreview(q, idx);
             }
         }
 
         // New helper to avoid recursion
         function populateEditor(q) {
+            // Take a snapshot of the original state for change detection
+            originalQuestionSnapshot = JSON.stringify(q);
+            hasUnsavedChanges = false;
+            updateSaveButtonState();
+            
             // First, hide all optional sections to ensure clean state
             document.getElementById('stimulus-section').style.display = 'none';
             document.getElementById('options-section').style.display = 'none';
@@ -1813,8 +1878,8 @@
                 // Auto-add options for MCQ types if not present
                 if(isMcqType && !q.content.options) {
                     q.content.options = [
-                        { id: 'opt_a', text: 'Option A', assets: [] },
-                        { id: 'opt_b', text: 'Option B', assets: [] }
+                        { id: 'a', text: 'Option A', assets: [] },
+                        { id: 'b', text: 'Option B', assets: [] }
                     ];
                 }
                 
@@ -1992,11 +2057,11 @@
                 document.getElementById('editor-wrapper').style.display = 'none';
                 document.getElementById('empty-state').style.display = 'block';
                 
-                // Reset to Edit tab so next question opens in edit mode
+                // Reset to Preview tab so next question opens in preview mode (default view)
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.getElementById('tab-edit').classList.add('active');
+                document.getElementById('tab-preview').classList.add('active');
                 document.querySelectorAll('.edit-view-container, .preview-view-container').forEach(v => v.classList.remove('active'));
-                document.getElementById('view-edit').classList.add('active');
+                document.getElementById('view-preview').classList.add('active');
                 
                 // Clear JSON view as well
                 document.getElementById('json-ro-textarea').value = '';
@@ -2052,9 +2117,9 @@
             // Clear preview content before selecting new question
             document.getElementById('a4-content').innerHTML = '';
             
-            // Force switch to Edit tab for new questions
+            // Force switch to Preview tab for new questions (default view)
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-edit').classList.add('active');
+            document.getElementById('tab-preview').classList.add('active');
             
             selectQuestion(activeData.length - 1);
             
@@ -2076,17 +2141,95 @@
                 if (layoutView && layoutView.style.display !== 'none') {
                     updateLayoutJsonView();
                 }
+                
+                // Check for changes and update save button state
+                checkForChanges();
             }
         }
-
-        // Helper function to safely extract text from various data structures
-        function getTextValue(data) {
-            if (!data) return '';
-            if (typeof data === 'string') return data;
-            if (typeof data === 'object' && data.text !== undefined) return data.text || '';
-            if (typeof data === 'object' && data.value !== undefined) return data.value || '';
-            return '';
+        
+        // =====================================================
+        // SAVE FUNCTIONALITY & CHANGE TRACKING
+        // =====================================================
+        
+        function checkForChanges() {
+            if (activeIndex === null || !activeData[activeIndex]) {
+                hasUnsavedChanges = false;
+                updateSaveButtonState();
+                return;
+            }
+            
+            const currentState = JSON.stringify(activeData[activeIndex]);
+            hasUnsavedChanges = (currentState !== originalQuestionSnapshot);
+            updateSaveButtonState();
         }
+        
+        function updateSaveButtonState() {
+            const saveBtn = document.getElementById('btn-save-changes');
+            const unsavedStatus = document.getElementById('unsaved-status');
+            
+            if (saveBtn) {
+                saveBtn.disabled = !hasUnsavedChanges;
+                saveBtn.classList.toggle('has-changes', hasUnsavedChanges);
+            }
+            
+            if (unsavedStatus) {
+                unsavedStatus.style.display = hasUnsavedChanges ? 'inline' : 'none';
+            }
+        }
+        
+        function saveChanges() {
+            if (!hasUnsavedChanges || activeIndex === null) return;
+            
+            const q = activeData[activeIndex];
+            if (!q) return;
+            
+            // Get the current content JSON (use prepareForExport for clean output)
+            const contentJson = prepareForExport(q);
+            
+            // Get the layout JSON using shared function
+            const layoutJson = generateLayoutJson(q);
+            
+            // Log the saved data (in production, this would be an API call)
+            console.log('=== SAVING CHANGES ===');
+            console.log('Content JSON:', contentJson);
+            console.log('Layout JSON:', layoutJson);
+            
+            // Update the snapshot to reflect saved state
+            originalQuestionSnapshot = JSON.stringify(q);
+            hasUnsavedChanges = false;
+            updateSaveButtonState();
+            
+            // Update the JSON views
+            document.getElementById('json-ro-textarea').value = JSON.stringify(contentJson, null, 2);
+            const layoutTextarea = document.getElementById('layout-json-textarea');
+            if (layoutTextarea) {
+                layoutTextarea.value = JSON.stringify(layoutJson, null, 2);
+            }
+            
+            // Visual feedback
+            const saveBtn = document.getElementById('btn-save-changes');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '✓ Saved!';
+            saveBtn.style.background = '#15803d';
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.style.background = '';
+            }, 1500);
+            
+            // Update the list to reflect any changes
+            renderList();
+        }
+        
+        // Warn user about unsaved changes when switching questions
+        function confirmUnsavedChanges() {
+            if (hasUnsavedChanges) {
+                return confirm('You have unsaved changes. Do you want to discard them?');
+            }
+            return true;
+        }
+
+        // NOTE: getTextValue is now in question-parser.js
 
         // =====================================================
         // ADD SECTION FUNCTIONS
@@ -2112,8 +2255,8 @@
             if (!q.content) q.content = {};
             if(!q.content.options || q.content.options.length === 0) {
                 q.content.options = [
-                    { id: 'opt_a', text: 'Option A', assets: [] },
-                    { id: 'opt_b', text: 'Option B', assets: [] }
+                    { id: 'a', text: 'Option A', assets: [] },
+                    { id: 'b', text: 'Option B', assets: [] }
                 ];
                 selectQuestion(activeIndex);
             }
@@ -2190,7 +2333,7 @@
             container.innerHTML = '';
             
             options.forEach((opt, idx) => {
-                const optId = opt.id || `opt_${String.fromCharCode(97 + idx)}`;
+                const optId = opt.id || `${String.fromCharCode(97 + idx)}`;
                 const optText = getTextValue(opt);
                 const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
@@ -2242,7 +2385,7 @@
             if (!q.content) q.content = {};
             if(!q.content.options) q.content.options = [];
             const newIdx = q.content.options.length;
-            const newId = `opt_${String.fromCharCode(97 + newIdx)}`;
+            const newId = `${String.fromCharCode(97 + newIdx)}`;
             q.content.options.push({ id: newId, text: '', assets: [] });
             renderMainOptions(q.content.options);
             updateJsonView();
@@ -2253,7 +2396,7 @@
             const opt = q.content?.options?.[idx];
             if (!opt) return;
             if(typeof opt === 'string') {
-                q.content.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
+                q.content.options[idx] = { id: `${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
             } else {
                 q.content.options[idx].text = value;
             }
@@ -2276,7 +2419,7 @@
             
             const opt = q.content.options[idx];
             if(typeof opt === 'string') {
-                q.content.options[idx] = { id: `opt_${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
+                q.content.options[idx] = { id: `${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
             }
             if(!q.content.options[idx].assets) q.content.options[idx].assets = [];
             q.content.options[idx].assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
@@ -2430,8 +2573,8 @@
             if(type === 'mcq') {
                 if(!q.content.subquestions[idx].options) {
                     q.content.subquestions[idx].options = [
-                        { id: 'sq_opt1', text: 'Option 1', assets: [] },
-                        { id: 'sq_opt2', text: 'Option 2', assets: [] }
+                        { id: 'a', text: 'Option A', assets: [] },
+                        { id: 'b', text: 'Option B', assets: [] }
                     ];
                 }
             }
@@ -2445,7 +2588,7 @@
             if(!sq) return;
             if(!sq.options) sq.options = [];
             const newIdx = sq.options.length;
-            sq.options.push({ id: `sq_opt${newIdx + 1}`, text: '', assets: [] });
+            sq.options.push({ id: `${String.fromCharCode(97 + newIdx)}`, text: '', assets: [] });
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -2458,218 +2601,50 @@
             renderSubQuestions(q);
             updateJsonView();
         }
+
+        // =====================================================
+        // SUB-QUESTION STIMULUS MANAGEMENT
+        // =====================================================
         
-        // --- PREVIOUS HELPERS (Parsing, Rendering, etc.) ---
-        // (Keeping existing renderSubQuestions, renderAssetList, parseMixedJson, etc. as they were)
-        // [Re-inserting them below for completeness]
-
-        function parseMixedJson(content) {
-            const results = [];
-            let buffer = "";
-            let braceCount = 0;
-            let inString = false;
-            let escape = false;
-            if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
-            for (let i = 0; i < content.length; i++) {
-                const char = content[i];
-                buffer += char;
-                if (escape) { escape = false; continue; }
-                if (char === '\\') { escape = true; continue; }
-                if (char === '"') { inString = !inString; continue; }
-                if (!inString) {
-                    if (char === '{') { braceCount++; } 
-                    else if (char === '}') {
-                        braceCount--;
-                        if (braceCount === 0) {
-                            try {
-                                const obj = JSON.parse(buffer);
-                                // Normalize to new schema format
-                                const normalized = normalizeToNewSchema(obj);
-                                results.push(normalized);
-                                buffer = ""; 
-                            } catch (e) {
-                                console.error('Parse error:', e);
-                            }
-                        }
-                    }
-                }
-            }
-            return results;
-        }
-
-        // Normalize incoming data to new schema structure
-        function normalizeToNewSchema(obj) {
-            // If already in new schema format (has taxonomy object), just ensure defaults
-            if (obj.taxonomy) {
-                return ensureSchemaDefaults(obj);
-            }
+        function addSubQuestionStimulus(sqIdx) {
+            const q = activeData[activeIndex];
+            const sq = q.content?.subquestions?.[sqIdx];
+            if (!sq) return;
             
-            // Convert from old flat schema to new nested schema
-            const normalized = {
-                question_id: obj.question_id || `q_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-                
-                // 1. Taxonomy
-                taxonomy: {
-                    grade_id: obj.grade_id || 'grade_3',
-                    subject_id: obj.subject_id || 'mathematics',
-                    unit_id: obj.unit_id || obj.chapter_id || 'ch1',
-                    section_id: obj.section_id || 'A',
-                    type: obj.type || 'short_answer',
-                    difficulty: obj.difficulty || 'medium',
-                    pool: obj.pool || obj.pool_type || 'practice',
-                    skill_tags: obj.skill_tags || []
-                },
-                
-                // 2. Content
-                content: {
-                    prompt: convertToNewPromptFormat(obj.prompt),
-                    stimulus: obj.stimulus ? convertToNewStimulusFormat(obj.stimulus) : null,
-                    options: obj.options ? obj.options.map(convertToNewOptionFormat) : null,
-                    subquestions: obj.subquestions ? obj.subquestions.map(convertSubquestionToNewFormat) : null
-                },
-                
-                // 3. Grading
-                grading: convertToNewGradingFormat(obj.answer, obj.rubric, obj.points),
-                
-                // 4. Metadata
-                metadata: {
-                    ui_hint: obj.metadata?.ui_hint || '',
-                    version: obj.metadata?.version || 1,
-                    source: obj.metadata?.source || 'AI_Generated'
-                }
+            sq.stimulus = {
+                text: '',
+                assets: []
             };
-            
-            // Clean up null content fields
-            if (!normalized.content.stimulus) delete normalized.content.stimulus;
-            if (!normalized.content.options) delete normalized.content.options;
-            if (!normalized.content.subquestions) delete normalized.content.subquestions;
-            
-            return normalized;
+            renderSubQuestions(q);
+            updateJsonView();
         }
-
-        function ensureSchemaDefaults(obj) {
-            // Ensure all required fields have defaults
-            if (!obj.question_id) obj.question_id = `q_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        
+        function removeSubQuestionStimulus(sqIdx) {
+            const q = activeData[activeIndex];
+            const sq = q.content?.subquestions?.[sqIdx];
+            if (!sq) return;
             
-            if (!obj.taxonomy) obj.taxonomy = {};
-            obj.taxonomy.grade_id = obj.taxonomy.grade_id || 'grade_3';
-            obj.taxonomy.subject_id = obj.taxonomy.subject_id || 'mathematics';
-            obj.taxonomy.unit_id = obj.taxonomy.unit_id || 'ch1';
-            obj.taxonomy.section_id = obj.taxonomy.section_id || 'A';
-            obj.taxonomy.type = obj.taxonomy.type || 'short_answer';
-            obj.taxonomy.difficulty = obj.taxonomy.difficulty || 'medium';
-            obj.taxonomy.pool = obj.taxonomy.pool || 'practice';
-            obj.taxonomy.skill_tags = obj.taxonomy.skill_tags || [];
-            
-            if (!obj.content) obj.content = {};
-            if (!obj.content.prompt) obj.content.prompt = { text: '', assets: [] };
-            
-            if (!obj.grading) obj.grading = { kind: 'text', values: [], points: '1' };
-            
-            if (!obj.metadata) obj.metadata = {};
-            obj.metadata.ui_hint = obj.metadata.ui_hint || '';
-            obj.metadata.version = obj.metadata.version || 1;
-            obj.metadata.source = obj.metadata.source || 'AI_Generated';
-            
-            return obj;
-        }
-
-        function convertToNewPromptFormat(prompt) {
-            if (!prompt) return { text: '', assets: [] };
-            if (typeof prompt === 'string') {
-                return { text: prompt, assets: [] };
+            if (confirm('Are you sure you want to remove this stimulus?')) {
+                delete sq.stimulus;
+                renderSubQuestions(q);
+                updateJsonView();
             }
-            return {
-                text: prompt.text || '',
-                assets: (prompt.media || prompt.assets || []).map(convertToNewAssetFormat)
-            };
         }
-
-        function convertToNewStimulusFormat(stimulus) {
-            if (!stimulus) return null;
-            return {
-                text: stimulus.text || '',
-                assets: (stimulus.media || stimulus.assets || []).map(convertToNewAssetFormat),
-                word_bank: stimulus.word_bank || []
-            };
-        }
-
-        function convertToNewOptionFormat(opt) {
-            if (typeof opt === 'string') {
-                return { id: '', text: opt, assets: [] };
-            }
-            return {
-                id: opt.id || '',
-                text: opt.text || '',
-                assets: (opt.media || opt.assets || []).map(convertToNewAssetFormat)
-            };
-        }
-
-        function convertToNewAssetFormat(asset) {
-            return {
-                asset_id: asset.asset_id || '#',
-                uri: asset.uri || '',
-                ai_generation_prompt: asset.ai_generation_prompt || '',
-                alt: asset.alt || '',
-                // Preserve dimensions for UI
-                width: asset.width,
-                height: asset.height
-            };
-        }
-
-        function convertSubquestionToNewFormat(sq) {
-            const converted = {
-                sub_id: sq.sub_id || 'a',
-                type: sq.type || 'short_answer',
-                prompt: convertToNewPromptFormat(sq.prompt),
-                grading: convertToNewGradingFormat(sq.answer, sq.rubric, sq.points)
-            };
+        
+        function addSubQuestionStimulusAsset(sqIdx) {
+            const q = activeData[activeIndex];
+            const sq = q.content?.subquestions?.[sqIdx];
+            if (!sq || !sq.stimulus) return;
             
-            if (sq.stimulus) {
-                converted.stimulus = convertToNewStimulusFormat(sq.stimulus);
-            }
-            if (sq.options) {
-                converted.options = sq.options.map(convertToNewOptionFormat);
-            }
-            
-            return converted;
+            if (!sq.stimulus.assets) sq.stimulus.assets = [];
+            sq.stimulus.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
+            renderSubQuestions(q);
+            updateJsonView();
         }
-
-        function convertToNewGradingFormat(answer, rubric, points) {
-            let kind = 'text';
-            let values = [];
-            let explanation = '';
-            
-            if (answer) {
-                if (typeof answer === 'string') {
-                    values = [answer];
-                } else {
-                    kind = answer.kind || 'text';
-                    values = answer.value ? [answer.value] : (answer.values || []);
-                }
-            }
-            
-            if (rubric) {
-                explanation = rubric.explanation || '';
-            }
-            
-            return {
-                kind: kind,
-                values: values,
-                points: String(points || 1),
-                explanation: explanation
-            };
-        }
-
-        function hasMedia(q) {
-            const content = q.content || {};
-            if(content.prompt?.assets?.length) return true;
-            if(content.stimulus?.assets?.length) return true; 
-            if(content.subquestions) { 
-                return content.subquestions.some(sq => sq.prompt?.assets?.length); 
-            }
-            return false;
-        }
+        
+        // --- PARSING HELPERS ---
+        // NOTE: Core parsing functions (parseMixedJson, normalizeToNewSchema, etc.) 
+        // are now in question-parser.js for shared use across tools
 
         function updateLayoutButtons(mode) {
             const currentMode = mode || 'grid';  // Default to grid for subquestions
@@ -2784,6 +2759,49 @@
                     headerRow.appendChild(rightControls);
                     card.appendChild(headerRow);
                     
+                    // Stimulus section for sub-question (if exists)
+                    if (sq.stimulus) {
+                        const stimSection = document.createElement('div');
+                        stimSection.className = 'sq-stimulus-section';
+                        stimSection.style.cssText = 'background:#f0f9ff; border:1px dashed #93c5fd; border-radius:6px; padding:0.75rem; margin-bottom:0.75rem;';
+                        
+                        const stimHeader = document.createElement('div');
+                        stimHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;';
+                        stimHeader.innerHTML = `
+                            <label style="font-size:0.7rem; font-weight:700; color:#1d4ed8; text-transform:uppercase;">📄 Sub-Question Stimulus</label>
+                            <div style="display:flex; gap:0.25rem;">
+                                <button class="btn btn-sm" style="font-size:0.65rem;" onclick="addSubQuestionStimulusAsset(${sqIdx})">+ Image</button>
+                                <button class="btn btn-sm" style="font-size:0.65rem; background:#fee2e2; color:#991b1b; border-color:#fecaca;" onclick="removeSubQuestionStimulus(${sqIdx})">✕</button>
+                            </div>
+                        `;
+                        stimSection.appendChild(stimHeader);
+                        
+                        const stimInput = document.createElement('textarea');
+                        stimInput.className = 'input-bare';
+                        stimInput.style.cssText = 'font-size:0.9rem; min-height:60px; background:white;';
+                        stimInput.value = sq.stimulus.text || '';
+                        stimInput.placeholder = 'Enter stimulus text for this sub-question...';
+                        stimInput.oninput = (e) => {
+                            sq.stimulus.text = e.target.value;
+                            updateJsonView();
+                        };
+                        stimSection.appendChild(stimInput);
+                        
+                        // Stimulus assets
+                        if (sq.stimulus.assets && sq.stimulus.assets.length > 0) {
+                            const stimAssetCont = document.createElement('div');
+                            stimAssetCont.className = 'asset-container';
+                            stimAssetCont.style.marginTop = '0.5rem';
+                            renderAssetList(sq.stimulus.assets, stimAssetCont, (newAssets) => {
+                                sq.stimulus.assets = newAssets;
+                                updateJsonView();
+                            });
+                            stimSection.appendChild(stimAssetCont);
+                        }
+                        
+                        card.appendChild(stimSection);
+                    }
+                    
                     // Content wrapper (stack layout only - layout control removed from individual sub-questions)
                     const contentWrapper = document.createElement('div');
                     contentWrapper.className = 'sq-content-stack';
@@ -2841,7 +2859,7 @@
                             optInput.value = optVal;
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
-                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { id: `sq_opt${oIdx+1}`, text: e.target.value, assets: [] };
+                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { id: `${String.fromCharCode(97 + oIdx)}`, text: e.target.value, assets: [] };
                                 else sq.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
@@ -2878,6 +2896,18 @@
                     };
                     actionsRow.appendChild(addImgBtn);
                     
+                    // Add stimulus button if no stimulus yet
+                    if (!sq.stimulus) {
+                        const addStimBtn = document.createElement('button');
+                        addStimBtn.className = 'btn btn-sm';
+                        addStimBtn.style.cssText = 'color:#1d4ed8;';
+                        addStimBtn.innerText = '+ Stimulus';
+                        addStimBtn.onclick = () => {
+                            addSubQuestionStimulus(sqIdx);
+                        };
+                        actionsRow.appendChild(addStimBtn);
+                    }
+                    
                     // Add options button for MCQ types without options yet
                     if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi' || sq.type === 'mcq') && (!sq.options || sq.options.length === 0)) {
                         const addOptBtn = document.createElement('button');
@@ -2885,8 +2915,8 @@
                         addOptBtn.innerText = '+ Options';
                         addOptBtn.onclick = () => {
                             sq.options = [
-                                { id: 'sq_opt1', text: '', assets: [] },
-                                { id: 'sq_opt2', text: '', assets: [] }
+                                { id: 'a', text: '', assets: [] },
+                                { id: 'b', text: '', assets: [] }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();
@@ -2980,9 +3010,27 @@
                         valuesInput.placeholder = grading.kind === 'single_selection' ? 'Enter option ID' : 'Enter values (comma-separated)';
                         valuesInput.oninput = (e) => { 
                             sq.grading.values = e.target.value.split(',').map(v => v.trim()).filter(v => v);
-                        updateJsonView(); 
-                    };
+                            updateJsonView(); 
+                        };
                         gradingDiv.appendChild(valuesInput);
+                        
+                        // Explanation field
+                        const explanationLabel = document.createElement('label');
+                        explanationLabel.style.cssText = 'display:block; font-size:0.65rem; color:#047857; font-weight:600; margin-top:0.5rem; margin-bottom:0.25rem;';
+                        explanationLabel.innerText = 'Explanation (Optional)';
+                        gradingDiv.appendChild(explanationLabel);
+                        
+                        const explanationInput = document.createElement('textarea');
+                        explanationInput.className = 'input-bare';
+                        explanationInput.style.cssText = 'font-size:0.85rem; min-height:50px; color:#047857; background:#f0fdf4; border:1px solid #6ee7b7; border-radius:4px;';
+                        explanationInput.value = grading.explanation || '';
+                        explanationInput.placeholder = 'Explain the correct answer...';
+                        explanationInput.oninput = (e) => {
+                            if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
+                            sq.grading.explanation = e.target.value;
+                            updateJsonView();
+                        };
+                        gradingDiv.appendChild(explanationInput);
                         
                         card.appendChild(gradingDiv);
                     }
@@ -3152,30 +3200,8 @@
         });
         
         function downloadJSONL() {
-            // Prepare data for export (remove UI-only fields)
-            const exportData = activeData.map(q => {
-                const exported = JSON.parse(JSON.stringify(q));
-                // Clean up assets - remove width/height (UI only)
-                const cleanAssets = (assets) => {
-                    if (!assets) return;
-                    assets.forEach(a => {
-                        delete a.width;
-                        delete a.height;
-                    });
-                };
-                if (exported.content?.prompt?.assets) cleanAssets(exported.content.prompt.assets);
-                if (exported.content?.stimulus?.assets) cleanAssets(exported.content.stimulus.assets);
-                if (exported.content?.options) {
-                    exported.content.options.forEach(opt => cleanAssets(opt.assets));
-                }
-                if (exported.content?.subquestions) {
-                    exported.content.subquestions.forEach(sq => {
-                        if (sq.prompt?.assets) cleanAssets(sq.prompt.assets);
-                        if (sq.options) sq.options.forEach(opt => cleanAssets(opt.assets));
-                    });
-                }
-                return exported;
-            });
+            // Prepare data for export using shared prepareForExport function
+            const exportData = activeData.map(q => prepareForExport(q));
             
             let jsonl = exportData.map(q => JSON.stringify(q)).join('\n');
             const blob = new Blob([jsonl], { type: 'application/json' });
@@ -3250,75 +3276,13 @@
             const q = activeData[activeIndex];
             if (!q) return;
             
-            const questionId = q.question_id || 'q_xxx';
-            const layoutConfig = getLayoutConfig(q);
-            
-            // Build layout JSON in the specified format
-            const layoutData = {
-                layout_id: `lyt_${questionId}_print`,
-                question_id: questionId,
-                page_layout: "A4",
-                
-                theme: layoutConfig.theme,
-                regions: layoutConfig.regions,
-                print_settings: layoutConfig.print_settings
-            };
+            // Use shared generateLayoutJson function
+            const layoutData = generateLayoutJson(q);
             
             const textarea = document.getElementById('layout-json-textarea');
             if (textarea) {
                 textarea.value = JSON.stringify(layoutData, null, 2);
             }
-        }
-        
-        // Helper function to get layout configuration for a question
-        function getLayoutConfig(q) {
-            const content = q.content || {};
-            
-            // Default theme settings
-            const theme = {
-                font_family: "Noto Sans, sans-serif",
-                base_font_size: "11pt",
-                line_height: "1.5"
-            };
-            
-            // Build regions only for sections that exist
-            const regions = {};
-            
-            // Check if prompt exists (has text or assets)
-            const hasPrompt = content.prompt && (content.prompt.text || (content.prompt.assets && content.prompt.assets.length > 0));
-            if (hasPrompt) {
-                regions.prompt = { display: content.prompt.layout || 'stack' };
-            }
-            
-            // Check if stimulus exists (has text, assets, or word_bank)
-            const hasStimulus = content.stimulus && (
-                content.stimulus.text || 
-                (content.stimulus.assets && content.stimulus.assets.length > 0) ||
-                (content.stimulus.word_bank && content.stimulus.word_bank.length > 0)
-            );
-            if (hasStimulus) {
-                regions.stimulus = { display: content.stimulus.layout || 'stack' };
-            }
-            
-            // Check if options exist
-            const hasOptions = content.options && content.options.length > 0;
-            if (hasOptions) {
-                regions.options = { display: content.options_layout || 'stack' };
-            }
-            
-            // Check if subquestions exist
-            const hasSubquestions = content.subquestions && content.subquestions.length > 0;
-            if (hasSubquestions) {
-                regions.subquestions = { display: content.subquestions_layout || 'grid' };
-            }
-            
-            // Print settings
-            const print_settings = {
-                page_break_inside: "avoid",
-                keep_with_next: false
-            };
-            
-            return { theme, regions, print_settings };
         }
         
         function getBlankStyle(text, options) {
@@ -3435,6 +3399,17 @@
                     const label = sq.sub_id || String.fromCharCode(97 + i);
                     const sqAssets = (sq.prompt && sq.prompt.assets) ? sq.prompt.assets : [];
                     
+                    // Sub-question stimulus (context)
+                    let sqStimulusHtml = '';
+                    if (sq.stimulus && (sq.stimulus.text || (sq.stimulus.assets && sq.stimulus.assets.length > 0))) {
+                        const sqStimText = sq.stimulus.text || '';
+                        const sqStimAssets = sq.stimulus.assets || [];
+                        sqStimulusHtml = `<div style="background:#f9fafb; padding:0.5rem; border:1px solid #e5e7eb; margin-bottom:0.5rem; font-style:italic; font-size:10pt;">
+                            ${sqStimText}
+                            ${renderAssetsArray(sqStimAssets)}
+                        </div>`;
+                    }
+                    
                     let optHtml = '';
                     if(sq.options) {
                         optHtml = sq.options.map((o, k) => {
@@ -3450,6 +3425,7 @@
                     // Stack layout for individual sub-questions
                     const contentHtml = `
                             <div style="width:100%">
+                            ${sqStimulusHtml}
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
                                 <div style="flex:1;">${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}</div>
                                 ${sqMarks ? `<div>${sqMarks}</div>` : ''}
