@@ -465,6 +465,13 @@
         
         .p-stimulus { background: #f9fafb; padding: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1rem; font-style: italic; text-align: justify; }
         .p-word-bank { background: white; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 0.75rem; font-style: normal; font-size: 10pt; text-align: center; }
+        
+        /* Table styles for stimulus tables */
+        .p-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-style: normal; font-size: 10pt; }
+        .p-table th, .p-table td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; }
+        .p-table th { background: #f3f4f6; font-weight: 600; }
+        .p-table tbody tr:nth-child(even) { background: #fafafa; }
+        
         .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .p-sub-item { margin-bottom: 0.75rem; text-align: justify; padding-left: 1.5rem; display: flex; align-items: baseline; }
         .p-sub-label { font-weight: bold; margin-right: 0.5rem; flex-shrink: 0; }
@@ -3356,6 +3363,7 @@
                 const stimAssets = content.stimulus.assets || [];
                 const stimText = content.stimulus.text || '';
                 const wordBank = content.stimulus.word_bank || [];
+                const stimTables = content.stimulus.tables || [];
                 
                 // Render word bank if present
                 let wordBankHtml = '';
@@ -3364,9 +3372,13 @@
                     wordBankHtml = `<div class="p-word-bank">${words}</div>`;
                 }
                 
+                // Render tables if present (use shared helper from question-parser.js)
+                const tablesHtml = renderStimulusTables(stimTables);
+                
                 stimHtml = `<div class="p-stimulus p-section-stack">
                     <div class="p-section-text">${stimText}</div>
                     ${stimAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(stimAssets)}</div>` : ''}
+                    ${tablesHtml}
                     ${wordBankHtml}
                 </div>`;
             }
@@ -3401,12 +3413,14 @@
                     
                     // Sub-question stimulus (context)
                     let sqStimulusHtml = '';
-                    if (sq.stimulus && (sq.stimulus.text || (sq.stimulus.assets && sq.stimulus.assets.length > 0))) {
+                    if (sq.stimulus && (sq.stimulus.text || (sq.stimulus.assets && sq.stimulus.assets.length > 0) || (sq.stimulus.tables && sq.stimulus.tables.length > 0))) {
                         const sqStimText = sq.stimulus.text || '';
                         const sqStimAssets = sq.stimulus.assets || [];
+                        const sqStimTables = sq.stimulus.tables || [];
                         sqStimulusHtml = `<div style="background:#f9fafb; padding:0.5rem; border:1px solid #e5e7eb; margin-bottom:0.5rem; font-style:italic; font-size:10pt;">
                             ${sqStimText}
                             ${renderAssetsArray(sqStimAssets)}
+                            ${renderStimulusTables(sqStimTables)}
                         </div>`;
                     }
                     
