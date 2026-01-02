@@ -86,6 +86,26 @@
             text-align: justify;
             font-size: 9pt;
         }
+        /* Table styles for stimulus tables */
+        .q-preview .p-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.5rem 0;
+            font-style: normal;
+            font-size: 9pt;
+        }
+        .q-preview .p-table th, .q-preview .p-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.4rem 0.6rem;
+            text-align: left;
+        }
+        .q-preview .p-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+        .q-preview .p-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
         .q-preview .p-sub-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -783,15 +803,18 @@
             let stimHtml = '';
             if (q.stimulus) {
                 let assetsHtml = '';
-                if (q.stimulus.media) {
-                    assetsHtml = q.stimulus.media.map(m =>
+                if (q.stimulus.media || q.stimulus.assets) {
+                    const media = q.stimulus.media || q.stimulus.assets || [];
+                    assetsHtml = media.map(m =>
                         `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
                     ).join('');
                 }
-                if (q.stimulus.text) {
-                    stimHtml = `<div class="p-stimulus">${q.stimulus.text}${assetsHtml}</div>`;
-                } else if (assetsHtml) {
-                    stimHtml = `<div class="p-stimulus">${assetsHtml}</div>`;
+                // Render tables if present (use shared helper from question-parser.js)
+                const tablesHtml = renderStimulusTables(q.stimulus.tables || []);
+                
+                const stimContent = (q.stimulus.text || '') + assetsHtml + tablesHtml;
+                if (stimContent) {
+                    stimHtml = `<div class="p-stimulus">${stimContent}</div>`;
                 }
             }
 
@@ -1375,15 +1398,18 @@
             let stimHtml = '';
             if (qData.stimulus) {
                 let assetsHtml = '';
-                if (qData.stimulus.media) {
-                    assetsHtml = qData.stimulus.media.map(m =>
+                if (qData.stimulus.media || qData.stimulus.assets) {
+                    const media = qData.stimulus.media || qData.stimulus.assets || [];
+                    assetsHtml = media.map(m =>
                         `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
                     ).join('');
                 }
-                if (qData.stimulus.text) {
-                    stimHtml = `<div class="p-stimulus">${qData.stimulus.text}${assetsHtml}</div>`;
-                } else if (assetsHtml) {
-                    stimHtml = `<div class="p-stimulus">${assetsHtml}</div>`;
+                // Render tables if present (use shared helper from question-parser.js)
+                const tablesHtml = renderStimulusTables(qData.stimulus.tables || []);
+                
+                const stimContent = (qData.stimulus.text || '') + assetsHtml + tablesHtml;
+                if (stimContent) {
+                    stimHtml = `<div class="p-stimulus">${stimContent}</div>`;
                 }
             }
 
