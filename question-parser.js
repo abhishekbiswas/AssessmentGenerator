@@ -170,11 +170,38 @@ function convertToNewPromptFormat(prompt) {
  */
 function convertToNewStimulusFormat(stimulus) {
     if (!stimulus) return null;
-    return {
+    
+    // Convert word_bank items to new format with id, text, assets
+    const wordBank = (stimulus.word_bank || []).map((item, idx) => {
+        if (typeof item === 'string') {
+            return { id: `wb_${idx}`, text: item, assets: [] };
+        }
+        return {
+            id: item.id || `wb_${idx}`,
+            text: item.text || '',
+            assets: (item.assets || []).map(convertToNewAssetFormat)
+        };
+    });
+    
+    // Convert tables to new format
+    const tables = (stimulus.tables || []).map((table, idx) => ({
+        id: table.id || `table_${idx}`,
+        header: table.header || [],
+        rows: table.rows || []
+    }));
+    
+    const result = {
         text: stimulus.text || '',
         assets: (stimulus.media || stimulus.assets || []).map(convertToNewAssetFormat),
-        word_bank: stimulus.word_bank || []
+        word_bank: wordBank
     };
+    
+    // Only include tables if present
+    if (tables.length > 0) {
+        result.tables = tables;
+    }
+    
+    return result;
 }
 
 /**
@@ -215,11 +242,24 @@ function convertToNewAssetFormat(asset) {
  * @returns {Object} Sub-question in new format
  */
 function convertSubquestionToNewFormat(sq) {
+    // If grading already exists in new format, use it directly
+    let grading;
+    if (sq.grading && sq.grading.kind) {
+        grading = {
+            kind: sq.grading.kind,
+            values: sq.grading.values || [],
+            points: String(sq.grading.points || 1),
+            explanation: sq.grading.explanation || ''
+        };
+    } else {
+        grading = convertToNewGradingFormat(sq.answer, sq.rubric, sq.points);
+    }
+    
     const converted = {
         sub_id: sq.sub_id || 'a',
         type: sq.type || 'short_answer',
         prompt: convertToNewPromptFormat(sq.prompt),
-        grading: convertToNewGradingFormat(sq.answer, sq.rubric, sq.points)
+        grading: grading
     };
     
     if (sq.stimulus) {
@@ -293,7 +333,8 @@ function getLayoutConfig(q) {
     const hasStimulus = content.stimulus && (
         content.stimulus.text || 
         (content.stimulus.assets && content.stimulus.assets.length > 0) ||
-        (content.stimulus.word_bank && content.stimulus.word_bank.length > 0)
+        (content.stimulus.word_bank && content.stimulus.word_bank.length > 0) ||
+        (content.stimulus.tables && content.stimulus.tables.length > 0)
     );
     if (hasStimulus) {
         regions.stimulus = { display: content.stimulus.layout || 'stack' };
@@ -339,16 +380,21 @@ function generateLayoutJson(q) {
 // =====================================================
 
 /**
- * Check if a question has any media assets
+ * Check if a question has any media assets or tables
  * @param {Object} q - Question object
- * @returns {boolean} True if question has media
+ * @returns {boolean} True if question has media or tables
  */
 function hasMedia(q) {
     const content = q.content || {};
     if (content.prompt?.assets?.length) return true;
-    if (content.stimulus?.assets?.length) return true; 
+    if (content.stimulus?.assets?.length) return true;
+    if (content.stimulus?.tables?.length) return true;
     if (content.subquestions) { 
-        return content.subquestions.some(sq => sq.prompt?.assets?.length || sq.stimulus?.assets?.length); 
+        return content.subquestions.some(sq => 
+            sq.prompt?.assets?.length || 
+            sq.stimulus?.assets?.length ||
+            sq.stimulus?.tables?.length
+        ); 
     }
     return false;
 }
@@ -364,6 +410,37 @@ function getTextValue(data) {
     if (typeof data === 'object' && data.text !== undefined) return data.text || '';
     if (typeof data === 'object' && data.value !== undefined) return data.value || '';
     return '';
+}
+
+/**
+ * Render tables from stimulus as HTML
+ * @param {Array} tables - Array of table objects with id, header, and rows
+ * @returns {string} HTML string for rendered tables
+ */
+function renderStimulusTables(tables) {
+    if (!tables || tables.length === 0) return '';
+    
+    return tables.map(table => {
+        const tableId = table.id || '';
+        const header = table.header || [];
+        const rows = table.rows || [];
+        
+        // Build header row if present
+        let headerHtml = '';
+        if (header.length > 0) {
+            const headerCells = header.map(h => `<th>${h}</th>`).join('');
+            headerHtml = `<thead><tr>${headerCells}</tr></thead>`;
+        }
+        
+        // Build body rows
+        const bodyRows = rows.map(row => {
+            const cells = row.map(cell => `<td>${cell}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        const bodyHtml = bodyRows ? `<tbody>${bodyRows}</tbody>` : '';
+        
+        return `<table class="p-table" data-table-id="${tableId}">${headerHtml}${bodyHtml}</table>`;
+    }).join('');
 }
 
 /**
