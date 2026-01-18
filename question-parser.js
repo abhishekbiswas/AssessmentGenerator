@@ -16,17 +16,55 @@
 
 /**
  * Parse mixed JSON/JSONL content into an array of question objects
- * Handles BOM, multiple JSON objects, and normalizes to the new schema
+ * Handles BOM, JSON arrays, multiple JSON objects, and normalizes to the new schema
  * @param {string} content - Raw JSON/JSONL content
  * @returns {Array} Array of normalized question objects
  */
 function parseMixedJson(content) {
     const results = [];
+    
+    // Remove BOM if present
+    if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+    
+    // Trim whitespace
+    content = content.trim();
+    
+    // Try parsing as JSON array first (handles JSON files with array wrapper)
+    if (content.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+                parsed.forEach(obj => {
+                    if (obj && typeof obj === 'object') {
+                        const normalized = normalizeToNewSchema(obj);
+                        results.push(normalized);
+                    }
+                });
+                return results;
+            }
+        } catch (e) {
+            console.log('Not a valid JSON array, trying JSONL parsing...');
+        }
+    }
+    
+    // Try parsing as complete JSON object (single question)
+    if (content.startsWith('{') && !content.includes('\n{')) {
+        try {
+            const obj = JSON.parse(content);
+            const normalized = normalizeToNewSchema(obj);
+            results.push(normalized);
+            return results;
+        } catch (e) {
+            console.log('Not a single JSON object, trying JSONL parsing...');
+        }
+    }
+    
+    // Fall back to JSONL parsing (one object per line or concatenated objects)
     let buffer = "";
     let braceCount = 0;
     let inString = false;
     let escape = false;
-    if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+    
     for (let i = 0; i < content.length; i++) {
         const char = content[i];
         buffer += char;
@@ -39,12 +77,13 @@ function parseMixedJson(content) {
                 braceCount--;
                 if (braceCount === 0) {
                     try {
-                        const obj = JSON.parse(buffer);
+                        const obj = JSON.parse(buffer.trim());
                         const normalized = normalizeToNewSchema(obj);
                         results.push(normalized);
                         buffer = ""; 
                     } catch (e) {
                         console.error('Parse error:', e);
+                        buffer = ""; // Reset buffer on error
                     }
                 }
             }

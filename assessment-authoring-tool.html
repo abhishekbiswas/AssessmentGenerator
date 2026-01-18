@@ -463,8 +463,28 @@
         .p-q-num { font-weight: bold; margin-right: 0.5rem; }
         .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
-        .p-stimulus { background: #f9fafb; padding: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1rem; font-style: italic; text-align: justify; }
+        .p-stimulus { padding: 0.75rem 0; margin-bottom: 1rem; text-align: justify; }
         .p-word-bank { background: white; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 0.75rem; font-style: normal; font-size: 10pt; text-align: center; }
+        
+        /* Groups for sorting/classification */
+        .p-groups-container { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+        .p-group-box { flex: 1; min-width: 120px; border: 1px solid #000; }
+        .p-group-header { background: #f3f4f6; padding: 0.5rem; font-weight: bold; text-align: center; border-bottom: 1px solid #000; }
+        .p-group-body { min-height: 80px; padding: 0.5rem; }
+        .p-group-line { border-bottom: 1px solid #ccc; margin: 0.75rem 0.5rem; }
+        
+        /* Pairs for match_columns */
+        .p-pairs-container { display: flex; gap: 2rem; margin: 1rem 0; justify-content: center; }
+        .p-pairs-column { flex: 1; max-width: 200px; }
+        .p-pairs-header { font-weight: bold; text-align: center; margin-bottom: 0.5rem; font-size: 10pt; }
+        .p-pairs-item { padding: 0.4rem 0.75rem; margin-bottom: 0.5rem; border: 1px solid #000; background: white; }
+        .p-pairs-item-id { font-weight: bold; margin-right: 0.5rem; }
+        
+        /* Items to sort */
+        .p-items-box { margin-top: 1rem; padding: 0.75rem; border: 1px dashed #999; }
+        .p-items-label { font-weight: bold; font-size: 10pt; margin-bottom: 0.5rem; }
+        .p-items-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+        .p-item-chip { padding: 0.25rem 0.75rem; border: 1px solid #000; background: white; }
         
         /* Table styles for stimulus tables */
         .p-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-style: normal; font-size: 10pt; }
@@ -823,6 +843,57 @@
         }
         .word-bank-item input { flex: 1; padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem; }
 
+        /* GROUPS EDITOR (for sorting/classification) */
+        .groups-section {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+        .groups-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #fef3c7;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #fcd34d;
+        }
+        .groups-item .group-id { width: 40px; padding: 0.4rem; border: 1px solid #fcd34d; border-radius: 4px; font-size: 0.85rem; font-weight: 600; text-align: center; background: white; }
+        .groups-item input.group-text { flex: 1; padding: 0.4rem; border: 1px solid #fcd34d; border-radius: 4px; font-size: 0.85rem; }
+
+        /* PAIRS EDITOR (for match_columns) */
+        .pairs-section {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+        .pairs-column {
+            margin-bottom: 0.75rem;
+        }
+        .pairs-column-header {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #7c3aed;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pairs-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #f5f3ff;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #c4b5fd;
+        }
+        .pairs-item .pair-id { width: 40px; padding: 0.4rem; border: 1px solid #c4b5fd; border-radius: 4px; font-size: 0.85rem; font-weight: 600; text-align: center; background: white; }
+        .pairs-item input.pair-text { flex: 1; padding: 0.4rem; border: 1px solid #c4b5fd; border-radius: 4px; font-size: 0.85rem; }
+
         /* SECTION LAYOUT TOGGLE */
         .section-layout-toggle {
             display: flex;
@@ -1056,8 +1127,8 @@
                     
                     <!-- Actions: Dynamic based on Workflow -->
                     <div class="actions" id="action-bar">
-                        <input type="file" id="file-input" accept=".jsonl">
-                        <button class="btn" id="btn-upload" onclick="document.getElementById('file-input').click()">📁 Upload JSONL</button>
+                        <input type="file" id="file-input" accept=".jsonl,.json">
+                        <button class="btn" id="btn-upload" onclick="document.getElementById('file-input').click()">📁 Upload JSON/JSONL</button>
                         <button class="btn btn-primary" id="btn-action" onclick="downloadJSONL()">Publish All</button>
                     </div>
                 </header>
@@ -1069,7 +1140,6 @@
                         <div id="module-import" class="panel-module active">
                             <div class="panel-filter">
                                 <div style="font-size:0.75rem; color:#666; margin-bottom:0.25rem;">Upload questions to review and publish.</div>
-                                <button class="btn btn-primary" style="width:100%; font-size:0.8rem;" onclick="createNewQuestion()">+ Create New Question</button>
                             </div>
                             <div class="panel-header-status">
                                  <span id="import-count">0 Items</span>
@@ -1127,6 +1197,10 @@
                                         <option value="short_answer">Short Answer</option>
                                         <option value="long_answer">Long Answer</option>
                                         <option value="fill_blank">Fill Blank</option>
+                                        <option value="match_columns">Match Columns</option>
+                                        <option value="sequencing">Sequencing</option>
+                                        <option value="sorting">Sorting</option>
+                                        <option value="labelling">Labelling</option>
                                         <option value="composite">Composite</option>
                                     </select>
                                     <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
@@ -1250,6 +1324,8 @@
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                                 <button class="btn btn-sm" onclick="addAssetToStimulus()">+ Add Image</button>
                                                 <button class="btn btn-sm" onclick="toggleWordBank()" id="toggle-wordbank-btn">+ Word Bank</button>
+                                                <button class="btn btn-sm" onclick="toggleGroups()" id="toggle-groups-btn" style="background:#fef3c7; border-color:#fcd34d;">+ Groups</button>
+                                                <button class="btn btn-sm" onclick="togglePairs()" id="toggle-pairs-btn" style="background:#f5f3ff; border-color:#c4b5fd;">+ Pairs</button>
                                                 <button class="remove-section-btn" onclick="removeSection('stimulus')">✕ Remove</button>
                                             </div>
                                         </div>
@@ -1270,12 +1346,39 @@
                                             </div>
                                             <div id="word-bank-list"></div>
                                         </div>
+
+                                        <!-- Groups Section (inside Stimulus - for sorting/classification) -->
+                                        <div id="groups-section" class="groups-section" style="display:none;">
+                                            <div class="section-header">
+                                                <label style="font-size:0.7rem; font-weight:700; color:#b45309;">GROUPS (Categories for Sorting)</label>
+                                                <button class="btn btn-sm" onclick="addGroupItem()" style="font-size:0.7rem; background:#fef3c7; border-color:#fcd34d;">+ Add Group</button>
+                                            </div>
+                                            <div id="groups-list"></div>
+                                        </div>
+
+                                        <!-- Pairs Section (inside Stimulus - for match_columns) -->
+                                        <div id="pairs-section" class="pairs-section" style="display:none;">
+                                            <div class="pairs-column">
+                                                <div class="pairs-column-header">
+                                                    <label>LEFT COLUMN</label>
+                                                    <button class="btn btn-sm" onclick="addPairItem('left')" style="font-size:0.65rem; background:#f5f3ff; border-color:#c4b5fd;">+ Add</button>
+                                                </div>
+                                                <div id="pairs-left-list"></div>
+                                            </div>
+                                            <div class="pairs-column">
+                                                <div class="pairs-column-header">
+                                                    <label>RIGHT COLUMN</label>
+                                                    <button class="btn btn-sm" onclick="addPairItem('right')" style="font-size:0.65rem; background:#f5f3ff; border-color:#c4b5fd;">+ Add</button>
+                                                </div>
+                                                <div id="pairs-right-list"></div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <!-- Options Section (for MCQ types) -->
+                                    <!-- Options Section (for MCQ/sequencing/sorting types) -->
                                     <div id="options-section" class="content-section options-section" style="display:none;">
                                         <div class="section-header">
-                                            <label class="section-label">OPTIONS (MCQ)</label>
+                                            <label class="section-label" id="options-section-label">OPTIONS</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                                 <button class="btn btn-sm" onclick="addOption()">+ Add Option</button>
                                                 <button class="remove-section-btn" onclick="removeSection('options')">✕ Remove</button>
@@ -1309,11 +1412,15 @@
                                         <div class="grading-grid">
                                             <div class="grading-field">
                                                 <label>Kind</label>
-                                                <select id="grading-kind" onchange="updateGrading('kind', this.value)">
+                                                <select id="grading-kind" onchange="onGradingKindChange(this.value)">
                                                 <option value="text">Text</option>
                                                 <option value="single_selection">Single Selection</option>
-                                                    <option value="multiple_selection">Multiple Selection</option>
+                                                <option value="multiple_selection">Multiple Selection</option>
                                                 <option value="sample_text">Sample Text</option>
+                                                <option value="matching">Matching</option>
+                                                <option value="sequencing">Sequencing</option>
+                                                <option value="grouping">Grouping</option>
+                                                <option value="coordinate">Coordinate</option>
                                             </select>
                                         </div>
                                             <div class="grading-field">
@@ -1321,10 +1428,15 @@
                                                 <input type="text" id="grading-points" oninput="updateGrading('points', this.value)" placeholder="1">
                                     </div>
                                         </div>
-                                        <div class="grading-field" style="margin-top:0.75rem;">
-                                            <label>Values (comma-separated for multiple answers)</label>
+                                        <!-- Simple values for text/selection types -->
+                                        <div id="grading-values-simple" class="grading-field" style="margin-top:0.75rem;">
+                                            <label id="grading-values-label">Values (comma-separated for multiple answers)</label>
                                             <textarea class="input-bare" id="grading-values" oninput="updateGradingValues(this.value)" placeholder="Enter correct answer(s)..." style="color:#047857; min-height:60px;"></textarea>
-                                            </div>
+                                        </div>
+                                        <!-- Complex values for matching/sequencing/grouping -->
+                                        <div id="grading-values-complex" style="display:none; margin-top:0.75rem;">
+                                            <div id="grading-values-editor"></div>
+                                        </div>
                                         <div class="grading-field" style="margin-top:0.75rem;">
                                             <label>Explanation (Optional)</label>
                                             <textarea class="input-bare" id="grading-explanation" oninput="updateGrading('explanation', this.value)" placeholder="Explain the correct answer..." rows="2"></textarea>
@@ -1340,7 +1452,17 @@
                                         <div class="metadata-grid">
                                             <div class="metadata-field">
                                                 <label>UI Hint</label>
-                                                <input type="text" id="meta-ui-hint" oninput="updateMetadata('ui_hint', this.value)" placeholder="Optional hint...">
+                                                <select id="meta-ui-hint" onchange="updateMetadata('ui_hint', this.value)">
+                                                    <option value="">Select UI Hint...</option>
+                                                    <option value="selection_list">Selection List</option>
+                                                    <option value="cloze_text">Cloze Text</option>
+                                                    <option value="match_connector">Match Connector</option>
+                                                    <option value="reorder_list">Reorder List</option>
+                                                    <option value="sort_and_categorize">Sort & Categorize</option>
+                                                    <option value="visual_label">Visual Label</option>
+                                                    <option value="math_grid">Math Grid</option>
+                                                    <option value="rich_text_editor">Rich Text Editor</option>
+                                                </select>
                                             </div>
                                             <div class="metadata-field">
                                                 <label>Version</label>
@@ -1418,7 +1540,7 @@
         let hasUnsavedChanges = false;
         let originalQuestionSnapshot = null; // Stores the original state when editing begins
 
-        // MOCK DATABASE (using new schema format)
+        // MOCK DATABASE (using new schema format v2)
         const mockDatabase = [
             { 
                 question_id: "db_q1", 
@@ -1428,24 +1550,62 @@
                     subquestions: [{ sub_id: "a", type: "fill_blank", prompt: { text: "Standard unit for length is ____ (m/kg)", assets: [] }, grading: { kind: "text", values: ["m"], points: "1" } }] 
                 },
                 grading: { kind: "text", values: [], points: "2" },
-                metadata: { ui_hint: "", version: 1, source: "Manual" }
+                metadata: { ui_hint: "cloze_text", version: 2, source: "Manual" }
             },
             { 
                 question_id: "db_q2", 
                 taxonomy: { grade_id: "grade_3", subject_id: "mathematics", unit_id: "ch_addition", section_id: "B", type: "short_answer", difficulty: "medium", pool: "exam", skill_tags: ["addition"] },
                 content: { prompt: { text: "Solve 345 + 123", assets: [] } },
-                grading: { kind: "text", values: ["468"], points: "3" },
-                metadata: { ui_hint: "", version: 1, source: "Manual" }
+                grading: { kind: "sample_text", values: ["468"], points: "3" },
+                metadata: { ui_hint: "rich_text_editor", version: 2, source: "Manual" }
             },
             { 
                 question_id: "db_q3", 
                 taxonomy: { grade_id: "grade_3", subject_id: "english", unit_id: "ch1", section_id: "A", type: "mcq", difficulty: "easy", pool: "practice", skill_tags: ["grammar"] },
                 content: { 
                     prompt: { text: "Tick the noun.", assets: [] }, 
-                    options: [{ id: "a", text: "Run", assets: [] }, { id: "b", text: "Cat", assets: [] }, { id: "c", text: "Blue", assets: [] }] 
+                    options: [{ opt_id: "a", text: "Run", assets: [] }, { opt_id: "b", text: "Cat", assets: [] }, { opt_id: "c", text: "Blue", assets: [] }] 
                 },
                 grading: { kind: "single_selection", values: ["b"], points: "1" },
-                metadata: { ui_hint: "", version: 1, source: "Manual" }
+                metadata: { ui_hint: "selection_list", version: 2, source: "Manual" }
+            },
+            { 
+                question_id: "db_q4", 
+                taxonomy: { grade_id: "grade_3", subject_id: "english", unit_id: "ch1", section_id: "B", type: "match_columns", difficulty: "medium", pool: "practice", skill_tags: ["vocabulary"] },
+                content: { 
+                    prompt: { text: "Match the words with their meanings.", assets: [] },
+                    stimulus: {
+                        pairs: {
+                            left_column: [{ id: "l1", text: "Bright" }, { id: "l2", text: "Happy" }],
+                            right_column: [{ id: "r1", text: "Full of light" }, { id: "r2", text: "Feeling joy" }]
+                        }
+                    }
+                },
+                grading: { kind: "matching", values: [{ pair: ["l1", "r1"] }, { pair: ["l2", "r2"] }], points: "2" },
+                metadata: { ui_hint: "match_connector", version: 2, source: "Manual" }
+            },
+            { 
+                question_id: "db_q5", 
+                taxonomy: { grade_id: "grade_3", subject_id: "mathematics", unit_id: "ch1", section_id: "A", type: "sequencing", difficulty: "easy", pool: "practice", skill_tags: ["ordering"] },
+                content: { 
+                    prompt: { text: "Arrange the numbers in ascending order.", assets: [] },
+                    options: [{ opt_id: "n1", text: "45" }, { opt_id: "n2", text: "12" }, { opt_id: "n3", text: "78" }, { opt_id: "n4", text: "23" }]
+                },
+                grading: { kind: "sequencing", values: [{ order: ["n2", "n4", "n1", "n3"] }], points: "2" },
+                metadata: { ui_hint: "reorder_list", version: 2, source: "Manual" }
+            },
+            { 
+                question_id: "db_q6", 
+                taxonomy: { grade_id: "grade_3", subject_id: "evs", unit_id: "ch1", section_id: "A", type: "sorting", difficulty: "medium", pool: "practice", skill_tags: ["classification"] },
+                content: { 
+                    prompt: { text: "Sort the items into the correct categories.", assets: [] },
+                    stimulus: {
+                        groups: [{ group_id: "a", text: "Living Things" }, { group_id: "b", text: "Non-Living Things" }]
+                    },
+                    options: [{ opt_id: "i1", text: "Dog" }, { opt_id: "i2", text: "Rock" }, { opt_id: "i3", text: "Tree" }, { opt_id: "i4", text: "Chair" }]
+                },
+                grading: { kind: "grouping", values: [{ group: "a", items: ["i1", "i3"] }, { group: "b", items: ["i2", "i4"] }], points: "4" },
+                metadata: { ui_hint: "sort_and_categorize", version: 2, source: "Manual" }
             }
         ];
 
@@ -1671,6 +1831,8 @@
             document.getElementById('grading-section').style.display = 'none';
             document.getElementById('metadata-section').style.display = 'none';
             document.getElementById('word-bank-section').style.display = 'none';
+            document.getElementById('groups-section').style.display = 'none';
+            document.getElementById('pairs-section').style.display = 'none';
             
             // Read from new nested schema structure
             const taxonomy = q.taxonomy || {};
@@ -1729,20 +1891,43 @@
                 // Word Bank
                 renderWordBank(stimulus.word_bank || []);
                 document.getElementById('word-bank-section').style.display = (stimulus.word_bank && stimulus.word_bank.length > 0) ? 'block' : 'none';
+                // Groups (for sorting/classification)
+                renderGroups(stimulus.groups || []);
+                document.getElementById('groups-section').style.display = (stimulus.groups && stimulus.groups.length > 0) ? 'block' : 'none';
+                // Pairs (for match_columns)
+                if (stimulus.pairs) {
+                    renderPairs(stimulus.pairs);
+                    document.getElementById('pairs-section').style.display = 'block';
+                } else {
+                    document.getElementById('pairs-section').style.display = 'none';
+                }
             } else {
                 stimArea.style.display = 'none';
+                document.getElementById('groups-section').style.display = 'none';
+                document.getElementById('pairs-section').style.display = 'none';
             }
 
             // Get question type for conditional rendering
             const qType = taxonomy.type || 'short_answer';
             const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
             const isCompositeType = qType === 'composite';
+            // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
+            const usesOptions = isMcqType || qType === 'sequencing' || qType === 'sorting';
 
-            // Options Section (for MCQ types) from content
+            // Options Section (for MCQ/sequencing/sorting types) from content
             const optionsSection = document.getElementById('options-section');
             const options = content.options;
-            if(isMcqType) {
+            if(usesOptions) {
                 optionsSection.style.display = 'block';
+                // Update label based on question type
+                const optionsLabel = document.getElementById('options-section-label');
+                if (qType === 'sequencing') {
+                    optionsLabel.textContent = 'ITEMS TO ORDER';
+                } else if (qType === 'sorting') {
+                    optionsLabel.textContent = 'ITEMS TO SORT';
+                } else {
+                    optionsLabel.textContent = 'OPTIONS (MCQ)';
+                }
                 if (options && options.length > 0) {
                     renderMainOptions(options);
                 } else {
@@ -1767,10 +1952,32 @@
             const gradingSection = document.getElementById('grading-section');
             if(!isCompositeType && grading && (grading.values?.length > 0 || grading.kind)) {
                 gradingSection.style.display = 'block';
-                document.getElementById('grading-kind').value = grading.kind || 'text';
+                const gradingKind = grading.kind || 'text';
+                document.getElementById('grading-kind').value = gradingKind;
                 document.getElementById('grading-points').value = grading.points || '1';
-                document.getElementById('grading-values').value = (grading.values || []).join(', ');
                 document.getElementById('grading-explanation').value = grading.explanation || '';
+                
+                // Handle simple vs complex grading values
+                const isComplex = COMPLEX_GRADING_KINDS.includes(gradingKind);
+                document.getElementById('grading-values-simple').style.display = isComplex ? 'none' : 'block';
+                document.getElementById('grading-values-complex').style.display = isComplex ? 'block' : 'none';
+                
+                if (isComplex) {
+                    renderComplexGradingEditor(gradingKind);
+                } else {
+                    // For simple types, values are strings
+                    const simpleValues = (grading.values || []).map(v => typeof v === 'string' ? v : JSON.stringify(v));
+                    document.getElementById('grading-values').value = simpleValues.join(', ');
+                    // Update label based on kind
+                    const label = document.getElementById('grading-values-label');
+                    if (gradingKind === 'single_selection') {
+                        label.textContent = 'Correct Option ID (e.g., "a" or "b")';
+                    } else if (gradingKind === 'multiple_selection') {
+                        label.textContent = 'Correct Option IDs (comma-separated, e.g., "a, c")';
+                    } else {
+                        label.textContent = 'Values (comma-separated for multiple answers)';
+                    }
+                }
             } else {
                 gradingSection.style.display = 'none';
             }
@@ -1801,13 +2008,15 @@
             const qType = taxonomy.type || 'short_answer';
             const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
             const isCompositeType = qType === 'composite';
+            // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
+            const usesOptions = isMcqType || qType === 'sequencing' || qType === 'sorting';
             
             // Stimulus - always available
             document.getElementById('add-stimulus-btn').classList.toggle('disabled', !!content.stimulus);
             
-            // Options - only for MCQ types
+            // Options - for MCQ, sequencing, and sorting types
             const optionsBtn = document.getElementById('add-options-btn');
-            if (!isMcqType) {
+            if (!usesOptions) {
                 optionsBtn.style.display = 'none';
             } else {
                 optionsBtn.style.display = 'inline-block';
@@ -1881,17 +2090,41 @@
                 
                 const isMcqType = val === 'mcq_single' || val === 'mcq_multi' || val === 'mcq';
                 const isCompositeType = val === 'composite';
+                // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
+                const usesOptions = isMcqType || val === 'sequencing' || val === 'sorting';
                 
-                // Auto-add options for MCQ types if not present
-                if(isMcqType && !q.content.options) {
+                // Auto-add options for types that use them
+                if(usesOptions && !q.content.options) {
                     q.content.options = [
-                        { id: 'a', text: 'Option A', assets: [] },
-                        { id: 'b', text: 'Option B', assets: [] }
+                        { opt_id: 'a', text: 'Option A', assets: [] },
+                        { opt_id: 'b', text: 'Option B', assets: [] }
                     ];
                 }
                 
-                // Remove options for non-MCQ types (with confirmation if data exists)
-                if(!isMcqType && q.content.options && q.content.options.length > 0) {
+                // Auto-add stimulus.groups for sorting type
+                if(val === 'sorting') {
+                    if(!q.content.stimulus) q.content.stimulus = { text: '', assets: [] };
+                    if(!q.content.stimulus.groups) {
+                        q.content.stimulus.groups = [
+                            { group_id: 'a', text: 'Category A' },
+                            { group_id: 'b', text: 'Category B' }
+                        ];
+                    }
+                }
+                
+                // Auto-add stimulus.pairs for match_columns type
+                if(val === 'match_columns') {
+                    if(!q.content.stimulus) q.content.stimulus = { text: '', assets: [] };
+                    if(!q.content.stimulus.pairs) {
+                        q.content.stimulus.pairs = {
+                            left_column: [{ id: 'l1', text: 'Item A' }],
+                            right_column: [{ id: 'r1', text: 'Definition A' }]
+                        };
+                    }
+                }
+                
+                // Remove options for types that don't use them (with confirmation if data exists)
+                if(!usesOptions && q.content.options && q.content.options.length > 0) {
                     if(confirm('Changing to this type will remove the Options section. Continue?')) {
                         delete q.content.options;
             } else {
@@ -2082,62 +2315,6 @@
             }
         }
 
-        function createNewQuestion() {
-            const newQuestion = {
-                question_id: `q_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-                
-                // 1. Taxonomy
-                taxonomy: {
-                grade_id: 'grade_3',
-                subject_id: 'mathematics',
-                unit_id: 'ch1',
-                section_id: 'A',
-                type: 'short_answer',
-                difficulty: 'medium',
-                    pool: 'practice',
-                    skill_tags: []
-                },
-                
-                // 2. Content
-                content: {
-                    prompt: { text: '', assets: [] }
-                },
-                
-                // 3. Grading
-                grading: {
-                    kind: 'text',
-                    values: [],
-                    points: '1'
-                },
-                
-                // 4. Metadata
-                metadata: {
-                    ui_hint: '',
-                    version: 1,
-                    source: 'AI_Generated'
-                }
-            };
-            
-            activeData.push(newQuestion);
-            renderList();
-            
-            // Clear preview content before selecting new question
-            document.getElementById('a4-content').innerHTML = '';
-            
-            // Force switch to Preview tab for new questions (default view)
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-preview').classList.add('active');
-            
-            selectQuestion(activeData.length - 1);
-            
-            // Update counts
-            if(activeWorkflow === 'import') {
-                document.getElementById('import-count').innerText = `${importData.length} Items`;
-                document.getElementById('import-status').innerText = 'Editing';
-            } else {
-                document.getElementById('library-count').innerText = `${libraryData.length} Items`;
-            }
-        }
 
         function updateJsonView() {
             const q = activeData[activeIndex];
@@ -2262,8 +2439,8 @@
             if (!q.content) q.content = {};
             if(!q.content.options || q.content.options.length === 0) {
                 q.content.options = [
-                    { id: 'a', text: 'Option A', assets: [] },
-                    { id: 'b', text: 'Option B', assets: [] }
+                    { opt_id: 'a', text: 'Option A', assets: [] },
+                    { opt_id: 'b', text: 'Option B', assets: [] }
                 ];
                 selectQuestion(activeIndex);
             }
@@ -2304,7 +2481,7 @@
         function addMetadataSection() {
             const q = activeData[activeIndex];
             if(!q.metadata) {
-                q.metadata = { ui_hint: '', version: 1, source: 'AI_Generated' };
+                q.metadata = { ui_hint: 'rich_text_editor', version: 2, source: 'AI_Generated' };
                 selectQuestion(activeIndex);
             }
         }
@@ -2340,7 +2517,8 @@
             container.innerHTML = '';
             
             options.forEach((opt, idx) => {
-                const optId = opt.id || `${String.fromCharCode(97 + idx)}`;
+                // Support both opt_id (new schema) and id (legacy schema)
+                const optId = opt.opt_id || opt.id || `${String.fromCharCode(97 + idx)}`;
                 const optText = getTextValue(opt);
                 const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
@@ -2393,7 +2571,7 @@
             if(!q.content.options) q.content.options = [];
             const newIdx = q.content.options.length;
             const newId = `${String.fromCharCode(97 + newIdx)}`;
-            q.content.options.push({ id: newId, text: '', assets: [] });
+            q.content.options.push({ opt_id: newId, text: '', assets: [] });
             renderMainOptions(q.content.options);
             updateJsonView();
         }
@@ -2403,7 +2581,7 @@
             const opt = q.content?.options?.[idx];
             if (!opt) return;
             if(typeof opt === 'string') {
-                q.content.options[idx] = { id: `${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
+                q.content.options[idx] = { opt_id: `${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
             } else {
                 q.content.options[idx].text = value;
             }
@@ -2426,7 +2604,7 @@
             
             const opt = q.content.options[idx];
             if(typeof opt === 'string') {
-                q.content.options[idx] = { id: `${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
+                q.content.options[idx] = { opt_id: `${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
             }
             if(!q.content.options[idx].assets) q.content.options[idx].assets = [];
             q.content.options[idx].assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
@@ -2503,8 +2681,172 @@
         }
 
         // =====================================================
+        // GROUPS MANAGEMENT (for sorting/classification)
+        // =====================================================
+        
+        function toggleGroups() {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
+            
+            const section = document.getElementById('groups-section');
+            if(section.style.display === 'none') {
+                section.style.display = 'block';
+                if(!stimulus.groups) stimulus.groups = [];
+                if(stimulus.groups.length === 0) {
+                    addGroupItem();
+                }
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function renderGroups(groups) {
+            const container = document.getElementById('groups-list');
+            container.innerHTML = '';
+            
+            groups.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'groups-item';
+                el.innerHTML = `
+                    <input type="text" class="group-id" value="${item.group_id || ''}" placeholder="ID" 
+                           oninput="updateGroupItem(${idx}, 'group_id', this.value)">
+                    <input type="text" class="group-text" value="${item.text || ''}" placeholder="Category name..." 
+                           oninput="updateGroupItem(${idx}, 'text', this.value)">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deleteGroupItem(${idx})">✕</button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function addGroupItem() {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
+            if(!stimulus.groups) stimulus.groups = [];
+            const newIdx = stimulus.groups.length;
+            stimulus.groups.push({ group_id: String.fromCharCode(97 + newIdx), text: '' });
+            renderGroups(stimulus.groups);
+            document.getElementById('groups-section').style.display = 'block';
+            updateJsonView();
+        }
+
+        function updateGroupItem(idx, field, value) {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if (stimulus?.groups?.[idx]) {
+                stimulus.groups[idx][field] = value;
+            }
+            updateJsonView();
+        }
+
+        function deleteGroupItem(idx) {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if (stimulus?.groups) {
+                stimulus.groups.splice(idx, 1);
+                renderGroups(stimulus.groups);
+            }
+            updateJsonView();
+        }
+
+        // =====================================================
+        // PAIRS MANAGEMENT (for match_columns)
+        // =====================================================
+        
+        function togglePairs() {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
+            
+            const section = document.getElementById('pairs-section');
+            if(section.style.display === 'none') {
+                section.style.display = 'block';
+                if(!stimulus.pairs) stimulus.pairs = { left_column: [], right_column: [] };
+                if(stimulus.pairs.left_column.length === 0 && stimulus.pairs.right_column.length === 0) {
+                    addPairItem('left');
+                    addPairItem('right');
+                }
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function renderPairs(pairs) {
+            // Render left column
+            const leftContainer = document.getElementById('pairs-left-list');
+            leftContainer.innerHTML = '';
+            (pairs.left_column || []).forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'pairs-item';
+                el.innerHTML = `
+                    <input type="text" class="pair-id" value="${item.id || ''}" placeholder="ID" 
+                           oninput="updatePairItem('left', ${idx}, 'id', this.value)">
+                    <input type="text" class="pair-text" value="${item.text || ''}" placeholder="Item text..." 
+                           oninput="updatePairItem('left', ${idx}, 'text', this.value)">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deletePairItem('left', ${idx})">✕</button>
+                `;
+                leftContainer.appendChild(el);
+            });
+
+            // Render right column
+            const rightContainer = document.getElementById('pairs-right-list');
+            rightContainer.innerHTML = '';
+            (pairs.right_column || []).forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'pairs-item';
+                el.innerHTML = `
+                    <input type="text" class="pair-id" value="${item.id || ''}" placeholder="ID" 
+                           oninput="updatePairItem('right', ${idx}, 'id', this.value)">
+                    <input type="text" class="pair-text" value="${item.text || ''}" placeholder="Definition text..." 
+                           oninput="updatePairItem('right', ${idx}, 'text', this.value)">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deletePairItem('right', ${idx})">✕</button>
+                `;
+                rightContainer.appendChild(el);
+            });
+        }
+
+        function addPairItem(column) {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            if(!stimulus) return;
+            if(!stimulus.pairs) stimulus.pairs = { left_column: [], right_column: [] };
+            
+            const colKey = column === 'left' ? 'left_column' : 'right_column';
+            const prefix = column === 'left' ? 'l' : 'r';
+            const newIdx = stimulus.pairs[colKey].length;
+            stimulus.pairs[colKey].push({ id: `${prefix}${newIdx + 1}`, text: '' });
+            renderPairs(stimulus.pairs);
+            document.getElementById('pairs-section').style.display = 'block';
+            updateJsonView();
+        }
+
+        function updatePairItem(column, idx, field, value) {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            const colKey = column === 'left' ? 'left_column' : 'right_column';
+            if (stimulus?.pairs?.[colKey]?.[idx]) {
+                stimulus.pairs[colKey][idx][field] = value;
+            }
+            updateJsonView();
+        }
+
+        function deletePairItem(column, idx) {
+            const q = activeData[activeIndex];
+            const stimulus = q.content?.stimulus;
+            const colKey = column === 'left' ? 'left_column' : 'right_column';
+            if (stimulus?.pairs?.[colKey]) {
+                stimulus.pairs[colKey].splice(idx, 1);
+                renderPairs(stimulus.pairs);
+            }
+            updateJsonView();
+        }
+
+        // =====================================================
         // GRADING MANAGEMENT
         // =====================================================
+        
+        const COMPLEX_GRADING_KINDS = ['matching', 'sequencing', 'grouping', 'coordinate'];
         
         function updateGrading(field, value) {
             const q = activeData[activeIndex];
@@ -2519,10 +2861,259 @@
             updateJsonView();
         }
 
+        function onGradingKindChange(kind) {
+            const q = activeData[activeIndex];
+            updateGrading('kind', kind);
+            
+            // Toggle between simple and complex value editors
+            const simpleEditor = document.getElementById('grading-values-simple');
+            const complexEditor = document.getElementById('grading-values-complex');
+            const isComplex = COMPLEX_GRADING_KINDS.includes(kind);
+            
+            simpleEditor.style.display = isComplex ? 'none' : 'block';
+            complexEditor.style.display = isComplex ? 'block' : 'none';
+            
+            // Update label for simple editors
+            const label = document.getElementById('grading-values-label');
+            if (kind === 'single_selection') {
+                label.textContent = 'Correct Option ID (e.g., "a" or "b")';
+            } else if (kind === 'multiple_selection') {
+                label.textContent = 'Correct Option IDs (comma-separated, e.g., "a, c")';
+            } else {
+                label.textContent = 'Values (comma-separated for multiple answers)';
+            }
+            
+            // Render complex editor if needed
+            if (isComplex) {
+                renderComplexGradingEditor(kind);
+            }
+        }
+
+        function renderComplexGradingEditor(kind) {
+            const q = activeData[activeIndex];
+            const container = document.getElementById('grading-values-editor');
+            const values = q.grading?.values || [];
+            
+            let html = '';
+            
+            if (kind === 'matching') {
+                html = `
+                    <div class="grading-field">
+                        <label style="color:#7c3aed;">Matching Pairs (left_id → right_id)</label>
+                        <div id="matching-pairs-list"></div>
+                        <button class="btn btn-sm" onclick="addMatchingPair()" style="margin-top:0.5rem; background:#f5f3ff; border-color:#c4b5fd;">+ Add Pair</button>
+                    </div>`;
+                container.innerHTML = html;
+                renderMatchingPairs(values);
+            } else if (kind === 'sequencing') {
+                html = `
+                    <div class="grading-field">
+                        <label style="color:#0284c7;">Correct Order (comma-separated item IDs)</label>
+                        <input type="text" class="input-bare" id="sequencing-order" 
+                               value="${values.length > 0 && values[0]?.order ? values[0].order.join(', ') : ''}"
+                               oninput="updateSequencingOrder(this.value)"
+                               placeholder="e.g., item3, item1, item2" style="color:#0284c7;">
+                    </div>`;
+                container.innerHTML = html;
+            } else if (kind === 'grouping') {
+                html = `
+                    <div class="grading-field">
+                        <label style="color:#b45309;">Group Assignments (group_id: item1, item2...)</label>
+                        <div id="grouping-list"></div>
+                        <button class="btn btn-sm" onclick="addGroupingEntry()" style="margin-top:0.5rem; background:#fef3c7; border-color:#fcd34d;">+ Add Group Entry</button>
+                    </div>`;
+                container.innerHTML = html;
+                renderGroupingEntries(values);
+            } else if (kind === 'coordinate') {
+                html = `
+                    <div class="grading-field">
+                        <label style="color:#dc2626;">Coordinate Labels (label_id: x, y)</label>
+                        <div id="coordinate-list"></div>
+                        <button class="btn btn-sm" onclick="addCoordinateEntry()" style="margin-top:0.5rem; background:#fee2e2; border-color:#fecaca;">+ Add Label</button>
+                    </div>`;
+                container.innerHTML = html;
+                renderCoordinateEntries(values);
+            }
+        }
+        
+        // --- Matching Pairs Editor ---
+        function renderMatchingPairs(values) {
+            const container = document.getElementById('matching-pairs-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const pairs = values.filter(v => v && v.pair);
+            pairs.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.style.cssText = 'display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#f5f3ff; border-radius:4px; border:1px solid #c4b5fd;';
+                el.innerHTML = `
+                    <input type="text" value="${item.pair[0] || ''}" placeholder="Left ID" 
+                           oninput="updateMatchingPair(${idx}, 0, this.value)"
+                           style="width:80px; padding:0.4rem; border:1px solid #c4b5fd; border-radius:4px;">
+                    <span style="color:#7c3aed;">→</span>
+                    <input type="text" value="${item.pair[1] || ''}" placeholder="Right ID" 
+                           oninput="updateMatchingPair(${idx}, 1, this.value)"
+                           style="width:80px; padding:0.4rem; border:1px solid #c4b5fd; border-radius:4px;">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deleteMatchingPair(${idx})">✕</button>
+                `;
+                container.appendChild(el);
+            });
+            
+            if (pairs.length === 0) {
+                container.innerHTML = '<div style="padding:0.5rem; color:#999; font-size:0.85rem;">No pairs yet. Click "+ Add Pair".</div>';
+            }
+        }
+        
+        function addMatchingPair() {
+            const q = activeData[activeIndex];
+            if (!q.grading) q.grading = { kind: 'matching', values: [], points: '1' };
+            q.grading.values.push({ pair: ['', ''] });
+            renderMatchingPairs(q.grading.values);
+            updateJsonView();
+        }
+        
+        function updateMatchingPair(idx, pairIdx, value) {
+            const q = activeData[activeIndex];
+            if (q.grading?.values?.[idx]?.pair) {
+                q.grading.values[idx].pair[pairIdx] = value;
+            }
+            updateJsonView();
+        }
+        
+        function deleteMatchingPair(idx) {
+            const q = activeData[activeIndex];
+            if (q.grading?.values) {
+                q.grading.values.splice(idx, 1);
+                renderMatchingPairs(q.grading.values);
+            }
+            updateJsonView();
+        }
+        
+        // --- Sequencing Order Editor ---
+        function updateSequencingOrder(value) {
+            const q = activeData[activeIndex];
+            if (!q.grading) q.grading = { kind: 'sequencing', values: [], points: '1' };
+            const orderItems = value.split(',').map(v => v.trim()).filter(v => v);
+            q.grading.values = [{ order: orderItems }];
+            updateJsonView();
+        }
+        
+        // --- Grouping Editor ---
+        function renderGroupingEntries(values) {
+            const container = document.getElementById('grouping-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const entries = values.filter(v => v && v.group);
+            entries.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.style.cssText = 'display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#fef3c7; border-radius:4px; border:1px solid #fcd34d;';
+                el.innerHTML = `
+                    <input type="text" value="${item.group || ''}" placeholder="Group ID" 
+                           oninput="updateGroupingEntry(${idx}, 'group', this.value)"
+                           style="width:60px; padding:0.4rem; border:1px solid #fcd34d; border-radius:4px; font-weight:600;">
+                    <span style="color:#b45309;">:</span>
+                    <input type="text" value="${(item.items || []).join(', ')}" placeholder="Item IDs (comma-separated)" 
+                           oninput="updateGroupingEntry(${idx}, 'items', this.value)"
+                           style="flex:1; padding:0.4rem; border:1px solid #fcd34d; border-radius:4px;">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deleteGroupingEntry(${idx})">✕</button>
+                `;
+                container.appendChild(el);
+            });
+            
+            if (entries.length === 0) {
+                container.innerHTML = '<div style="padding:0.5rem; color:#999; font-size:0.85rem;">No groups yet. Click "+ Add Group Entry".</div>';
+            }
+        }
+        
+        function addGroupingEntry() {
+            const q = activeData[activeIndex];
+            if (!q.grading) q.grading = { kind: 'grouping', values: [], points: '1' };
+            q.grading.values.push({ group: '', items: [] });
+            renderGroupingEntries(q.grading.values);
+            updateJsonView();
+        }
+        
+        function updateGroupingEntry(idx, field, value) {
+            const q = activeData[activeIndex];
+            if (!q.grading?.values?.[idx]) return;
+            if (field === 'group') {
+                q.grading.values[idx].group = value;
+            } else if (field === 'items') {
+                q.grading.values[idx].items = value.split(',').map(v => v.trim()).filter(v => v);
+            }
+            updateJsonView();
+        }
+        
+        function deleteGroupingEntry(idx) {
+            const q = activeData[activeIndex];
+            if (q.grading?.values) {
+                q.grading.values.splice(idx, 1);
+                renderGroupingEntries(q.grading.values);
+            }
+            updateJsonView();
+        }
+        
+        // --- Coordinate Editor ---
+        function renderCoordinateEntries(values) {
+            const container = document.getElementById('coordinate-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const entries = values.filter(v => v && v.label_id);
+            entries.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.style.cssText = 'display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#fee2e2; border-radius:4px; border:1px solid #fecaca;';
+                el.innerHTML = `
+                    <input type="text" value="${item.label_id || ''}" placeholder="Label" 
+                           oninput="updateCoordinateEntry(${idx}, 'label_id', this.value)"
+                           style="width:80px; padding:0.4rem; border:1px solid #fecaca; border-radius:4px; font-weight:600;">
+                    <span style="color:#dc2626;">x:</span>
+                    <input type="number" value="${item.x || ''}" placeholder="X" 
+                           oninput="updateCoordinateEntry(${idx}, 'x', parseFloat(this.value))"
+                           style="width:60px; padding:0.4rem; border:1px solid #fecaca; border-radius:4px;">
+                    <span style="color:#dc2626;">y:</span>
+                    <input type="number" value="${item.y || ''}" placeholder="Y" 
+                           oninput="updateCoordinateEntry(${idx}, 'y', parseFloat(this.value))"
+                           style="width:60px; padding:0.4rem; border:1px solid #fecaca; border-radius:4px;">
+                    <button class="btn btn-sm delete-sub-btn" onclick="deleteCoordinateEntry(${idx})">✕</button>
+                `;
+                container.appendChild(el);
+            });
+            
+            if (entries.length === 0) {
+                container.innerHTML = '<div style="padding:0.5rem; color:#999; font-size:0.85rem;">No labels yet. Click "+ Add Label".</div>';
+            }
+        }
+        
+        function addCoordinateEntry() {
+            const q = activeData[activeIndex];
+            if (!q.grading) q.grading = { kind: 'coordinate', values: [], points: '1' };
+            q.grading.values.push({ label_id: '', x: 0, y: 0 });
+            renderCoordinateEntries(q.grading.values);
+            updateJsonView();
+        }
+        
+        function updateCoordinateEntry(idx, field, value) {
+            const q = activeData[activeIndex];
+            if (!q.grading?.values?.[idx]) return;
+            q.grading.values[idx][field] = value;
+            updateJsonView();
+        }
+        
+        function deleteCoordinateEntry(idx) {
+            const q = activeData[activeIndex];
+            if (q.grading?.values) {
+                q.grading.values.splice(idx, 1);
+                renderCoordinateEntries(q.grading.values);
+            }
+            updateJsonView();
+        }
+
         function updateGradingValues(value) {
             const q = activeData[activeIndex];
             if(!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
-            // Parse comma-separated values for multi-value answers
+            // Parse comma-separated values for multi-value answers (simple types only)
             q.grading.values = value.split(',').map(v => v.trim()).filter(v => v);
             updateJsonView();
         }
@@ -2533,7 +3124,7 @@
         
         function updateMetadata(field, value) {
             const q = activeData[activeIndex];
-            if(!q.metadata) q.metadata = { ui_hint: '', version: 1, source: 'AI_Generated' };
+            if(!q.metadata) q.metadata = { ui_hint: 'rich_text_editor', version: 2, source: 'AI_Generated' };
             q.metadata[field] = value;
             updateJsonView();
         }
@@ -2580,8 +3171,8 @@
             if(type === 'mcq') {
                 if(!q.content.subquestions[idx].options) {
                     q.content.subquestions[idx].options = [
-                        { id: 'a', text: 'Option A', assets: [] },
-                        { id: 'b', text: 'Option B', assets: [] }
+                        { opt_id: 'a', text: 'Option A', assets: [] },
+                        { opt_id: 'b', text: 'Option B', assets: [] }
                     ];
                 }
             }
@@ -2595,7 +3186,7 @@
             if(!sq) return;
             if(!sq.options) sq.options = [];
             const newIdx = sq.options.length;
-            sq.options.push({ id: `${String.fromCharCode(97 + newIdx)}`, text: '', assets: [] });
+            sq.options.push({ opt_id: `${String.fromCharCode(97 + newIdx)}`, text: '', assets: [] });
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -2712,6 +3303,10 @@
                         <option value="short_answer" ${sq.type === 'short_answer' ? 'selected' : ''}>Short Answer</option>
                         <option value="long_answer" ${sq.type === 'long_answer' ? 'selected' : ''}>Long Answer</option>
                         <option value="fill_blank" ${sq.type === 'fill_blank' ? 'selected' : ''}>Fill Blank</option>
+                        <option value="match_columns" ${sq.type === 'match_columns' ? 'selected' : ''}>Match Columns</option>
+                        <option value="sequencing" ${sq.type === 'sequencing' ? 'selected' : ''}>Sequencing</option>
+                        <option value="sorting" ${sq.type === 'sorting' ? 'selected' : ''}>Sorting</option>
+                        <option value="labelling" ${sq.type === 'labelling' ? 'selected' : ''}>Labelling</option>
                     `;
                     typeSelect.onchange = (e) => updateSubQuestionType(sqIdx, e.target.value);
                     
@@ -2866,7 +3461,7 @@
                             optInput.value = optVal;
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
-                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { id: `${String.fromCharCode(97 + oIdx)}`, text: e.target.value, assets: [] };
+                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { opt_id: `${String.fromCharCode(97 + oIdx)}`, text: e.target.value, assets: [] };
                                 else sq.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
@@ -2922,8 +3517,8 @@
                         addOptBtn.innerText = '+ Options';
                         addOptBtn.onclick = () => {
                             sq.options = [
-                                { id: 'a', text: '', assets: [] },
-                                { id: 'b', text: '', assets: [] }
+                                { opt_id: 'a', text: '', assets: [] },
+                                { opt_id: 'b', text: '', assets: [] }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();
@@ -2986,6 +3581,10 @@
                             <option value="single_selection" ${grading.kind === 'single_selection' ? 'selected' : ''}>Single Selection</option>
                             <option value="multiple_selection" ${grading.kind === 'multiple_selection' ? 'selected' : ''}>Multiple Selection</option>
                             <option value="sample_text" ${grading.kind === 'sample_text' ? 'selected' : ''}>Sample Text</option>
+                            <option value="matching" ${grading.kind === 'matching' ? 'selected' : ''}>Matching</option>
+                            <option value="sequencing" ${grading.kind === 'sequencing' ? 'selected' : ''}>Sequencing</option>
+                            <option value="grouping" ${grading.kind === 'grouping' ? 'selected' : ''}>Grouping</option>
+                            <option value="coordinate" ${grading.kind === 'coordinate' ? 'selected' : ''}>Coordinate</option>
                         `;
                         kindSelect.onchange = (e) => {
                             sq.grading.kind = e.target.value;
@@ -3364,6 +3963,8 @@
                 const stimText = content.stimulus.text || '';
                 const wordBank = content.stimulus.word_bank || [];
                 const stimTables = content.stimulus.tables || [];
+                const stimGroups = content.stimulus.groups || [];
+                const stimPairs = content.stimulus.pairs || null;
                 
                 // Render word bank if present
                 let wordBankHtml = '';
@@ -3375,30 +3976,81 @@
                 // Render tables if present (use shared helper from question-parser.js)
                 const tablesHtml = renderStimulusTables(stimTables);
                 
+                // Render groups for sorting/classification
+                let groupsHtml = '';
+                if (stimGroups.length > 0) {
+                    const groupBoxes = stimGroups.map(g => `
+                        <div class="p-group-box">
+                            <div class="p-group-header">${g.text || g.group_id}</div>
+                            <div class="p-group-body"></div>
+                        </div>
+                    `).join('');
+                    groupsHtml = `<div class="p-groups-container">${groupBoxes}</div>`;
+                }
+                
+                // Render pairs for match_columns
+                let pairsHtml = '';
+                if (stimPairs && (stimPairs.left_column?.length > 0 || stimPairs.right_column?.length > 0)) {
+                    const leftItems = (stimPairs.left_column || []).map((item, i) => 
+                        `<div class="p-pairs-item"><span class="p-pairs-item-id">${i + 1}.</span>${item.text || ''}</div>`
+                    ).join('');
+                    const rightItems = (stimPairs.right_column || []).map((item, i) => 
+                        `<div class="p-pairs-item"><span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>${item.text || ''}</div>`
+                    ).join('');
+                    pairsHtml = `
+                        <div class="p-pairs-container">
+                            <div class="p-pairs-column">
+                                <div class="p-pairs-header">Column A</div>
+                                ${leftItems}
+                            </div>
+                            <div class="p-pairs-column">
+                                <div class="p-pairs-header">Column B</div>
+                                ${rightItems}
+                            </div>
+                        </div>`;
+                }
+                
                 stimHtml = `<div class="p-stimulus p-section-stack">
                     <div class="p-section-text">${stimText}</div>
                     ${stimAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(stimAssets)}</div>` : ''}
                     ${tablesHtml}
+                    ${pairsHtml}
+                    ${groupsHtml}
                     ${wordBankHtml}
                 </div>`;
             }
             
-            // Options section (for MCQ types) - stack layout only
+            // Options section - varies by question type
+            const qType = q.taxonomy?.type || 'mcq';
             let optionsHtml = '';
             if(content.options && content.options.length > 0) {
-                const optItems = content.options.map((opt, k) => {
-                    const optText = typeof opt === 'string' ? opt : (opt.text || '');
-                    const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
-                    const letter = String.fromCharCode(65 + k); // A, B, C, D...
-                    
-                    const assetStr = optAssets.length > 0 ? optAssets.map(a => {
-                        if (!a.uri) return '';
-                        const style = (a.width && a.height) ? `width:${Math.min(a.width, 80)}px; height:${Math.min(a.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
-                        return `<img src="${a.uri}" alt="${a.alt || ''}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
+                // For sorting/sequencing, show items as chips
+                if (qType === 'sorting' || qType === 'sequencing') {
+                    const itemChips = content.options.map(opt => {
+                        const optText = typeof opt === 'string' ? opt : (opt.text || '');
+                        return `<span class="p-item-chip">${optText}</span>`;
+                    }).join('');
+                    const label = qType === 'sorting' ? 'Items to sort:' : 'Items to arrange:';
+                    optionsHtml = `<div class="p-items-box">
+                        <div class="p-items-label">${label}</div>
+                        <div class="p-items-list">${itemChips}</div>
+                    </div>`;
+                } else {
+                    // For MCQ types - stack layout only
+                    const optItems = content.options.map((opt, k) => {
+                        const optText = typeof opt === 'string' ? opt : (opt.text || '');
+                        const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
+                        const letter = String.fromCharCode(65 + k); // A, B, C, D...
+                        
+                        const assetStr = optAssets.length > 0 ? optAssets.map(a => {
+                            if (!a.uri) return '';
+                            const style = (a.width && a.height) ? `width:${Math.min(a.width, 80)}px; height:${Math.min(a.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
+                            return `<img src="${a.uri}" alt="${a.alt || ''}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
                         }).join('') : '';
-                    return `<div class="p-option-item">(${letter}) ${optText}${assetStr}</div>`;
-                }).join('');
-                optionsHtml = `<div class="p-options p-options-stack">${optItems}</div>`;
+                        return `<div class="p-option-item">(${letter}) ${optText}${assetStr}</div>`;
+                    }).join('');
+                    optionsHtml = `<div class="p-options p-options-stack">${optItems}</div>`;
+                }
             }
             
             // Sub-questions section with layout support (sub-questions retain layout controls)
@@ -3433,7 +4085,7 @@
                     }
                     let sqMarks = '';
                     const sqPoints = sq.grading?.points;
-                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">(${sqPoints} ${sqPoints == 1 ? 'mark' : 'marks'})</span>`; }
+                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">[${sqPoints}]</span>`; }
                     const sqText = getTextValue(sq.prompt);
                     
                     // Stack layout for individual sub-questions
@@ -3454,7 +4106,7 @@
             }
             
             const points = grading.points || '1';
-            const marksText = `(${points} ${points == 1 ? 'mark' : 'marks'})`;
+            const marksText = `[${points}]`;
             
             // Apply print settings
             const printSettings = layoutConfig.print_settings;
