@@ -403,7 +403,7 @@
         .card-body { padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
         /* EDIT VIEW CONTAINER */
-        .edit-view-container { display: none; height: 100%; flex-direction: column; }
+        .edit-view-container { display: none; flex: 1; flex-direction: column; overflow: hidden; }
         .edit-view-container.active { display: flex; }
         
         /* TOOLBAR */
@@ -429,7 +429,7 @@
         .view-toggle-btn.active { background: white; color: var(--text-main); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
         /* GRAPHICAL SUB-VIEW */
-        .graphical-view { padding: 2rem; overflow-y: auto; flex: 1; display: block; }
+        .graphical-view { padding: 2rem; overflow-y: auto; overflow-x: hidden; flex: 1; display: block; }
 
         /* JSON SUB-VIEW */
         .json-view { display: none; flex: 1; flex-direction: column; background: var(--json-bg); position: relative; height: 100%; }
@@ -447,7 +447,7 @@
 
         /* PREVIEW VIEW */
         .preview-view-container { 
-            padding: 2rem; background: #525659; display: none; flex: 1; justify-content: center; overflow-y: auto; 
+            padding: 2rem; background: #525659; display: none; flex: 1; justify-content: center; overflow-y: auto; overflow-x: hidden;
         }
         .preview-view-container.active { display: flex; }
         
@@ -498,7 +498,7 @@
         
         .p-asset { margin: 0.5rem 0; text-align: center; }
         .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
-        .p-asset-placeholder { border: 1px dashed #ccc; padding: 2rem; color: #999; font-family: sans-serif; font-size: 0.8rem; }
+        .p-asset-placeholder { display: block; border: 1px dashed #9ca3af; background: #f9fafb; padding: 1.5rem 1rem; margin: 0.75rem 0; color: #6b7280; font-family: sans-serif; font-size: 0.8rem; text-align: center; border-radius: 6px; }
 
         /* Grid layout for preview sections (text left, media right) */
         .p-section-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
@@ -507,7 +507,7 @@
         .p-section-grid .p-section-media .p-asset { margin: 0; }
         .p-section-grid .p-section-media .p-asset img { max-width: 180px; max-height: 150px; }
         
-        /* Stack layout (default - text above media) */
+        /* Vertical layout (default - text above media) */
         .p-section-stack { display: flex; flex-direction: column; }
         .p-section-stack .p-section-media { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
         
@@ -527,7 +527,7 @@
         .sub-input { font-size: 0.95rem; min-height: 2.5rem; }
         
         .sub-questions-wrapper { display: flex; flex-direction: column; gap: 1rem; }
-        .sub-questions-wrapper.layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .sub-questions-wrapper.layout-horizontal { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
         .sub-question-card { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; position: relative; transition: box-shadow 0.2s; }
         .sub-question-card:focus-within { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -1193,15 +1193,11 @@
                                 <div class="meta-group">
                                     <span class="badge-draft" id="meta-id" style="background:#eff6ff; color:var(--primary); padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.8rem;">ID</span>
                                     <select class="btn btn-sm" id="meta-type" onchange="updateMeta('type', this.value)" title="Question Type">
-                                        <option value="mcq">MCQ</option>
-                                        <option value="short_answer">Short Answer</option>
-                                        <option value="long_answer">Long Answer</option>
-                                        <option value="fill_blank">Fill Blank</option>
-                                        <option value="match_columns">Match Columns</option>
-                                        <option value="sequencing">Sequencing</option>
-                                        <option value="sorting">Sorting</option>
-                                        <option value="labelling">Labelling</option>
-                                        <option value="composite">Composite</option>
+                                        <option value="MCQ">MCQ</option>
+                                        <option value="FIB">Fill in Blank</option>
+                                        <option value="MATCH">Match</option>
+                                        <option value="SUBJECTIVE">Subjective</option>
+                                        <option value="COMPOSITE">Composite</option>
                                     </select>
                                     <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
                                         <option value="practice">Practice Pool</option>
@@ -1243,12 +1239,6 @@
                                             <option value="D">D</option>
                                         </select>
                                     </div>
-                                    <div style="display:flex; align-items:center; gap:4px; margin-left:1rem; padding-left:1rem; border-left:1px solid var(--border);">
-                                        <label style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">Skills:</label>
-                                        <div id="skill-tags-display" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
-                                        <input type="text" id="new-skill-input" class="btn btn-sm" style="width:100px;" placeholder="Add skill..." onkeypress="if(event.key==='Enter'){addSkillTag(); event.preventDefault();}">
-                                        <button class="btn btn-sm" onclick="addSkillTag()" style="padding:2px 6px;">+</button>
-                                    </div>
                                 </div>
                             </div>
                             <!-- TABS -->
@@ -1273,38 +1263,23 @@
                                     </div>
                                     
                                     <div class="toolbar-right">
-                                        <!-- SAVE BUTTON -->
-                                        <button class="btn btn-save" id="btn-save-changes" onclick="saveChanges()" disabled>
-                                            💾 Save Changes
-                                        </button>
                                         <!-- SUB VIEW TOGGLE -->
                                         <div class="view-toggle">
                                             <button class="view-toggle-btn active" id="subview-graphical" onclick="switchSubView('graphical')">Graphical</button>
                                             <button class="view-toggle-btn" id="subview-json" onclick="switchSubView('json')">Content JSON</button>
-                                            <button class="view-toggle-btn" id="subview-layout" onclick="switchSubView('layout')">Layout JSON</button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- SUB-VIEW: GRAPHICAL (Default) -->
                                 <div id="sub-view-graphical" class="graphical-view">
-                                    
-                                    <!-- ADD MISSING SECTIONS BAR -->
-                                    <div id="add-sections-bar" class="add-sections-bar">
-                                        <span class="add-section-label">➕ Add Missing Sections:</span>
-                                        <button class="add-section-btn" id="add-stimulus-btn" onclick="addStimulusSection()">+ Stimulus</button>
-                                        <button class="add-section-btn" id="add-options-btn" onclick="addOptionsSection()">+ Options (MCQ)</button>
-                                        <button class="add-section-btn" id="add-subquestions-btn" onclick="addSubquestionsSection()">+ Sub-Questions</button>
-                                        <button class="add-section-btn" id="add-grading-btn" onclick="addGradingSection()">+ Grading</button>
-                                        <button class="add-section-btn" id="add-metadata-btn" onclick="addMetadataSection()">+ Metadata</button>
-                                    </div>
 
                                     <!-- Main Prompt -->
                                     <div class="content-section" style="background:white; padding:1rem; border-radius:6px; border:1px solid var(--border);">
                                         <div class="section-header">
-                                            <label class="section-label">QUESTION PROMPT</label>
+                                            <label class="section-label">QUESTION CONTENT</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <button class="btn btn-sm" onclick="addAssetToPrompt()">+ Add Image</button>
+                                                <button class="btn btn-sm" onclick="insertImageTag('input-prompt')">+ Add Image</button>
                                             </div>
                                         </div>
                                         <div id="prompt-content" class="section-content-stack">
@@ -1322,7 +1297,7 @@
                                         <div class="section-header">
                                             <label class="section-label">SHARED CONTEXT (STIMULUS)</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <button class="btn btn-sm" onclick="addAssetToStimulus()">+ Add Image</button>
+                                                <button class="btn btn-sm" onclick="insertImageTag('input-stimulus')">+ Add Image</button>
                                                 <button class="btn btn-sm" onclick="toggleWordBank()" id="toggle-wordbank-btn">+ Word Bank</button>
                                                 <button class="btn btn-sm" onclick="toggleGroups()" id="toggle-groups-btn" style="background:#fef3c7; border-color:#fcd34d;">+ Groups</button>
                                                 <button class="btn btn-sm" onclick="togglePairs()" id="toggle-pairs-btn" style="background:#f5f3ff; border-color:#c4b5fd;">+ Pairs</button>
@@ -1393,8 +1368,8 @@
                                             <label class="section-label">SUB-QUESTIONS</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                                 <div class="section-layout-toggle" id="subquestions-layout-toggle">
-                                                    <button class="section-layout-btn" onclick="setLayout('stack')" data-layout="stack">☰ Stack</button>
-                                                    <button class="section-layout-btn active" onclick="setLayout('grid')" data-layout="grid">⊞ Grid</button>
+                                                    <button class="section-layout-btn" onclick="setLayout('vertical')" data-layout="vertical" id="btn-layout-vertical">☰ Vertical</button>
+                                                    <button class="section-layout-btn active" onclick="setLayout('horizontal')" data-layout="horizontal" id="btn-layout-horizontal">⊞ Horizontal</button>
                                                 </div>
                                                 <button class="btn btn-sm" onclick="addSubQuestion()">+ Add Sub-Question</button>
                                                 <button class="remove-section-btn" onclick="removeSection('subquestions')">✕ Remove</button>
@@ -1403,81 +1378,13 @@
                                         <div id="sub-questions-list" class="sub-questions-wrapper"></div>
                                     </div>
 
-                                    <!-- Grading Section (for non-composite questions) -->
-                                    <div id="grading-section" class="content-section grading-section" style="display:none;">
+                                    <!-- Solution Section -->
+                                    <div id="solution-section" class="content-section solution-section" style="background:#f0fdf4; border:1px solid #86efac;">
                                         <div class="section-header">
-                                            <label class="section-label">GRADING</label>
-                                            <button class="remove-section-btn" onclick="removeSection('grading')">✕ Remove</button>
+                                            <label class="section-label" style="color:#166534;">✓ SOLUTION / ANSWER KEY</label>
                                         </div>
-                                        <div class="grading-grid">
-                                            <div class="grading-field">
-                                                <label>Kind</label>
-                                                <select id="grading-kind" onchange="onGradingKindChange(this.value)">
-                                                <option value="text">Text</option>
-                                                <option value="single_selection">Single Selection</option>
-                                                <option value="multiple_selection">Multiple Selection</option>
-                                                <option value="sample_text">Sample Text</option>
-                                                <option value="matching">Matching</option>
-                                                <option value="sequencing">Sequencing</option>
-                                                <option value="grouping">Grouping</option>
-                                                <option value="coordinate">Coordinate</option>
-                                            </select>
-                                        </div>
-                                            <div class="grading-field">
-                                                <label>Points</label>
-                                                <input type="text" id="grading-points" oninput="updateGrading('points', this.value)" placeholder="1">
-                                    </div>
-                                        </div>
-                                        <!-- Simple values for text/selection types -->
-                                        <div id="grading-values-simple" class="grading-field" style="margin-top:0.75rem;">
-                                            <label id="grading-values-label">Values (comma-separated for multiple answers)</label>
-                                            <textarea class="input-bare" id="grading-values" oninput="updateGradingValues(this.value)" placeholder="Enter correct answer(s)..." style="color:#047857; min-height:60px;"></textarea>
-                                        </div>
-                                        <!-- Complex values for matching/sequencing/grouping -->
-                                        <div id="grading-values-complex" style="display:none; margin-top:0.75rem;">
-                                            <div id="grading-values-editor"></div>
-                                        </div>
-                                        <div class="grading-field" style="margin-top:0.75rem;">
-                                            <label>Explanation (Optional)</label>
-                                            <textarea class="input-bare" id="grading-explanation" oninput="updateGrading('explanation', this.value)" placeholder="Explain the correct answer..." rows="2"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <!-- Metadata Section -->
-                                    <div id="metadata-section" class="content-section metadata-section" style="display:none;">
-                                        <div class="section-header">
-                                            <label class="section-label">METADATA</label>
-                                            <button class="remove-section-btn" onclick="removeSection('metadata')">✕ Remove</button>
-                                        </div>
-                                        <div class="metadata-grid">
-                                            <div class="metadata-field">
-                                                <label>UI Hint</label>
-                                                <select id="meta-ui-hint" onchange="updateMetadata('ui_hint', this.value)">
-                                                    <option value="">Select UI Hint...</option>
-                                                    <option value="selection_list">Selection List</option>
-                                                    <option value="cloze_text">Cloze Text</option>
-                                                    <option value="match_connector">Match Connector</option>
-                                                    <option value="reorder_list">Reorder List</option>
-                                                    <option value="sort_and_categorize">Sort & Categorize</option>
-                                                    <option value="visual_label">Visual Label</option>
-                                                    <option value="math_grid">Math Grid</option>
-                                                    <option value="rich_text_editor">Rich Text Editor</option>
-                                                </select>
-                                            </div>
-                                            <div class="metadata-field">
-                                                <label>Version</label>
-                                                <input type="number" id="meta-version" oninput="updateMetadata('version', parseInt(this.value))" placeholder="1" min="1">
-                                            </div>
-                                            <div class="metadata-field">
-                                                <label>Source</label>
-                                                <select id="meta-source" onchange="updateMetadata('source', this.value)">
-                                                    <option value="">Select...</option>
-                                                    <option value="AI_Generated">AI Generated</option>
-                                                    <option value="Manual">Manual</option>
-                                                    <option value="Imported">Imported</option>
-                                                    <option value="Curated">Curated</option>
-                                                </select>
-                                            </div>
+                                        <div style="padding:0.5rem;">
+                                            <textarea class="input-bare" id="input-solution" oninput="updateSolution(this.value)" placeholder="Enter the correct answer and explanation..." style="color:#166534; min-height:80px; background:white;"></textarea>
                                         </div>
                                     </div>
 
@@ -1491,13 +1398,6 @@
                                     </div>
                                 </div>
 
-                                <!-- SUB-VIEW: Layout JSON (Read Only) -->
-                                <div id="sub-view-layout" class="json-view" style="display:none;">
-                                    <textarea id="layout-json-textarea" class="json-editor" readonly spellcheck="false"></textarea>
-                                    <div class="json-footer">
-                                        <span style="color:#aaa;">● Read-only (Layout configuration)</span>
-                                    </div>
-                                </div>
                             </div>
 
                             <!-- VIEW: PREVIEW -->
@@ -1537,10 +1437,6 @@
         let activeIndex = null;
         let activeWorkflow = 'import'; // 'import' or 'library'
         let activeUploadCallback = null;
-        
-        // 4. Change tracking for save functionality
-        let hasUnsavedChanges = false;
-        let originalQuestionSnapshot = null; // Stores the original state when editing begins
 
         // MOCK DATABASE (using new schema format v2)
         const mockDatabase = [
@@ -1738,31 +1634,32 @@
                 item.className = `q-item ${idx === activeIndex ? 'active' : ''}`;
                 item.onclick = () => selectQuestion(idx);
                 
-                const status = hasMedia(q) 
+                const status = hasImages(q) 
                     ? '<span class="status-indicator pending"><span class="dot"></span> Has Assets</span>' 
                     : '<span class="status-indicator valid"><span class="dot"></span> Text Only</span>';
 
-                // Read from new nested schema
-                const taxonomy = q.taxonomy || {};
-                const content = q.content || {};
+                // Read from v4.0 schema
+                const meta = q.metadata || {};
+                const data = q.data || {};
                 
-                const unitId = taxonomy.unit_id || '';
-                const chap = unitId ? unitId.replace('ch_', '').replace(/_/g, ' ') : 'General';
-                const sec = taxonomy.section_id ? `Sec ${taxonomy.section_id}` : '';
+                const chap = meta.chapter ? `Ch ${meta.chapter}` : 'General';
+                const sec = meta.section ? `Sec ${meta.section}` : '';
                 
-                const poolBadge = taxonomy.pool === 'exam' 
+                const poolBadge = (meta.pool || '').toLowerCase() === 'exam' 
                     ? '<span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:3px; border:1px solid #fcd34d;">EXAM</span>'
                     : '<span style="font-size:0.65rem; background:#ecfdf5; color:#065f46; padding:1px 4px; border-radius:3px; border:1px solid #6ee7b7;">PRACTICE</span>';
 
-                const prompt = content.prompt || {};
-                const promptText = prompt.text || 'No prompt';
+                // Get preview text from data.content or data.common_content (for COMPOSITE)
+                const contentText = data.content || data.common_content || '';
+                // Strip image tokens for preview
+                const promptText = contentText.replace(/\[\[[^\]]+\]\]/g, '[img]').substring(0, 100) || 'No content';
 
                 item.innerHTML = `
                     <div class="q-item-header">
-                        <span class="q-id">Q${idx + 1}</span>
+                        <span class="q-id">${q.id || `Q${idx + 1}`}</span>
                         <div style="display:flex; gap:4px; align-items:center;">
                             ${poolBadge}
-                            <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(taxonomy.difficulty||'').toUpperCase()}</span>
+                            <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">${(meta.difficulty||'').toUpperCase()}</span>
                         </div>
                     </div>
                     <div class="q-location">${chap} • ${sec}</div>
@@ -1775,11 +1672,6 @@
 
         // --- SHARED: SELECT QUESTION ---
         function selectQuestion(idx) {
-            // Check for unsaved changes before switching
-            if (activeIndex !== null && activeIndex !== idx && !confirmUnsavedChanges()) {
-                return; // User cancelled, don't switch
-            }
-            
             activeIndex = idx;
             const q = activeData[idx]; // Use activeData reference
             
@@ -1821,128 +1713,90 @@
 
         // New helper to avoid recursion
         function populateEditor(q) {
-            // Take a snapshot of the original state for change detection
-            originalQuestionSnapshot = JSON.stringify(q);
-            hasUnsavedChanges = false;
-            updateSaveButtonState();
-            
             // First, hide all optional sections to ensure clean state
             document.getElementById('stimulus-section').style.display = 'none';
             document.getElementById('options-section').style.display = 'none';
             document.getElementById('subquestions-section').style.display = 'none';
-            document.getElementById('grading-section').style.display = 'none';
-            document.getElementById('metadata-section').style.display = 'none';
             document.getElementById('word-bank-section').style.display = 'none';
             document.getElementById('groups-section').style.display = 'none';
             document.getElementById('pairs-section').style.display = 'none';
             
-            // Read from new nested schema structure
-            const taxonomy = q.taxonomy || {};
-            const content = q.content || {};
-            const grading = q.grading || {};
-            const metadata = q.metadata || {};
+            // Read from v4.0 schema structure
+            const meta = q.metadata || {};
+            const data = q.data || {};
+            const solution = q.solution || {};
+            const qType = q.type || 'SUBJECTIVE';
             
-            document.getElementById('meta-id').innerText = q.question_id || `Q${activeIndex+1}`;
-            document.getElementById('meta-type').value = taxonomy.type || 'short_answer';
-            document.getElementById('meta-pool-type').value = taxonomy.pool || 'practice';
-            document.getElementById('meta-difficulty').value = taxonomy.difficulty || 'medium';
+            document.getElementById('meta-id').innerText = q.id || `Q${activeIndex+1}`;
+            document.getElementById('meta-type').value = qType;
+            document.getElementById('meta-pool-type').value = (meta.pool || 'Practice').toLowerCase();
+            document.getElementById('meta-difficulty').value = (meta.difficulty || 'Medium').toLowerCase();
             
             // Points - readonly for composite questions (total is sum of sub-questions)
             const pointsInput = document.getElementById('meta-points');
-            const isComposite = (taxonomy.type === 'composite');
-            pointsInput.value = grading.points || '1';
+            const isComposite = (qType === 'COMPOSITE');
+            pointsInput.value = meta.marks || '1';
             pointsInput.readOnly = isComposite;
             pointsInput.style.opacity = isComposite ? '0.6' : '1';
             pointsInput.style.cursor = isComposite ? 'not-allowed' : 'text';
             pointsInput.title = isComposite ? 'Total marks are calculated from sub-questions' : 'Points';
             
-            // Location metadata from taxonomy
-            document.getElementById('meta-grade').value = taxonomy.grade_id || '';
-            document.getElementById('meta-subject').value = taxonomy.subject_id || '';
-            document.getElementById('meta-unit').value = taxonomy.unit_id || '';
-            document.getElementById('meta-section').value = taxonomy.section_id || 'A';
-            
-            // Skill tags
-            renderSkillTags(taxonomy.skill_tags || []);
+            // Location metadata
+            document.getElementById('meta-grade').value = meta.grade || '';
+            document.getElementById('meta-subject').value = meta.subject || '';
+            document.getElementById('meta-unit').value = meta.chapter || '';
+            document.getElementById('meta-section').value = meta.section || 'A';
 
-            // Prompt from content
-            const prompt = content.prompt || { text: '', assets: [] };
-            const pText = prompt.text || '';
-            const pAssets = prompt.assets || [];
+            // Content from data - handle different types
+            // For COMPOSITE, main content is common_content; for others, it's content
+            const mainContent = data.common_content || data.content || '';
+            document.getElementById('input-prompt').value = mainContent;
+            // v4.0 uses [[tag]] tokens for images, not assets array
+            renderAssetList([], 'prompt-assets', () => {});
 
-            document.getElementById('input-prompt').value = pText;
-            renderAssetList(pAssets, 'prompt-assets', (newAssets) => {
-                if (!q.content) q.content = {};
-                if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
-                q.content.prompt.assets = newAssets;
-                updateJsonView(); 
-            });
-
-            // Stimulus Section from content
+            // Stimulus Section - v4.0 doesn't have separate stimulus
+            // For COMPOSITE, common_content serves as stimulus
             const stimArea = document.getElementById('stimulus-section');
-            const stimInput = document.getElementById('input-stimulus');
-            const stimulus = content.stimulus;
-            
-            if(stimulus) {
-                stimArea.style.display = 'block';
-                stimInput.value = stimulus.text || '';
-                renderAssetList(stimulus.assets || [], 'stimulus-assets', (newAssets) => {
-                    q.content.stimulus.assets = newAssets;
-                    updateJsonView(); 
-                });
-                // Word Bank
-                renderWordBank(stimulus.word_bank || []);
-                document.getElementById('word-bank-section').style.display = (stimulus.word_bank && stimulus.word_bank.length > 0) ? 'block' : 'none';
-                // Groups (for sorting/classification)
-                renderGroups(stimulus.groups || []);
-                document.getElementById('groups-section').style.display = (stimulus.groups && stimulus.groups.length > 0) ? 'block' : 'none';
-                // Pairs (for match_columns)
-                if (stimulus.pairs) {
-                    renderPairs(stimulus.pairs);
-                    document.getElementById('pairs-section').style.display = 'block';
-                } else {
-                    document.getElementById('pairs-section').style.display = 'none';
-                }
-            } else {
                 stimArea.style.display = 'none';
-                document.getElementById('groups-section').style.display = 'none';
-                document.getElementById('pairs-section').style.display = 'none';
-            }
 
             // Get question type for conditional rendering
-            const qType = taxonomy.type || 'short_answer';
-            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
-            const isCompositeType = qType === 'composite';
-            // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
-            const usesOptions = isMcqType || qType === 'sequencing' || qType === 'sorting';
+            const isMcqType = qType === 'MCQ';
+            const isFibType = qType === 'FIB';
+            const isMatchType = qType === 'MATCH';
+            const isCompositeType = qType === 'COMPOSITE';
 
-            // Options Section (for MCQ/sequencing/sorting types) from content
+            // Options Section (for MCQ type)
             const optionsSection = document.getElementById('options-section');
-            const options = content.options;
-            if(usesOptions) {
+            const options = data.options;
+            if(isMcqType && options && options.length > 0) {
                 optionsSection.style.display = 'block';
-                // Update label based on question type
-                const optionsLabel = document.getElementById('options-section-label');
-                if (qType === 'sequencing') {
-                    optionsLabel.textContent = 'ITEMS TO ORDER';
-                } else if (qType === 'sorting') {
-                    optionsLabel.textContent = 'ITEMS TO SORT';
-                } else {
-                    optionsLabel.textContent = 'OPTIONS (MCQ)';
-                }
-                if (options && options.length > 0) {
+                document.getElementById('options-section-label').textContent = 'OPTIONS (MCQ)';
                     renderMainOptions(options);
-                } else {
-                    // Initialize empty options list
-                    document.getElementById('options-list').innerHTML = '<div style="padding:0.5rem; color:#999; font-size:0.85rem;">No options yet. Click "+ Add Option" to add.</div>';
-                }
             } else {
                 optionsSection.style.display = 'none';
             }
 
-            // Sub-Questions Section (only for composite type) from content
+            // FIB options_pool as word bank
+            if(isFibType && data.options_pool && data.options_pool.length > 0) {
+                document.getElementById('word-bank-section').style.display = 'block';
+                const wordBankItems = data.options_pool.map((text, idx) => ({ id: `wb_${idx}`, text }));
+                renderWordBank(wordBankItems);
+            }
+            
+            // MATCH pairs
+            if(isMatchType && data.pairs && data.pairs.length > 0) {
+                document.getElementById('pairs-section').style.display = 'block';
+                // Convert v4.0 pairs format to old format for display
+                const pairsData = {
+                    left_column: data.pairs.map((p, i) => ({ id: `l${i}`, text: p.left })),
+                    right_column: data.pairs.map((p, i) => ({ id: `r${i}`, text: p.right }))
+                };
+                renderPairs(pairsData);
+            }
+
+            // Sub-Questions Section (only for COMPOSITE type)
             const subqSection = document.getElementById('subquestions-section');
-            const subquestions = content.subquestions;
+            const subquestions = data.sub_questions;
             if(isCompositeType && subquestions && subquestions.length > 0) {
                 subqSection.style.display = 'block';
             renderSubQuestions(q);
@@ -1950,205 +1804,150 @@
                 subqSection.style.display = 'none';
             }
 
-            // Grading Section (for non-composite questions)
-            const gradingSection = document.getElementById('grading-section');
-            if(!isCompositeType && grading && (grading.values?.length > 0 || grading.kind)) {
-                gradingSection.style.display = 'block';
-                const gradingKind = grading.kind || 'text';
-                document.getElementById('grading-kind').value = gradingKind;
-                document.getElementById('grading-points').value = grading.points || '1';
-                document.getElementById('grading-explanation').value = grading.explanation || '';
-                
-                // Handle simple vs complex grading values
-                const isComplex = COMPLEX_GRADING_KINDS.includes(gradingKind);
-                document.getElementById('grading-values-simple').style.display = isComplex ? 'none' : 'block';
-                document.getElementById('grading-values-complex').style.display = isComplex ? 'block' : 'none';
-                
-                if (isComplex) {
-                    renderComplexGradingEditor(gradingKind);
-                } else {
-                    // For simple types, values are strings
-                    const simpleValues = (grading.values || []).map(v => typeof v === 'string' ? v : JSON.stringify(v));
-                    document.getElementById('grading-values').value = simpleValues.join(', ');
-                    // Update label based on kind
-                    const label = document.getElementById('grading-values-label');
-                    if (gradingKind === 'single_selection') {
-                        label.textContent = 'Correct Option ID (e.g., "a" or "b")';
-                    } else if (gradingKind === 'multiple_selection') {
-                        label.textContent = 'Correct Option IDs (comma-separated, e.g., "a, c")';
-                    } else {
-                        label.textContent = 'Values (comma-separated for multiple answers)';
-                    }
-                }
-            } else {
-                gradingSection.style.display = 'none';
-            }
+            // Solution Section - populate with solution.text
+            document.getElementById('input-solution').value = solution.text || '';
 
-            // Metadata Section
-            const metaSection = document.getElementById('metadata-section');
-            if(metadata) {
-                metaSection.style.display = 'block';
-                document.getElementById('meta-ui-hint').value = metadata.ui_hint || '';
-                document.getElementById('meta-version').value = metadata.version || '';
-                document.getElementById('meta-source').value = metadata.source || '';
-            } else {
-                metaSection.style.display = 'none';
-            }
-
-            // Update "Add Section" buttons visibility
-            updateAddSectionButtons(q);
-
-            // Update subquestions layout buttons (default to grid)
-            updateLayoutButtons(q.content?.subquestions_layout || 'grid');
+            // Update subquestions layout buttons (default to vertical)
+            updateLayoutButtons(data.style?.sub_questions_layout || 'vertical');
             updateJsonView();
         }
 
-        // Update visibility of "Add Section" buttons based on what's present and question type
+        // Update visibility of "Add Section" buttons - removed in v4.0 UI
         function updateAddSectionButtons(q) {
-            const taxonomy = q.taxonomy || {};
-            const content = q.content || {};
-            const qType = taxonomy.type || 'short_answer';
-            const isMcqType = qType === 'mcq_single' || qType === 'mcq_multi' || qType === 'mcq';
-            const isCompositeType = qType === 'composite';
-            // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
-            const usesOptions = isMcqType || qType === 'sequencing' || qType === 'sorting';
-            
-            // Stimulus - always available
-            document.getElementById('add-stimulus-btn').classList.toggle('disabled', !!content.stimulus);
-            
-            // Options - for MCQ, sequencing, and sorting types
-            const optionsBtn = document.getElementById('add-options-btn');
-            if (!usesOptions) {
-                optionsBtn.style.display = 'none';
-            } else {
-                optionsBtn.style.display = 'inline-block';
-                optionsBtn.classList.toggle('disabled', !!(content.options && content.options.length > 0));
-            }
-            
-            // Sub-Questions - only for composite type
-            const subqBtn = document.getElementById('add-subquestions-btn');
-            if (!isCompositeType) {
-                subqBtn.style.display = 'none';
-            } else {
-                subqBtn.style.display = 'inline-block';
-                subqBtn.classList.toggle('disabled', !!(content.subquestions && content.subquestions.length > 0));
-            }
-            
-            // Grading - only for non-composite types
-            const gradingBtn = document.getElementById('add-grading-btn');
-            if (isCompositeType) {
-                gradingBtn.style.display = 'none';
-            } else {
-                gradingBtn.style.display = 'inline-block';
-                const hasGrading = q.grading && q.grading.values && q.grading.values.length > 0;
-                gradingBtn.classList.toggle('disabled', hasGrading);
-            }
-            
-            // Metadata - always available
-            document.getElementById('add-metadata-btn').classList.toggle('disabled', !!q.metadata);
+            // No-op - Add Missing Sections bar has been removed
         }
 
-        // --- DATA HELPERS (Adapted for new nested schema) ---
+        // --- UTILITY FUNCTIONS ---
+        
+        /**
+         * Extract the display label from an ID
+         * Returns the part after the last hyphen, or the full ID if no hyphen
+         * e.g., "Q1-a" → "a", "Q1-sub-b" → "b", "abc" → "abc"
+         */
+        function getIdDisplayLabel(id) {
+            if (!id) return '';
+            const parts = id.split('-');
+            return parts[parts.length - 1];
+        }
+
+        // --- DATA HELPERS (Adapted for v4.0 schema) ---
         function updatePrompt(val) {
             const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
-            q.content.prompt.text = val;
+            if (!q.data) q.data = {};
+            // For COMPOSITE, update common_content; for others, update content
+            if (q.type === 'COMPOSITE') {
+                q.data.common_content = val;
+            } else {
+                q.data.content = val;
+            }
             renderList();
             updateJsonView(); 
         }
 
+        function updateSolution(val) {
+            const q = activeData[activeIndex];
+            if (!q.solution) q.solution = {};
+            q.solution.text = val;
+            updateJsonView();
+        }
+
+        function insertImageTag(inputId) {
+            const textarea = document.getElementById(inputId);
+            if (!textarea) return;
+            
+            const imageId = prompt('Enter Image ID (e.g., Q1.content.1):', '');
+            if (!imageId || !imageId.trim()) return;
+            
+            const tag = `[[${imageId.trim()}]]`;
+            
+            // Insert at cursor position
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            textarea.value = text.substring(0, start) + tag + text.substring(end);
+            
+            // Move cursor after the inserted tag
+            textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+            textarea.focus();
+            
+            // Trigger input event to update the data
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
         function updateMeta(field, val) {
             const q = activeData[activeIndex];
-            // Ensure nested structures exist
-            if (!q.taxonomy) q.taxonomy = {};
-            if (!q.content) q.content = {};
-            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
+            // Ensure nested structures exist for v4.0 schema
+            if (!q.metadata) q.metadata = {};
+            if (!q.data) q.data = {};
+            if (!q.solution) q.solution = { text: '' };
             
             if(field === 'pool_type') {
-                q.taxonomy.pool = val;
+                q.metadata.pool = val.charAt(0).toUpperCase() + val.slice(1); // Capitalize
             } else if(field === 'points') {
                 // For composite questions, points are calculated from sub-questions
-                if (q.taxonomy?.type === 'composite') {
-                    // Restore the calculated value
+                if (q.type === 'COMPOSITE') {
                     recalculateTotalMarks();
                     return;
                 }
-                q.grading.points = String(val);
-                distributeTotalMarks(parseFloat(val)); 
+                q.metadata.marks = parseInt(val) || 1;
             } else if(field === 'grade_id') {
-                q.taxonomy.grade_id = val;
+                q.metadata.grade = val;
             } else if(field === 'subject_id') {
-                q.taxonomy.subject_id = val;
+                q.metadata.subject = val;
             } else if(field === 'unit_id') {
-                q.taxonomy.unit_id = val;
+                q.metadata.chapter = val;
             } else if(field === 'section_id') {
-                q.taxonomy.section_id = val;
+                q.metadata.section = val;
             } else if(field === 'difficulty') {
-                q.taxonomy.difficulty = val;
+                q.metadata.difficulty = val.charAt(0).toUpperCase() + val.slice(1); // Capitalize
             } else if(field === 'type') {
-                const oldType = q.taxonomy.type;
-                q.taxonomy.type = val;
+                const oldType = q.type;
+                q.type = val;
                 
-                const isMcqType = val === 'mcq_single' || val === 'mcq_multi' || val === 'mcq';
-                const isCompositeType = val === 'composite';
-                // Options are used by MCQ, sequencing (items to sort), and sorting (items to categorize)
-                const usesOptions = isMcqType || val === 'sequencing' || val === 'sorting';
+                const isMcqType = val === 'MCQ';
+                const isCompositeType = val === 'COMPOSITE';
+                const isMatchType = val === 'MATCH';
                 
-                // Auto-add options for types that use them
-                if(usesOptions && !q.content.options) {
-                    q.content.options = [
-                        { opt_id: 'a', text: 'Option A', assets: [] },
-                        { opt_id: 'b', text: 'Option B', assets: [] }
+                // Auto-add options for MCQ type
+                if(isMcqType && !q.data.options) {
+                    q.data.options = [
+                        { id: 'a', text: 'Option A' },
+                        { id: 'b', text: 'Option B' }
                     ];
                 }
                 
-                // Auto-add stimulus.groups for sorting type
-                if(val === 'sorting') {
-                    if(!q.content.stimulus) q.content.stimulus = { text: '', assets: [] };
-                    if(!q.content.stimulus.groups) {
-                        q.content.stimulus.groups = [
-                            { group_id: 'a', text: 'Category A' },
-                            { group_id: 'b', text: 'Category B' }
-                        ];
-                    }
+                // Auto-add pairs for MATCH type
+                if(isMatchType && !q.data.pairs) {
+                    q.data.pairs = [
+                        { left: 'Item A', right: 'Match A' }
+                    ];
                 }
                 
-                // Auto-add stimulus.pairs for match_columns type
-                if(val === 'match_columns') {
-                    if(!q.content.stimulus) q.content.stimulus = { text: '', assets: [] };
-                    if(!q.content.stimulus.pairs) {
-                        q.content.stimulus.pairs = {
-                            left_column: [{ id: 'l1', text: 'Item A' }],
-                            right_column: [{ id: 'r1', text: 'Definition A' }]
-                        };
-                    }
-                }
-                
-                // Remove options for types that don't use them (with confirmation if data exists)
-                if(!usesOptions && q.content.options && q.content.options.length > 0) {
+                // Remove options for types that don't use them
+                if(!isMcqType && q.data.options && q.data.options.length > 0) {
                     if(confirm('Changing to this type will remove the Options section. Continue?')) {
-                        delete q.content.options;
+                        delete q.data.options;
             } else {
-                        q.taxonomy.type = oldType; // Revert
+                        q.type = oldType; // Revert
                         document.getElementById('meta-type').value = oldType;
                         return;
                     }
                 }
                 
-                // Auto-add subquestions for composite type if not present
-                if(isCompositeType && !q.content.subquestions) {
-                    q.content.subquestions = [
-                        { sub_id: 'a', type: 'short_answer', prompt: { text: '', assets: [] }, grading: { kind: 'text', values: [], points: '1' } }
+                // Auto-add sub_questions for COMPOSITE type if not present
+                if(isCompositeType && !q.data.sub_questions) {
+                    q.data.sub_questions = [
+                        { id: 'a', type: 'SUBJECTIVE', data: { content: '' } }
                     ];
                 }
                 
-                // Remove subquestions for non-composite types (with confirmation if data exists)
-                if(!isCompositeType && q.content.subquestions && q.content.subquestions.length > 0) {
+                // Remove sub_questions for non-composite types
+                if(!isCompositeType && q.data.sub_questions && q.data.sub_questions.length > 0) {
                     if(confirm('Changing to this type will remove the Sub-Questions section. Continue?')) {
-                        delete q.content.subquestions;
+                        delete q.data.sub_questions;
                     } else {
-                        q.taxonomy.type = oldType; // Revert
+                        q.type = oldType; // Revert
                         document.getElementById('meta-type').value = oldType;
                         return;
                     }
@@ -2173,105 +1972,51 @@
             updateJsonView(); 
         }
 
-        // Skill Tags Functions
-        function renderSkillTags(tags) {
-            const container = document.getElementById('skill-tags-display');
-            if (!container) return;
-            container.innerHTML = '';
-            if (!tags || tags.length === 0) {
-                container.innerHTML = '<span style="font-size:0.7rem; color:#999; font-style:italic;">No skills</span>';
-                return;
-            }
-            tags.forEach((tag, idx) => {
-                const tagEl = document.createElement('span');
-                tagEl.style.cssText = 'display:inline-flex; align-items:center; gap:2px; padding:2px 6px; background:#dbeafe; color:#1e40af; border-radius:4px; font-size:0.7rem; font-weight:500;';
-                tagEl.innerHTML = `${tag}<button onclick="deleteSkillTag(${idx})" style="background:none; border:none; color:#1e40af; cursor:pointer; padding:0 2px; margin-left:2px; font-size:0.8rem; opacity:0.7;">×</button>`;
-                container.appendChild(tagEl);
-            });
-        }
-
-        function addSkillTag() {
-            const input = document.getElementById('new-skill-input');
-            const val = input.value.trim();
-            if (!val) return;
-            const q = activeData[activeIndex];
-            if (!q.taxonomy) q.taxonomy = {};
-            if (!q.taxonomy.skill_tags) q.taxonomy.skill_tags = [];
-            if (!q.taxonomy.skill_tags.includes(val)) {
-                q.taxonomy.skill_tags.push(val);
-                renderSkillTags(q.taxonomy.skill_tags);
-                updateJsonView();
-            }
-            input.value = '';
-        }
-
-        function deleteSkillTag(idx) {
-            const q = activeData[activeIndex];
-            if (!q.taxonomy?.skill_tags) return;
-            q.taxonomy.skill_tags.splice(idx, 1);
-            renderSkillTags(q.taxonomy.skill_tags);
-            updateJsonView(); 
-        }
-
         function updateStimulus(val) {
-            const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if (!q.content.stimulus) q.content.stimulus = { text: '', assets: [], word_bank: [] };
-            q.content.stimulus.text = val;
+            // v4.0 doesn't have separate stimulus - content is inline
+            // No-op for v4.0
             updateJsonView(); 
         }
         
         function addAssetToPrompt() {
-            const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if (!q.content.prompt) q.content.prompt = { text: '', assets: [] };
-            if (!q.content.prompt.assets) q.content.prompt.assets = [];
-            q.content.prompt.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
-            selectQuestion(activeIndex);
+            // v4.0 uses [[tag]] tokens, not assets array
+            // No-op - user should add [[tag]] token manually
+            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the content.');
         }
 
         function addAssetToStimulus() {
             const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if (!q.content.stimulus) q.content.stimulus = { text: '', assets: [], word_bank: [] };
-            if (!q.content.stimulus.assets) q.content.stimulus.assets = [];
-            q.content.stimulus.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
-            selectQuestion(activeIndex);
+            // v4.0 uses [[tag]] tokens, not assets array
+            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the content.');
         }
 
         function distributeTotalMarks(newTotal) {
             const q = activeData[activeIndex];
-            const subquestions = q.content?.subquestions;
+            const subquestions = q.data?.sub_questions;
             if(!subquestions || subquestions.length === 0) return;
             const count = subquestions.length;
             const newPerSub = Math.round((newTotal / count) * 100) / 100; 
-            subquestions.forEach(sq => { 
-                if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
-                sq.grading.points = String(newPerSub); 
-            });
+            // v4.0 doesn't have per-subquestion marks in the same way
             renderSubQuestions(q);
             updateJsonView();
         }
 
         function recalculateTotalMarks() {
             const q = activeData[activeIndex];
-            const subquestions = q.content?.subquestions;
-            if(!subquestions) return;
-            let total = 0;
-            subquestions.forEach(sq => {
-                if(sq.grading?.points) total += parseFloat(sq.grading.points);
-            });
-            total = Math.round(total * 100) / 100;
-            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
-            q.grading.points = String(total);
+            // v4.0 uses metadata.marks for total marks
+            // For COMPOSITE, we could sum sub-question marks if they were tracked
+            if (!q.metadata) q.metadata = {};
+            // Just keep the current marks value
+            const total = q.metadata.marks || 1;
             document.getElementById('meta-points').value = total;
             updateJsonView(); 
         }
         
         function setLayout(mode) {
             const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            q.content.subquestions_layout = mode;
+            if (!q.data) q.data = {};
+            if (!q.data.style) q.data.style = {};
+            q.data.style.sub_questions_layout = mode;
             updateLayoutButtons(mode);
             renderSubQuestions(q);
             updateJsonView(); 
@@ -2328,165 +2073,10 @@
                     updateLayoutJsonView();
                 }
                 
-                // Check for changes and update save button state
-                checkForChanges();
             }
-        }
-        
-        // =====================================================
-        // SAVE FUNCTIONALITY & CHANGE TRACKING
-        // =====================================================
-        
-        function checkForChanges() {
-            if (activeIndex === null || !activeData[activeIndex]) {
-                hasUnsavedChanges = false;
-                updateSaveButtonState();
-                return;
-            }
-            
-            const currentState = JSON.stringify(activeData[activeIndex]);
-            hasUnsavedChanges = (currentState !== originalQuestionSnapshot);
-            updateSaveButtonState();
-        }
-        
-        function updateSaveButtonState() {
-            const saveBtn = document.getElementById('btn-save-changes');
-            const unsavedStatus = document.getElementById('unsaved-status');
-            
-            if (saveBtn) {
-                saveBtn.disabled = !hasUnsavedChanges;
-                saveBtn.classList.toggle('has-changes', hasUnsavedChanges);
-            }
-            
-            if (unsavedStatus) {
-                unsavedStatus.style.display = hasUnsavedChanges ? 'inline' : 'none';
-            }
-        }
-        
-        function saveChanges() {
-            if (!hasUnsavedChanges || activeIndex === null) return;
-            
-            const q = activeData[activeIndex];
-            if (!q) return;
-            
-            // Get the current content JSON (use prepareForExport for clean output)
-            const contentJson = prepareForExport(q);
-            
-            // Get the layout JSON using shared function
-            const layoutJson = generateLayoutJson(q);
-            
-            // Log the saved data (in production, this would be an API call)
-            console.log('=== SAVING CHANGES ===');
-            console.log('Content JSON:', contentJson);
-            console.log('Layout JSON:', layoutJson);
-            
-            // Update the snapshot to reflect saved state
-            originalQuestionSnapshot = JSON.stringify(q);
-            hasUnsavedChanges = false;
-            updateSaveButtonState();
-            
-            // Update the JSON views
-            document.getElementById('json-ro-textarea').value = JSON.stringify(contentJson, null, 2);
-            const layoutTextarea = document.getElementById('layout-json-textarea');
-            if (layoutTextarea) {
-                layoutTextarea.value = JSON.stringify(layoutJson, null, 2);
-            }
-            
-            // Visual feedback
-            const saveBtn = document.getElementById('btn-save-changes');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '✓ Saved!';
-            saveBtn.style.background = '#15803d';
-            
-            setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-                saveBtn.style.background = '';
-            }, 1500);
-            
-            // Update the list to reflect any changes
-            renderList();
-        }
-        
-        // Warn user about unsaved changes when switching questions
-        function confirmUnsavedChanges() {
-            if (hasUnsavedChanges) {
-                return confirm('You have unsaved changes. Do you want to discard them?');
-            }
-            return true;
         }
 
         // NOTE: getTextValue is now in question-parser.js
-
-        // =====================================================
-        // ADD SECTION FUNCTIONS
-        // =====================================================
-        
-        function addStimulusSection() {
-            const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if(!q.content.stimulus) {
-                q.content.stimulus = { text: '', assets: [], word_bank: [] };
-                selectQuestion(activeIndex);
-            }
-        }
-
-        function addOptionsSection() {
-            const q = activeData[activeIndex];
-            const qType = q.taxonomy?.type || 'short_answer';
-            // Only allow options for MCQ types
-            if(qType !== 'mcq_single' && qType !== 'mcq_multi' && qType !== 'mcq') {
-                alert('Options are only available for MCQ question types.');
-                return;
-            }
-            if (!q.content) q.content = {};
-            if(!q.content.options || q.content.options.length === 0) {
-                q.content.options = [
-                    { opt_id: 'a', text: 'Option A', assets: [] },
-                    { opt_id: 'b', text: 'Option B', assets: [] }
-                ];
-                selectQuestion(activeIndex);
-            }
-        }
-
-        function addSubquestionsSection() {
-            const q = activeData[activeIndex];
-            const qType = q.taxonomy?.type || 'short_answer';
-            // Only allow sub-questions for composite type
-            if(qType !== 'composite') {
-                alert('Sub-questions are only available for Composite question types.');
-                return;
-            }
-            if (!q.content) q.content = {};
-            if(!q.content.subquestions || q.content.subquestions.length === 0) {
-                q.content.subquestions = [
-                    { sub_id: 'a', type: 'short_answer', prompt: { text: '', assets: [] }, grading: { kind: 'text', values: [], points: '1' } }
-                ];
-                selectQuestion(activeIndex);
-            }
-        }
-
-        function addGradingSection() {
-            const q = activeData[activeIndex];
-            const qType = q.taxonomy?.type || 'short_answer';
-            // Grading at question level is not available for composite (uses sub-question grading)
-            if(qType === 'composite') {
-                alert('Composite questions use grading at the sub-question level, not at the main question level.');
-                return;
-            }
-            if (!q.grading) q.grading = { kind: 'text', values: [], points: '1' };
-            if (!q.grading.values || q.grading.values.length === 0) {
-                q.grading.values = [''];
-            }
-                selectQuestion(activeIndex);
-        }
-
-        function addMetadataSection() {
-            const q = activeData[activeIndex];
-            if(!q.metadata) {
-                q.metadata = { ui_hint: 'rich_text_editor', version: 2, source: 'AI_Generated' };
-                selectQuestion(activeIndex);
-            }
-        }
 
         // =====================================================
         // REMOVE SECTION FUNCTIONS
@@ -2495,14 +2085,11 @@
         function removeSection(sectionName) {
             const q = activeData[activeIndex];
             if(confirm(`Are you sure you want to remove the ${sectionName} section?`)) {
-                // Handle nested content sections
-                if (['stimulus', 'options', 'subquestions'].includes(sectionName)) {
-                    if (q.content) {
-                        delete q.content[sectionName];
+                // Handle v4.0 schema data sections
+                if (['stimulus', 'options', 'subquestions', 'sub_questions'].includes(sectionName)) {
+                    if (q.data) {
+                        delete q.data[sectionName];
                     }
-                } else if (sectionName === 'grading') {
-                    // Reset grading to empty state
-                    q.grading = { kind: 'text', values: [], points: '1' };
                 } else {
                 delete q[sectionName];
                 }
@@ -2520,7 +2107,9 @@
             
             options.forEach((opt, idx) => {
                 // Support both opt_id (new schema) and id (legacy schema)
-                const optId = opt.opt_id || opt.id || `${String.fromCharCode(97 + idx)}`;
+                // Display only the part after the last hyphen for cleaner display
+                const rawId = opt.opt_id || opt.id || `${String.fromCharCode(97 + idx)}`;
+                const optId = getIdDisplayLabel(rawId);
                 const optText = getTextValue(opt);
                 const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
@@ -2569,64 +2158,56 @@
 
         function addOption() {
             const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if(!q.content.options) q.content.options = [];
-            const newIdx = q.content.options.length;
-            const newId = `${String.fromCharCode(97 + newIdx)}`;
-            q.content.options.push({ opt_id: newId, text: '', assets: [] });
-            renderMainOptions(q.content.options);
+            if (!q.data) q.data = {};
+            if(!q.data.options) q.data.options = [];
+            const newIdx = q.data.options.length;
+            const newId = String.fromCharCode(97 + newIdx);
+            q.data.options.push({ id: newId, text: '' });
+            renderMainOptions(q.data.options);
             updateJsonView();
         }
 
         function updateOption(idx, value) {
             const q = activeData[activeIndex];
-            const opt = q.content?.options?.[idx];
+            const opt = q.data?.options?.[idx];
             if (!opt) return;
             if(typeof opt === 'string') {
-                q.content.options[idx] = { opt_id: `${String.fromCharCode(97 + idx)}`, text: value, assets: [] };
+                q.data.options[idx] = { id: String.fromCharCode(97 + idx), text: value };
             } else {
-                q.content.options[idx].text = value;
+                q.data.options[idx].text = value;
             }
             updateJsonView();
         }
 
         function deleteOption(idx) {
             const q = activeData[activeIndex];
-            if (q.content?.options) {
-                q.content.options.splice(idx, 1);
-                renderMainOptions(q.content.options);
+            if (q.data?.options) {
+                q.data.options.splice(idx, 1);
+                renderMainOptions(q.data.options);
             }
             updateJsonView();
         }
 
         function addOptionMedia(idx) {
-            const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if (!q.content.options) q.content.options = [];
-            
-            const opt = q.content.options[idx];
-            if(typeof opt === 'string') {
-                q.content.options[idx] = { opt_id: `${String.fromCharCode(97 + idx)}`, text: opt, assets: [] };
-            }
-            if(!q.content.options[idx].assets) q.content.options[idx].assets = [];
-            q.content.options[idx].assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
-            selectQuestion(activeIndex);
+            // v4.0 uses [[tag]] tokens in option text, not assets array
+            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the option text.');
         }
 
         // =====================================================
-        // WORD BANK MANAGEMENT
+        // WORD BANK MANAGEMENT (v4.0 uses options_pool for FIB)
         // =====================================================
         
         function toggleWordBank() {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if(!stimulus) return;
+            // v4.0 FIB uses data.options_pool
+            if (q.type !== 'FIB') return;
             
             const section = document.getElementById('word-bank-section');
             if(section.style.display === 'none') {
                 section.style.display = 'block';
-                if(!stimulus.word_bank) stimulus.word_bank = [];
-                if(stimulus.word_bank.length === 0) {
+                if (!q.data) q.data = {};
+                if(!q.data.options_pool) q.data.options_pool = [];
+                if(q.data.options_pool.length === 0) {
                     addWordBankItem();
                 }
             } else {
@@ -3133,20 +2714,19 @@
 
 
         // =====================================================
-        // SUB-QUESTION MANAGEMENT (Enhanced for new schema)
+        // SUB-QUESTION MANAGEMENT (v4.0 schema)
         // =====================================================
         
         function addSubQuestion() {
             const q = activeData[activeIndex];
-            if (!q.content) q.content = {};
-            if(!q.content.subquestions) q.content.subquestions = [];
-            const newIdx = q.content.subquestions.length;
-            const newSubId = String.fromCharCode(97 + newIdx); // a, b, c, ...
-            q.content.subquestions.push({
-                sub_id: newSubId,
-                type: 'short_answer',
-                prompt: { text: '', assets: [] },
-                grading: { kind: 'text', values: [], points: '1' }
+            if (!q.data) q.data = {};
+            if(!q.data.sub_questions) q.data.sub_questions = [];
+            const newIdx = q.data.sub_questions.length;
+            const newSubId = `Q${q.id || activeIndex + 1}-${String.fromCharCode(97 + newIdx)}`; // Q1-a, Q1-b, etc.
+            q.data.sub_questions.push({
+                id: newSubId,
+                type: 'SUBJECTIVE',
+                data: { content: '' }
             });
             renderSubQuestions(q);
             updateJsonView();
@@ -3154,11 +2734,11 @@
 
         function deleteSubQuestion(idx) {
             const q = activeData[activeIndex];
-            if (!q.content?.subquestions) return;
-            q.content.subquestions.splice(idx, 1);
-            // Re-index sub_ids
-            q.content.subquestions.forEach((sq, i) => {
-                sq.sub_id = String.fromCharCode(97 + i);
+            if (!q.data?.sub_questions) return;
+            q.data.sub_questions.splice(idx, 1);
+            // Re-index sub ids
+            q.data.sub_questions.forEach((sq, i) => {
+                sq.id = `Q${q.id || activeIndex + 1}-${String.fromCharCode(97 + i)}`;
             });
             renderSubQuestions(q);
             recalculateTotalMarks();
@@ -3167,14 +2747,15 @@
 
         function updateSubQuestionType(idx, type) {
             const q = activeData[activeIndex];
-            if (!q.content?.subquestions?.[idx]) return;
-            q.content.subquestions[idx].type = type;
+            if (!q.data?.sub_questions?.[idx]) return;
+            q.data.sub_questions[idx].type = type;
             // Add/remove options based on type
-            if(type === 'mcq') {
-                if(!q.content.subquestions[idx].options) {
-                    q.content.subquestions[idx].options = [
-                        { opt_id: 'a', text: 'Option A', assets: [] },
-                        { opt_id: 'b', text: 'Option B', assets: [] }
+            if(type === 'MCQ') {
+                if(!q.data.sub_questions[idx].data) q.data.sub_questions[idx].data = {};
+                if(!q.data.sub_questions[idx].data.options) {
+                    q.data.sub_questions[idx].data.options = [
+                        { id: 'a', text: 'Option A' },
+                        { id: 'b', text: 'Option B' }
                     ];
                 }
             }
@@ -3184,48 +2765,46 @@
 
         function addSubQuestionOption(sqIdx) {
             const q = activeData[activeIndex];
-            const sq = q.content?.subquestions?.[sqIdx];
+            const sq = q.data?.sub_questions?.[sqIdx];
             if(!sq) return;
-            if(!sq.options) sq.options = [];
-            const newIdx = sq.options.length;
-            sq.options.push({ opt_id: `${String.fromCharCode(97 + newIdx)}`, text: '', assets: [] });
+            if(!sq.data) sq.data = {};
+            if(!sq.data.options) sq.data.options = [];
+            const newIdx = sq.data.options.length;
+            sq.data.options.push({ id: String.fromCharCode(97 + newIdx), text: '' });
             renderSubQuestions(q);
             updateJsonView();
         }
 
         function deleteSubQuestionOption(sqIdx, optIdx) {
             const q = activeData[activeIndex];
-            if (q.content?.subquestions?.[sqIdx]?.options) {
-                q.content.subquestions[sqIdx].options.splice(optIdx, 1);
+            if (q.data?.sub_questions?.[sqIdx]?.data?.options) {
+                q.data.sub_questions[sqIdx].data.options.splice(optIdx, 1);
             }
             renderSubQuestions(q);
             updateJsonView();
         }
 
         // =====================================================
-        // SUB-QUESTION STIMULUS MANAGEMENT
+        // SUB-QUESTION STIMULUS MANAGEMENT (v4.0 - not used)
         // =====================================================
         
         function addSubQuestionStimulus(sqIdx) {
+            // v4.0 doesn't have separate stimulus - content is inline
             const q = activeData[activeIndex];
-            const sq = q.content?.subquestions?.[sqIdx];
+            const sq = q.data?.sub_questions?.[sqIdx];
             if (!sq) return;
-            
-            sq.stimulus = {
-                text: '',
-                assets: []
-            };
+            // No-op for v4.0
             renderSubQuestions(q);
             updateJsonView();
         }
         
         function removeSubQuestionStimulus(sqIdx) {
             const q = activeData[activeIndex];
-            const sq = q.content?.subquestions?.[sqIdx];
+            const sq = q.data?.sub_questions?.[sqIdx];
             if (!sq) return;
             
             if (confirm('Are you sure you want to remove this stimulus?')) {
-                delete sq.stimulus;
+                // No-op for v4.0
                 renderSubQuestions(q);
                 updateJsonView();
             }
@@ -3247,18 +2826,18 @@
         // are now in question-parser.js for shared use across tools
 
         function updateLayoutButtons(mode) {
-            const currentMode = mode || 'grid';  // Default to grid for subquestions
+            const currentMode = mode || 'vertical';  // Default to vertical for subquestions
             
-            // Update toolbar buttons (legacy)
-            const btnStack = document.getElementById('btn-layout-stack');
-            const btnGrid = document.getElementById('btn-layout-grid');
-            if (btnStack && btnGrid) {
-            if(currentMode === 'stack') {
-                btnStack.classList.add('btn-primary');
-                btnGrid.classList.remove('btn-primary');
+            // Update toolbar buttons
+            const btnVertical = document.getElementById('btn-layout-vertical');
+            const btnHorizontal = document.getElementById('btn-layout-horizontal');
+            if (btnVertical && btnHorizontal) {
+                if(currentMode === 'vertical') {
+                    btnVertical.classList.add('active');
+                    btnHorizontal.classList.remove('active');
             } else {
-                btnStack.classList.remove('btn-primary');
-                btnGrid.classList.add('btn-primary');
+                    btnVertical.classList.remove('active');
+                    btnHorizontal.classList.add('active');
                 }
             }
             
@@ -3274,11 +2853,11 @@
         function renderSubQuestions(q) {
             const container = document.getElementById('sub-questions-list');
             container.innerHTML = '';
-            // Use content.subquestions_layout, default to grid
-            const mode = q.content?.subquestions_layout || 'grid';
-            container.className = `sub-questions-wrapper ${mode === 'grid' ? 'layout-grid' : ''}`;
+            // Use data.style.sub_questions_layout, default to vertical
+            const mode = q.data?.style?.sub_questions_layout || 'vertical';
+            container.className = `sub-questions-wrapper ${mode === 'horizontal' ? 'layout-horizontal' : ''}`;
             
-            const subquestions = q.content?.subquestions;
+            const subquestions = q.data?.sub_questions;
             if(subquestions && subquestions.length > 0) {
                 subquestions.forEach((sq, sqIdx) => {
                     const card = document.createElement('div');
@@ -3295,20 +2874,16 @@
                     
                     const badge = document.createElement('div');
                     badge.className = 'sub-id-badge';
-                    badge.innerText = sq.sub_id || String.fromCharCode(97 + sqIdx);
+                    badge.innerText = sq.id ? getIdDisplayLabel(sq.id) : String.fromCharCode(97 + sqIdx);
                     
-                    // Type selector
+                    // Type selector - v4.0 types
                     const typeSelect = document.createElement('select');
                     typeSelect.className = 'sub-question-type-select';
                     typeSelect.innerHTML = `
-                        <option value="mcq" ${sq.type === 'mcq' ? 'selected' : ''}>MCQ</option>
-                        <option value="short_answer" ${sq.type === 'short_answer' ? 'selected' : ''}>Short Answer</option>
-                        <option value="long_answer" ${sq.type === 'long_answer' ? 'selected' : ''}>Long Answer</option>
-                        <option value="fill_blank" ${sq.type === 'fill_blank' ? 'selected' : ''}>Fill Blank</option>
-                        <option value="match_columns" ${sq.type === 'match_columns' ? 'selected' : ''}>Match Columns</option>
-                        <option value="sequencing" ${sq.type === 'sequencing' ? 'selected' : ''}>Sequencing</option>
-                        <option value="sorting" ${sq.type === 'sorting' ? 'selected' : ''}>Sorting</option>
-                        <option value="labelling" ${sq.type === 'labelling' ? 'selected' : ''}>Labelling</option>
+                        <option value="MCQ" ${sq.type === 'MCQ' ? 'selected' : ''}>MCQ</option>
+                        <option value="FIB" ${sq.type === 'FIB' ? 'selected' : ''}>Fill Blank</option>
+                        <option value="MATCH" ${sq.type === 'MATCH' ? 'selected' : ''}>Match</option>
+                        <option value="SUBJECTIVE" ${sq.type === 'SUBJECTIVE' ? 'selected' : ''}>Subjective</option>
                     `;
                     typeSelect.onchange = (e) => updateSubQuestionType(sqIdx, e.target.value);
                     
@@ -3320,43 +2895,12 @@
                     rightControls.style.alignItems = 'center';
                     rightControls.style.gap = '8px';
                     
-                    // Marks toggle and input (now from grading.points)
-                    const hasPoints = sq.grading?.points;
-                    const label = document.createElement('label');
-                    label.className = 'toggle-wrapper';
-                    label.innerHTML = `<span>Marks</span><input type="checkbox" class="toggle-input" ${hasPoints ? 'checked' : ''}><div class="toggle-track"><div class="toggle-thumb"></div></div>`;
-                    
-                    const marksInput = document.createElement('input');
-                    marksInput.type = 'number';
-                    marksInput.className = 'sub-marks-input';
-                    marksInput.step = '0.5';
-                    if(hasPoints) { marksInput.value = sq.grading.points; marksInput.classList.add('visible'); }
-                    marksInput.placeholder = '0.5';
-                    marksInput.oninput = (e) => { 
-                        if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
-                        sq.grading.points = e.target.value; 
-                        recalculateTotalMarks(); 
-                    };
-                    label.querySelector('input').onchange = (e) => {
-                        if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
-                        if(e.target.checked) { 
-                            marksInput.classList.add('visible'); 
-                            sq.grading.points = marksInput.value || '1'; 
-                        } else { 
-                            marksInput.classList.remove('visible'); 
-                            sq.grading.points = '0'; 
-                        }
-                        recalculateTotalMarks();
-                    };
-                    
                     // Delete button
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'delete-sub-btn';
                     deleteBtn.innerText = '✕';
                     deleteBtn.onclick = () => deleteSubQuestion(sqIdx);
                     
-                    rightControls.appendChild(label);
-                    rightControls.appendChild(marksInput);
                     rightControls.appendChild(deleteBtn);
                     
                     headerRow.appendChild(leftControls);
@@ -3414,35 +2958,32 @@
                     const textArea = document.createElement('div');
                     textArea.className = 'sq-text-area';
                     
-                    // Prompt text input
+                    // Content text input - v4.0 uses sq.data.content
                     const input = document.createElement('textarea');
                     input.className = 'input-bare sub-input';
-                    const sqText = getTextValue(sq.prompt);
+                    const sqData = sq.data || {};
+                    const sqText = sqData.content || '';
                     input.value = sqText;
                     input.placeholder = 'Enter text...';
                     input.oninput = (e) => { 
-                        if(typeof sq.prompt === 'string') sq.prompt = { text: e.target.value, assets: [] };
-                        else sq.prompt.text = e.target.value;
+                        if (!sq.data) sq.data = {};
+                        sq.data.content = e.target.value;
                         updateJsonView(); 
                     };
                     textArea.appendChild(input);
                     contentWrapper.appendChild(textArea);
                     
-                    // Asset container for prompt
+                    // Asset container - v4.0 uses [[tag]] tokens, not assets array
                     const assetCont = document.createElement('div');
                     assetCont.className = 'asset-container';
-                    const sqAssets = (sq.prompt && sq.prompt.assets) ? sq.prompt.assets : [];
-                    renderAssetList(sqAssets, assetCont, (newAssets) => {
-                        if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, assets: [] };
-                        sq.prompt.assets = newAssets;
-                        updateJsonView(); 
-                    });
+                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span>';
                     contentWrapper.appendChild(assetCont);
                     
                     card.appendChild(contentWrapper);
                     
-                    // Options for MCQ types
-                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi' || sq.type === 'mcq') && sq.options && sq.options.length > 0) {
+                    // Options for MCQ type - v4.0 uses sq.data.options
+                    const sqOptions = sqData.options || [];
+                    if (sq.type === 'MCQ' && sqOptions.length > 0) {
                         const optDiv = document.createElement('div');
                         optDiv.className = 'options-editor';
                         optDiv.innerHTML = `
@@ -3451,20 +2992,21 @@
                                 <button class="btn btn-sm" style="font-size:0.65rem;" onclick="addSubQuestionOption(${sqIdx})">+ Add</button>
                             </div>
                         `;
-                        sq.options.forEach((opt, oIdx) => {
+                        sqOptions.forEach((opt, oIdx) => {
                             const optRow = document.createElement('div');
                             optRow.className = 'option-row';
                             const radio = document.createElement('div');
                             radio.className = 'option-radio';
-                            if(sq.type === 'mcq_multi') radio.style.borderRadius = '2px'; // Checkbox style
+                            if(sqData.allow_multiple) radio.style.borderRadius = '2px'; // Checkbox style
                             const optInput = document.createElement('input');
                             optInput.className = 'option-input';
-                            const optVal = getTextValue(opt);
+                            const optVal = opt.text || '';
                             optInput.value = optVal;
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
-                                if (typeof sq.options[oIdx] === 'string') sq.options[oIdx] = { opt_id: `${String.fromCharCode(97 + oIdx)}`, text: e.target.value, assets: [] };
-                                else sq.options[oIdx].text = e.target.value;
+                                if (!sq.data) sq.data = { options: [] };
+                                if (!sq.data.options[oIdx]) sq.data.options[oIdx] = { id: String.fromCharCode(97 + oIdx), text: '' };
+                                sq.data.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
                             const delOptBtn = document.createElement('button');
@@ -3489,38 +3031,16 @@
                     actionsRow.style.gap = '0.5rem';
                     actionsRow.style.marginTop = '0.5rem';
                     
-                    const addImgBtn = document.createElement('button');
-                    addImgBtn.className = 'btn btn-sm';
-                    addImgBtn.innerText = '+ Image';
-                    addImgBtn.onclick = () => {
-                         if(typeof sq.prompt === 'string') sq.prompt = { text: sq.prompt, assets: [] };
-                         if(!sq.prompt.assets) sq.prompt.assets = [];
-                         sq.prompt.assets.push({ asset_id: '#', ai_generation_prompt: 'Describe...', uri: '', alt: '' });
-                         selectQuestion(activeIndex);
-                    };
-                    actionsRow.appendChild(addImgBtn);
-                    
-                    // Add stimulus button if no stimulus yet
-                    if (!sq.stimulus) {
-                        const addStimBtn = document.createElement('button');
-                        addStimBtn.className = 'btn btn-sm';
-                        addStimBtn.style.cssText = 'color:#1d4ed8;';
-                        addStimBtn.innerText = '+ Stimulus';
-                        addStimBtn.onclick = () => {
-                            addSubQuestionStimulus(sqIdx);
-                        };
-                        actionsRow.appendChild(addStimBtn);
-                    }
-                    
                     // Add options button for MCQ types without options yet
-                    if ((sq.type === 'mcq_single' || sq.type === 'mcq_multi' || sq.type === 'mcq') && (!sq.options || sq.options.length === 0)) {
+                    if (sq.type === 'MCQ' && sqOptions.length === 0) {
                         const addOptBtn = document.createElement('button');
                         addOptBtn.className = 'btn btn-sm';
                         addOptBtn.innerText = '+ Options';
                         addOptBtn.onclick = () => {
-                            sq.options = [
-                                { opt_id: 'a', text: '', assets: [] },
-                                { opt_id: 'b', text: '', assets: [] }
+                            if (!sq.data) sq.data = {};
+                            sq.data.options = [
+                                { id: 'a', text: '' },
+                                { id: 'b', text: '' }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();
@@ -3851,20 +3371,16 @@
         function switchSubView(subview) {
             const btnGraph = document.getElementById('subview-graphical');
             const btnJson = document.getElementById('subview-json');
-            const btnLayout = document.getElementById('subview-layout');
             const viewGraph = document.getElementById('sub-view-graphical');
             const viewJson = document.getElementById('sub-view-json');
-            const viewLayout = document.getElementById('sub-view-layout');
             
             // Remove active from all buttons
             btnGraph.classList.remove('active');
             btnJson.classList.remove('active');
-            btnLayout.classList.remove('active');
             
             // Hide all views
             viewGraph.style.display = 'none';
             viewJson.style.display = 'none';
-            viewLayout.style.display = 'none';
             
             if(subview === 'graphical') {
                 btnGraph.classList.add('active');
@@ -3873,10 +3389,6 @@
                 btnJson.classList.add('active');
                 viewJson.style.display = 'flex';
                 updateJsonView();
-            } else if(subview === 'layout') {
-                btnLayout.classList.add('active');
-                viewLayout.style.display = 'flex';
-                updateLayoutJsonView();
             }
         }
         
@@ -3914,17 +3426,28 @@
         }
         function formatForPrint(text, options) {
             if(!text) return '';
-            if(text.includes('__')) {
+            let result = text;
+            
+            // Handle image tokens [[tag]] - render as block placeholders on new lines
+            result = result.replace(/\[\[([^\]]+)\]\]/g, '<div class="p-asset-placeholder">📷 Image: $1</div>');
+            
+            // Handle {{gap}} placeholders for FIB
+            result = result.replace(/\{\{gap\}\}/g, '<span style="display:inline-block; border-bottom:2px solid #000; min-width:60px; margin:0 4px;">&nbsp;</span>');
+            
+            // Handle __ blanks
+            if(result.includes('__')) {
                 const w = getBlankStyle(text, options);
-                return text.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
+                result = result.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
             }
-            return text;
+            return result;
         }
 
         function renderPreview(q, idx) {
             const container = document.getElementById('a4-content');
-            const content = q.content || {};
-            const grading = q.grading || {};
+            const data = q.data || {};
+            const meta = q.metadata || {};
+            const solution = q.solution || {};
+            const qType = q.type || 'SUBJECTIVE';
             
             // Get layout configuration and apply theme to A4 container
             const layoutConfig = getLayoutConfig(q);
@@ -3933,73 +3456,36 @@
             container.style.fontSize = theme.base_font_size;
             container.style.lineHeight = theme.line_height;
             
-            // Helper to render assets array
-            const renderAssetsArray = (assets) => {
-                if (!assets || assets.length === 0) return '';
-                return assets.map(a => {
-                    if (a.uri) {
-                        // Use stored dimensions if available
-                        const style = (a.width && a.height) 
-                            ? `style="width:${a.width}px; height:${a.height}px; object-fit:contain;"` 
-                            : '';
-                        const alt = a.alt || 'Image';
-                        return `<div class="p-asset"><img src="${a.uri}" alt="${alt}" ${style}></div>`;
-                    }
-                    return `<div class="p-asset"><div class="p-asset-placeholder">[IMAGE]</div></div>`;
-                }).join('');
+            // Helper to render image tokens [[tag]] as block placeholders
+            const renderImageTokens = (text) => {
+                if (!text) return '';
+                return text.replace(/\[\[([^\]]+)\]\]/g, '<div class="p-asset-placeholder">📷 Image: $1</div>');
             };
             
-            // Prompt section (stack layout only)
-            const prompt = content.prompt || { text: '', assets: [] };
-            const pText = prompt.text || '';
-            const pAssets = prompt.assets || [];
+            // Main content - for COMPOSITE it's common_content, others use content
+            const mainContent = data.common_content || data.content || '';
             let promptHtml = `<div class="p-section-stack">
-                    <div class="p-section-text"><span class="p-q-num">${idx + 1}.</span> ${formatForPrint(pText)}</div>
-                ${pAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(pAssets)}</div>` : ''}
+                    <div class="p-section-text"><span class="p-q-num">${q.id || idx + 1}.</span> ${formatForPrint(mainContent)}</div>
                 </div>`;
             
-            // Stimulus section (stack layout only)
+            // Stimulus section - not used in v4.0, content is inline
             let stimHtml = '';
-            if(content.stimulus) {
-                const stimAssets = content.stimulus.assets || [];
-                const stimText = content.stimulus.text || '';
-                const wordBank = content.stimulus.word_bank || [];
-                const stimTables = content.stimulus.tables || [];
-                const stimGroups = content.stimulus.groups || [];
-                const stimPairs = content.stimulus.pairs || null;
-                
-                // Render word bank if present
-                let wordBankHtml = '';
-                if (wordBank.length > 0) {
-                    const words = wordBank.map(w => w.text || w).filter(w => w).join(' &nbsp;|&nbsp; ');
-                    wordBankHtml = `<div class="p-word-bank">${words}</div>`;
-                }
-                
-                // Render tables if present (use shared helper from question-parser.js)
-                const tablesHtml = renderStimulusTables(stimTables);
-                
-                // Render groups for sorting/classification
-                let groupsHtml = '';
-                if (stimGroups.length > 0) {
-                    const groupBoxes = stimGroups.map(g => `
-                        <div class="p-group-box">
-                            <div class="p-group-header">${g.text || g.group_id}</div>
-                            <div class="p-group-body"></div>
-                        </div>
-                    `).join('');
-                    groupsHtml = `<div class="p-groups-container">${groupBoxes}</div>`;
-                }
-                
-                // Render pairs for match_columns
-                let pairsHtml = '';
-                if (stimPairs && (stimPairs.left_column?.length > 0 || stimPairs.right_column?.length > 0)) {
-                    const leftItems = (stimPairs.left_column || []).map((item, i) => 
-                        `<div class="p-pairs-item"><span class="p-pairs-item-id">${i + 1}.</span>${item.text || ''}</div>`
+            
+            // Word bank for FIB type
+            if (qType === 'FIB' && data.options_pool && data.options_pool.length > 0) {
+                const words = data.options_pool.join(' &nbsp;|&nbsp; ');
+                stimHtml = `<div class="p-word-bank">${words}</div>`;
+            }
+            
+            // Pairs for MATCH type
+            if (qType === 'MATCH' && data.pairs && data.pairs.length > 0) {
+                const leftItems = data.pairs.map((p, i) => 
+                    `<div class="p-pairs-item"><span class="p-pairs-item-id">${i + 1}.</span>${renderImageTokens(p.left)}</div>`
                     ).join('');
-                    const rightItems = (stimPairs.right_column || []).map((item, i) => 
-                        `<div class="p-pairs-item"><span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>${item.text || ''}</div>`
+                const rightItems = data.pairs.map((p, i) => 
+                    `<div class="p-pairs-item"><span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>${renderImageTokens(p.right)}</div>`
                     ).join('');
-                    pairsHtml = `
+                stimHtml += `
                         <div class="p-pairs-container">
                             <div class="p-pairs-column">
                                 <div class="p-pairs-header">Column A</div>
@@ -4012,102 +3498,59 @@
                         </div>`;
                 }
                 
-                stimHtml = `<div class="p-stimulus p-section-stack">
-                    <div class="p-section-text">${stimText}</div>
-                    ${stimAssets.length > 0 ? `<div class="p-section-media">${renderAssetsArray(stimAssets)}</div>` : ''}
-                    ${tablesHtml}
-                    ${pairsHtml}
-                    ${groupsHtml}
-                    ${wordBankHtml}
-                </div>`;
-            }
-            
-            // Options section - varies by question type
-            const qType = q.taxonomy?.type || 'mcq';
+            // Options section for MCQ type
             let optionsHtml = '';
-            if(content.options && content.options.length > 0) {
-                // For sorting/sequencing, show items as chips
-                if (qType === 'sorting' || qType === 'sequencing') {
-                    const itemChips = content.options.map(opt => {
-                        const optText = typeof opt === 'string' ? opt : (opt.text || '');
-                        return `<span class="p-item-chip">${optText}</span>`;
-                    }).join('');
-                    const label = qType === 'sorting' ? 'Items to sort:' : 'Items to arrange:';
-                    optionsHtml = `<div class="p-items-box">
-                        <div class="p-items-label">${label}</div>
-                        <div class="p-items-list">${itemChips}</div>
-                    </div>`;
-                } else {
-                    // For MCQ types - stack layout only
-                    const optItems = content.options.map((opt, k) => {
-                        const optText = typeof opt === 'string' ? opt : (opt.text || '');
-                        const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
+            if(qType === 'MCQ' && data.options && data.options.length > 0) {
+                const optItems = data.options.map((opt, k) => {
+                    const optText = opt.text || '';
                         const letter = String.fromCharCode(65 + k); // A, B, C, D...
-                        
-                        const assetStr = optAssets.length > 0 ? optAssets.map(a => {
-                            if (!a.uri) return '';
-                            const style = (a.width && a.height) ? `width:${Math.min(a.width, 80)}px; height:${Math.min(a.height, 40)}px; object-fit:contain;` : 'max-height:40px;';
-                            return `<img src="${a.uri}" alt="${a.alt || ''}" style="${style} vertical-align:middle; margin-left:0.5rem;">`;
-                        }).join('') : '';
-                        return `<div class="p-option-item">(${letter}) ${optText}${assetStr}</div>`;
+                    return `<div class="p-option-item">(${letter}) ${renderImageTokens(optText)}</div>`;
                     }).join('');
                     optionsHtml = `<div class="p-options p-options-stack">${optItems}</div>`;
-                }
             }
             
-            // Sub-questions section with layout support (sub-questions retain layout controls)
+            // Sub-questions section for COMPOSITE type
             let subHtml = '';
-            if(content.subquestions && content.subquestions.length > 0) {
-                // Use subquestions_layout from content, default to grid
-                const sectionSubLayout = content.subquestions_layout || 'grid';
-                const isSectionGrid = sectionSubLayout === 'grid';
-                const subs = content.subquestions.map((sq, i) => {
-                    const label = sq.sub_id || String.fromCharCode(97 + i);
-                    const sqAssets = (sq.prompt && sq.prompt.assets) ? sq.prompt.assets : [];
+            if(qType === 'COMPOSITE' && data.sub_questions && data.sub_questions.length > 0) {
+                // Use style.sub_questions_layout, default to vertical
+                const sectionSubLayout = data.style?.sub_questions_layout || 'vertical';
+                const isHorizontal = sectionSubLayout === 'horizontal';
+                const subs = data.sub_questions.map((sq, i) => {
+                    const label = sq.id ? getIdDisplayLabel(sq.id) : String.fromCharCode(97 + i);
+                    const sqData = sq.data || {};
+                    const sqContent = sqData.content || '';
                     
-                    // Sub-question stimulus (context)
-                    let sqStimulusHtml = '';
-                    if (sq.stimulus && (sq.stimulus.text || (sq.stimulus.assets && sq.stimulus.assets.length > 0) || (sq.stimulus.tables && sq.stimulus.tables.length > 0))) {
-                        const sqStimText = sq.stimulus.text || '';
-                        const sqStimAssets = sq.stimulus.assets || [];
-                        const sqStimTables = sq.stimulus.tables || [];
-                        sqStimulusHtml = `<div style="background:#f9fafb; padding:0.5rem; border:1px solid #e5e7eb; margin-bottom:0.5rem; font-style:italic; font-size:10pt;">
-                            ${sqStimText}
-                            ${renderAssetsArray(sqStimAssets)}
-                            ${renderStimulusTables(sqStimTables)}
-                        </div>`;
-                    }
-                    
+                    // Sub-question options for MCQ
                     let optHtml = '';
-                    if(sq.options) {
-                        optHtml = sq.options.map((o, k) => {
-                            const txt = typeof o === 'string' ? o : o.text;
-                            return `<span style="margin-right:1rem;">(${k+1}) ${txt}</span>`;
+                    if(sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
+                        optHtml = sqData.options.map((o, k) => {
+                            const txt = o.text || '';
+                            return `<span style="margin-right:1rem;">(${k+1}) ${renderImageTokens(txt)}</span>`;
                         }).join('');
                     }
-                    let sqMarks = '';
-                    const sqPoints = sq.grading?.points;
-                    if(sqPoints) { sqMarks = `<span style="font-weight:bold; font-size:10pt; white-space:nowrap;">[${sqPoints}]</span>`; }
-                    const sqText = getTextValue(sq.prompt);
                     
-                    // Stack layout for individual sub-questions
+                    // FIB options_pool as word bank
+                    let sqWordBank = '';
+                    if (sq.type === 'FIB' && sqData.options_pool && sqData.options_pool.length > 0) {
+                        sqWordBank = `<div style="font-size:0.8rem; color:#666; margin-top:4px;">Word bank: ${sqData.options_pool.join(', ')}</div>`;
+                    }
+                    
+                    // Vertical layout for individual sub-questions
                     const contentHtml = `
                             <div style="width:100%">
-                            ${sqStimulusHtml}
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
-                                <div style="flex:1;">${formatForPrint(sqText, sq.options) || '<em style="color:#999;">No text</em>'}</div>
-                                ${sqMarks ? `<div>${sqMarks}</div>` : ''}
+                                <div style="flex:1;">${formatForPrint(sqContent) || '<em style="color:#999;">No text</em>'}</div>
                             </div>
-                            ${renderAssetsArray(sqAssets)}
                                 ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                                ${sqWordBank}
                             </div>`;
                     
                     return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span>${contentHtml}</div>`;
                 }).join('');
-                subHtml = isSectionGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+                subHtml = isHorizontal ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
             }
             
-            const points = grading.points || '1';
+            const points = meta.marks || '1';
             const marksText = `[${points}]`;
             
             // Apply print settings
