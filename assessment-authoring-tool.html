@@ -245,7 +245,7 @@
         .badge-import { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         .badge-library { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
         
-        .actions { display: flex; gap: 0.75rem; }
+        .actions { display: flex; gap: 0.5rem; align-items: center; }
         .btn {
             padding: 0.5rem 1rem;
             border-radius: 6px;
@@ -254,7 +254,7 @@
             cursor: pointer;
             border: 1px solid var(--border);
             background: white;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -264,6 +264,138 @@
         .btn-primary:hover { background: var(--primary-hover); }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
         .btn-icon { padding: 0.4rem; }
+
+        /* Workflow Step Buttons */
+        .workflow-step {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .workflow-step .btn {
+            padding-left: 2.25rem;
+            position: relative;
+        }
+        .step-badge {
+            position: absolute;
+            left: 0.5rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #e5e7eb;
+            color: #6b7280;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        .workflow-step.completed .step-badge {
+            background: #10b981;
+            color: white;
+        }
+        .workflow-step.active .step-badge {
+            background: var(--primary);
+            color: white;
+            animation: pulse-badge 2s infinite;
+        }
+        .workflow-step.completed .step-badge::after {
+            content: '✓';
+            font-size: 0.65rem;
+        }
+        .workflow-step.completed .step-badge span { display: none; }
+        
+        /* Active step glow */
+        .workflow-step.active .btn {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            border-color: var(--primary);
+        }
+        
+        /* Connector arrows between steps */
+        .workflow-connector {
+            display: flex;
+            align-items: center;
+            color: #d1d5db;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+            margin: 0 0.25rem;
+        }
+        .workflow-connector.active {
+            color: var(--primary);
+        }
+        .workflow-connector.completed {
+            color: #10b981;
+        }
+        
+        /* Animations */
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+        }
+        @keyframes step-complete {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .workflow-step.just-completed .step-badge {
+            animation: step-complete 0.4s ease;
+        }
+        
+        /* Disabled/pending state - not clickable */
+        .workflow-step.pending .btn {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        .workflow-step.pending .btn:hover {
+            background: white;
+            border-color: var(--border);
+        }
+        
+        /* Completed state - not clickable (already done) */
+        .workflow-step.completed .btn {
+            opacity: 0.7;
+            pointer-events: none;
+            cursor: default;
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+        
+        /* Native disabled state */
+        .workflow-step .btn:disabled {
+            cursor: not-allowed;
+        }
+        
+        /* Skip button */
+        .btn-skip {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6b7280;
+            background: transparent;
+            border: 1px dashed #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 0.35rem;
+        }
+        .btn-skip:hover:not(:disabled) {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .btn-skip:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .workflow-step.completed .btn-skip,
+        .workflow-step.pending .btn-skip {
+            display: none;
+        }
+        .workflow-step.active .btn-skip {
+            display: inline-block;
+        }
 
         /* WORKSPACE LAYOUT */
         .workspace { display: flex; flex: 1; overflow: hidden; }
@@ -455,9 +587,30 @@
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
             box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 11pt; line-height: 1.4; color: #000;
         }
+        
+        .a4-pages-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
         /* CONTENT STYLES */
         .p-q-block { margin-bottom: 1.5rem; text-align: justify; }
+        
+        /* Print styles */
+        @media print {
+            .preview-view-container {
+                padding: 0;
+                background: white;
+            }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                padding: 15mm;
+                width: 100%;
+                min-height: auto;
+            }
+        }
         .p-q-header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; margin-bottom: 0.5rem; }
         .p-q-content { flex: 1; }
         .p-q-num { font-weight: bold; margin-right: 0.5rem; }
@@ -1128,8 +1281,30 @@
                     <!-- Actions: Dynamic based on Workflow -->
                     <div class="actions" id="action-bar">
                         <input type="file" id="file-input" accept=".jsonl,.json">
+                        <input type="file" id="image-files-input" accept="image/*" multiple style="display:none;">
+                        
+                        <!-- Step 1: Upload Questions (active initially) -->
+                        <div class="workflow-step active" id="step-upload">
+                            <span class="step-badge"><span>1</span></span>
                         <button class="btn" id="btn-upload" onclick="document.getElementById('file-input').click()">📁 Upload JSON/JSONL</button>
-                        <button class="btn btn-primary" id="btn-action" onclick="downloadJSONL()">Publish All</button>
+                        </div>
+                        
+                        <span class="workflow-connector" id="connector-1">→</span>
+                        
+                        <!-- Step 2: Upload Images (pending initially) -->
+                        <div class="workflow-step pending" id="step-images">
+                            <span class="step-badge"><span>2</span></span>
+                            <button class="btn" id="btn-upload-images" disabled onclick="document.getElementById('image-files-input').click()">🖼️ Upload Image(s)</button>
+                            <button class="btn-skip" id="btn-skip-images" disabled onclick="skipImageUpload()">Skip →</button>
+                        </div>
+                        
+                        <span class="workflow-connector" id="connector-2">→</span>
+                        
+                        <!-- Step 3: Publish (pending initially) -->
+                        <div class="workflow-step pending" id="step-publish">
+                            <span class="step-badge" id="step-publish-badge"><span>3</span></span>
+                            <button class="btn btn-primary" id="btn-action" disabled onclick="downloadJSONL()">Publish All</button>
+                        </div>
                     </div>
                 </header>
 
@@ -1355,6 +1530,10 @@
                                         <div class="section-header">
                                             <label class="section-label" id="options-section-label">OPTIONS</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <div class="section-layout-toggle" id="options-layout-toggle">
+                                                    <button class="section-layout-btn" onclick="setOptionsLayoutMain('vertical')" data-layout="vertical" id="btn-options-layout-vertical">☰ Vertical</button>
+                                                    <button class="section-layout-btn active" onclick="setOptionsLayoutMain('horizontal')" data-layout="horizontal" id="btn-options-layout-horizontal">⊞ Horizontal</button>
+                                                </div>
                                                 <button class="btn btn-sm" onclick="addOption()">+ Add Option</button>
                                                 <button class="remove-section-btn" onclick="removeSection('options')">✕ Remove</button>
                                             </div>
@@ -1402,8 +1581,10 @@
 
                             <!-- VIEW: PREVIEW -->
                             <div id="view-preview" class="preview-view-container">
+                                <div class="a4-pages-container" id="a4-pages-container">
                                 <div class="a4-page" id="a4-content">
                                     <!-- Rendered Content Goes Here -->
+                                    </div>
                                 </div>
                             </div>
 
@@ -1433,10 +1614,104 @@
         let libraryData = []; // Populated via fetch
         // 3. Pointer to currently active dataset (reference)
         let activeData = null; // Points to importData or libraryData
+        // 4. Uploaded Images Store (maps tag names to data URLs)
+        let uploadedImages = {};
         
         let activeIndex = null;
         let activeWorkflow = 'import'; // 'import' or 'library'
         let activeUploadCallback = null;
+        let workflowState = { step1: false, step2: false, step3: false }; // Track workflow completion
+
+        // --- WORKFLOW ANIMATION MANAGEMENT ---
+        function updateWorkflowState(completedStep) {
+            const step1 = document.getElementById('step-upload');
+            const step2 = document.getElementById('step-images');
+            const step3 = document.getElementById('step-publish');
+            const btn1 = document.getElementById('btn-upload');
+            const btn2 = document.getElementById('btn-upload-images');
+            const btn3 = document.getElementById('btn-action');
+            const btnSkip = document.getElementById('btn-skip-images');
+            const conn1 = document.getElementById('connector-1');
+            const conn2 = document.getElementById('connector-2');
+
+            if (completedStep === 1) {
+                workflowState.step1 = true;
+                // Step 1 completed - disable it
+                step1.classList.remove('active');
+                step1.classList.add('completed', 'just-completed');
+                btn1.disabled = true;
+                setTimeout(() => step1.classList.remove('just-completed'), 400);
+                
+                // Step 2 becomes active - enable it and skip button
+                step2.classList.remove('pending');
+                step2.classList.add('active');
+                btn2.disabled = false;
+                btnSkip.disabled = false;
+                conn1.classList.add('completed');
+            }
+            
+            if (completedStep === 2) {
+                workflowState.step2 = true;
+                // Step 2 completed - disable it
+                step2.classList.remove('active');
+                step2.classList.add('completed', 'just-completed');
+                btn2.disabled = true;
+                btnSkip.disabled = true;
+                setTimeout(() => step2.classList.remove('just-completed'), 400);
+                
+                // Step 3 becomes active - enable it
+                step3.classList.remove('pending');
+                step3.classList.add('active');
+                btn3.disabled = false;
+                conn2.classList.add('completed');
+            }
+            
+            if (completedStep === 3) {
+                workflowState.step3 = true;
+                // All steps completed
+                step3.classList.remove('active');
+                step3.classList.add('completed', 'just-completed');
+                btn3.disabled = true;
+                setTimeout(() => step3.classList.remove('just-completed'), 400);
+            }
+        }
+
+        function resetWorkflowState() {
+            workflowState = { step1: false, step2: false, step3: false };
+            const step1 = document.getElementById('step-upload');
+            const step2 = document.getElementById('step-images');
+            const step3 = document.getElementById('step-publish');
+            const btn1 = document.getElementById('btn-upload');
+            const btn2 = document.getElementById('btn-upload-images');
+            const btn3 = document.getElementById('btn-action');
+            const btnSkip = document.getElementById('btn-skip-images');
+            const conn1 = document.getElementById('connector-1');
+            const conn2 = document.getElementById('connector-2');
+
+            [step1, step2, step3].forEach(el => {
+                el.classList.remove('completed', 'active', 'pending', 'just-completed');
+            });
+            [conn1, conn2].forEach(el => {
+                el.classList.remove('completed', 'active');
+            });
+
+            // Step 1 active, others pending
+            step1.classList.add('active');
+            btn1.disabled = false;
+            
+            step2.classList.add('pending');
+            btn2.disabled = true;
+            btnSkip.disabled = true;
+            
+            step3.classList.add('pending');
+            btn3.disabled = true;
+        }
+
+        // Skip the image upload step
+        function skipImageUpload() {
+            // Mark step 2 as completed (skipped)
+            updateWorkflowState(2);
+        }
 
         // MOCK DATABASE (using new schema format v2)
         const mockDatabase = [
@@ -1523,24 +1798,57 @@
             const badge = document.getElementById('mode-badge');
             const actionBtn = document.getElementById('btn-action');
             const uploadBtn = document.getElementById('btn-upload');
+            const uploadImagesBtn = document.getElementById('btn-upload-images');
+
+            // Get workflow step containers
+            const stepUpload = document.getElementById('step-upload');
+            const stepImages = document.getElementById('step-images');
+            const stepPublish = document.getElementById('step-publish');
+            const connector1 = document.getElementById('connector-1');
+            const connector2 = document.getElementById('connector-2');
 
             if (mode === 'import') {
                 badge.innerText = "CREATE/ IMPORT MODE";
                 badge.className = "badge-mode badge-import";
                 activeData = importData;
                 
-                // Show Upload Button
+                // Show Upload Workflow Steps
+                stepUpload.style.display = 'inline-flex';
+                stepImages.style.display = 'inline-flex';
+                stepPublish.style.display = 'inline-flex';
+                connector1.style.display = 'flex';
+                connector2.style.display = 'flex';
+                // Show step badge in import mode
+                document.getElementById('step-publish-badge').style.display = 'flex';
+                // Restore left padding for badge
+                actionBtn.style.paddingLeft = '2.25rem';
                 uploadBtn.style.display = 'inline-flex';
+                uploadImagesBtn.style.display = 'inline-flex';
                 actionBtn.innerText = "Publish All";
-                actionBtn.onclick = downloadJSONL; // Simulate publish
+                actionBtn.onclick = downloadJSONL;
+                
+                // Reset workflow state
+                resetWorkflowState();
             } else {
                 badge.innerText = "LIBRARY MODE";
                 badge.className = "badge-mode badge-library";
                 activeData = libraryData;
                 
-                // Hide Upload Button
+                // Hide Upload Workflow Steps (show only save button, no step badge)
+                stepUpload.style.display = 'none';
+                stepImages.style.display = 'none';
+                connector1.style.display = 'none';
+                connector2.style.display = 'none';
+                stepPublish.style.display = 'inline-flex';
+                stepPublish.classList.remove('pending', 'completed', 'active');
+                // Hide step badge in library mode
+                document.getElementById('step-publish-badge').style.display = 'none';
+                // Remove left padding since no badge
+                actionBtn.style.paddingLeft = '1rem';
                 uploadBtn.style.display = 'none';
-                actionBtn.innerText = "Save Changes"; // Simulate DB Update
+                uploadImagesBtn.style.display = 'none';
+                actionBtn.innerText = "Save Changes";
+                actionBtn.disabled = false;
                 actionBtn.onclick = () => alert("Changes saved to database!"); 
             }
 
@@ -1608,12 +1916,168 @@
                     else renderList();
                     
                     selectQuestion(0);
+                    
+                    // Update workflow animation - Step 1 completed
+                    updateWorkflowState(1);
                 } else {
                     alert('No valid JSON objects found.');
                 }
             };
             reader.readAsText(file);
         });
+
+        // --- IMAGE UPLOAD ---
+        document.getElementById('image-files-input').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            let loadedCount = 0;
+            let matchedCount = 0;
+            const totalFiles = files.length;
+
+            // Collect all image tags from loaded questions
+            const allTags = collectAllImageTags();
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const dataUrl = evt.target.result;
+                    // Get filename without extension for matching
+                    const fileName = file.name.replace(/\.[^/.]+$/, '');
+                    
+                    // Try to match with existing tags (partial match)
+                    const matchedTag = findMatchingTag(fileName, allTags);
+                    if (matchedTag) {
+                        uploadedImages[matchedTag] = dataUrl;
+                        matchedCount++;
+                    } else {
+                        // Store with filename as key for potential future matching
+                        uploadedImages[fileName] = dataUrl;
+                    }
+
+                    loadedCount++;
+                    
+                    // When all files are loaded, refresh the preview
+                    if (loadedCount === totalFiles) {
+                        const uploadBtn = document.getElementById('btn-upload-images');
+                        uploadBtn.innerHTML = `🖼️ Images (${Object.keys(uploadedImages).length})`;
+                        
+                        // Refresh preview if a question is selected
+                        if (activeIndex !== null && activeData && activeData[activeIndex]) {
+                            renderPrintPreview(activeData[activeIndex], activeIndex);
+                        }
+                        
+                        // Update workflow animation - Step 2 completed
+                        updateWorkflowState(2);
+                        
+                        // Show summary
+                        alert(`Loaded ${totalFiles} image(s).\n${matchedCount} matched to question tags.`);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // Reset input to allow re-uploading same files
+            e.target.value = '';
+        });
+
+        // Collect all [[tag]] references from loaded questions
+        function collectAllImageTags() {
+            const tags = new Set();
+            const tagRegex = /\[\[([^\]]+)\]\]/g;
+            
+            if (!activeData) return tags;
+            
+            activeData.forEach(q => {
+                const data = q.data || {};
+                
+                // Check common_content and content
+                [data.common_content, data.content].forEach(text => {
+                    if (text) {
+                        let match;
+                        while ((match = tagRegex.exec(text)) !== null) {
+                            tags.add(match[1]);
+                        }
+                    }
+                });
+                
+                // Check sub_questions
+                if (data.sub_questions) {
+                    data.sub_questions.forEach(sq => {
+                        const sqData = sq.data || {};
+                        if (sqData.content) {
+                            let match;
+                            while ((match = tagRegex.exec(sqData.content)) !== null) {
+                                tags.add(match[1]);
+                            }
+                        }
+                        // Check options
+                        if (sqData.options) {
+                            sqData.options.forEach(opt => {
+                                if (opt.text) {
+                                    let match;
+                                    while ((match = tagRegex.exec(opt.text)) !== null) {
+                                        tags.add(match[1]);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Check options for MCQ
+                if (data.options) {
+                    data.options.forEach(opt => {
+                        if (opt.text) {
+                            let match;
+                            while ((match = tagRegex.exec(opt.text)) !== null) {
+                                tags.add(match[1]);
+                            }
+                        }
+                    });
+                }
+                
+                // Check pairs for MATCH
+                if (data.pairs) {
+                    data.pairs.forEach(pair => {
+                        [pair.left, pair.right].forEach(text => {
+                            if (text) {
+                                let match;
+                                while ((match = tagRegex.exec(text)) !== null) {
+                                    tags.add(match[1]);
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+            
+            return tags;
+        }
+
+        // Find a tag that matches the filename (supports partial matching)
+        function findMatchingTag(fileName, tags) {
+            // Exact match first
+            if (tags.has(fileName)) return fileName;
+            
+            // Try partial match - filename contains tag or tag contains filename
+            for (const tag of tags) {
+                if (tag.includes(fileName) || fileName.includes(tag)) {
+                    return tag;
+                }
+            }
+            
+            // Try matching last part of tag (after last hyphen)
+            for (const tag of tags) {
+                const tagParts = tag.split('-');
+                const lastPart = tagParts[tagParts.length - 1];
+                if (lastPart === fileName || fileName.includes(lastPart)) {
+                    return tag;
+                }
+            }
+            
+            return null;
+        }
 
         // --- SHARED: RENDER LIST ---
         function renderList() {
@@ -1772,6 +2236,8 @@
                 optionsSection.style.display = 'block';
                 document.getElementById('options-section-label').textContent = 'OPTIONS (MCQ)';
                     renderMainOptions(options);
+                // Set options layout toggle state (default to horizontal)
+                updateOptionsLayoutButtons(data.style?.options_layout || 'horizontal');
             } else {
                 optionsSection.style.display = 'none';
             }
@@ -2020,6 +2486,37 @@
             updateLayoutButtons(mode);
             renderSubQuestions(q);
             updateJsonView(); 
+            
+            // Also re-render preview if it's visible
+            const previewContainer = document.getElementById('view-preview');
+            if (previewContainer.classList.contains('active')) {
+                renderPreview(q, activeIndex);
+            }
+        }
+        
+        // Set layout for main-level options (MCQ)
+        function setOptionsLayoutMain(mode) {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.style) q.data.style = {};
+            q.data.style.options_layout = mode;
+            updateOptionsLayoutButtons(mode);
+            updateJsonView();
+            
+            // Re-render preview if it's visible
+            const previewContainer = document.getElementById('view-preview');
+            if (previewContainer.classList.contains('active')) {
+                renderPreview(q, activeIndex);
+            }
+        }
+        
+        function updateOptionsLayoutButtons(mode) {
+            const vertBtn = document.getElementById('btn-options-layout-vertical');
+            const horizBtn = document.getElementById('btn-options-layout-horizontal');
+            if (vertBtn && horizBtn) {
+                vertBtn.classList.toggle('active', mode === 'vertical');
+                horizBtn.classList.toggle('active', mode === 'horizontal');
+            }
         }
 
         // Set layout for individual sections - now only used for sub-questions
@@ -2784,6 +3281,17 @@
             updateJsonView();
         }
 
+        function setOptionsLayout(sqIdx, mode) {
+            const q = activeData[activeIndex];
+            const sq = q.data?.sub_questions?.[sqIdx];
+            if (!sq) return;
+            if (!sq.data) sq.data = {};
+            if (!sq.data.style) sq.data.style = {};
+            sq.data.style.options_layout = mode;
+            renderSubQuestions(q);
+            updateJsonView();
+        }
+
         // =====================================================
         // SUB-QUESTION STIMULUS MANAGEMENT (v4.0 - not used)
         // =====================================================
@@ -2986,10 +3494,17 @@
                     if (sq.type === 'MCQ' && sqOptions.length > 0) {
                         const optDiv = document.createElement('div');
                         optDiv.className = 'options-editor';
+                        const currentOptLayout = sqData.style?.options_layout || 'horizontal';
                         optDiv.innerHTML = `
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                                 <label style="font-size:0.7rem; font-weight:700; color:#6b7280; text-transform:uppercase;">Options</label>
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <div class="section-layout-toggle" style="padding:1px;">
+                                        <button class="section-layout-btn ${currentOptLayout === 'vertical' ? 'active' : ''}" onclick="setOptionsLayout(${sqIdx}, 'vertical')" title="Stack vertically">☰</button>
+                                        <button class="section-layout-btn ${currentOptLayout === 'horizontal' ? 'active' : ''}" onclick="setOptionsLayout(${sqIdx}, 'horizontal')" title="Arrange horizontally">⊞</button>
+                                    </div>
                                 <button class="btn btn-sm" style="font-size:0.65rem;" onclick="addSubQuestionOption(${sqIdx})">+ Add</button>
+                                </div>
                             </div>
                         `;
                         sqOptions.forEach((opt, oIdx) => {
@@ -3338,6 +3853,9 @@
             a.href = url;
             a.download = activeWorkflow === 'import' ? 'published_questions.jsonl' : 'library_export.jsonl';
             a.click();
+            
+            // Update workflow animation - Step 3 completed
+            updateWorkflowState(3);
         }
 
         function switchTab(tab) {
@@ -3428,8 +3946,13 @@
             if(!text) return '';
             let result = text;
             
-            // Handle image tokens [[tag]] - render as block placeholders on new lines
-            result = result.replace(/\[\[([^\]]+)\]\]/g, '<div class="p-asset-placeholder">📷 Image: $1</div>');
+            // Handle image tokens [[tag]] - render actual image if available, otherwise placeholder
+            result = result.replace(/\[\[([^\]]+)\]\]/g, (match, tag) => {
+                if (uploadedImages[tag]) {
+                    return `<div class="p-asset"><img src="${uploadedImages[tag]}" alt="${tag}" style="max-width:100%; max-height:200px;"></div>`;
+                }
+                return `<div class="p-asset-placeholder">📷 Image: ${tag}</div>`;
+            });
             
             // Handle {{gap}} placeholders for FIB
             result = result.replace(/\{\{gap\}\}/g, '<span style="display:inline-block; border-bottom:2px solid #000; min-width:60px; margin:0 4px;">&nbsp;</span>');
@@ -3456,10 +3979,15 @@
             container.style.fontSize = theme.base_font_size;
             container.style.lineHeight = theme.line_height;
             
-            // Helper to render image tokens [[tag]] as block placeholders
+            // Helper to render image tokens [[tag]] - actual image if available, otherwise placeholder
             const renderImageTokens = (text) => {
                 if (!text) return '';
-                return text.replace(/\[\[([^\]]+)\]\]/g, '<div class="p-asset-placeholder">📷 Image: $1</div>');
+                return text.replace(/\[\[([^\]]+)\]\]/g, (match, tag) => {
+                    if (uploadedImages[tag]) {
+                        return `<div class="p-asset"><img src="${uploadedImages[tag]}" alt="${tag}" style="max-width:100%; max-height:150px;"></div>`;
+                    }
+                    return `<div class="p-asset-placeholder">📷 Image: ${tag}</div>`;
+                });
             };
             
             // Main content - for COMPOSITE it's common_content, others use content
@@ -3501,12 +4029,18 @@
             // Options section for MCQ type
             let optionsHtml = '';
             if(qType === 'MCQ' && data.options && data.options.length > 0) {
+                // Check for options_layout setting (default to horizontal)
+                const optLayout = data.style?.options_layout || 'horizontal';
+                const isOptHorizontal = optLayout === 'horizontal';
                 const optItems = data.options.map((opt, k) => {
                     const optText = opt.text || '';
-                        const letter = String.fromCharCode(65 + k); // A, B, C, D...
-                    return `<div class="p-option-item">(${letter}) ${renderImageTokens(optText)}</div>`;
-                    }).join('');
-                    optionsHtml = `<div class="p-options p-options-stack">${optItems}</div>`;
+                    // Get option ID - use getIdDisplayLabel for consistent extraction
+                    const rawOptId = opt.opt_id || opt.id || String.fromCharCode(65 + k); // Default to A, B, C, D...
+                    const optId = getIdDisplayLabel(rawOptId);
+                    return `<div class="p-option-item" style="${isOptHorizontal ? '' : 'margin-bottom:4px;'}">(${optId}) ${renderImageTokens(optText)}</div>`;
+                }).join('');
+                // Wrap in flex container with appropriate direction
+                optionsHtml = `<div class="p-options" style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
             }
             
             // Sub-questions section for COMPOSITE type
@@ -3523,10 +4057,22 @@
                     // Sub-question options for MCQ
                     let optHtml = '';
                     if(sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
-                        optHtml = sqData.options.map((o, k) => {
+                        // Check for options_layout in multiple locations (sqData.style, sq.style, or default)
+                        const optLayout = sqData.style?.options_layout || sq.style?.options_layout || 'horizontal';
+                        const isOptHorizontal = optLayout === 'horizontal';
+                        const optItems = sqData.options.map((o, k) => {
                             const txt = o.text || '';
-                            return `<span style="margin-right:1rem;">(${k+1}) ${renderImageTokens(txt)}</span>`;
+                            // Get option ID - use getIdDisplayLabel for consistent extraction
+                            const rawOptId = o.opt_id || o.id || String.fromCharCode(97 + k);
+                            const optId = getIdDisplayLabel(rawOptId);
+                            // Use div for proper block-level content support (images)
+                            return `<div class="p-sq-option" style="display:flex; align-items:flex-start; gap:4px; ${isOptHorizontal ? '' : 'margin-bottom:4px;'}">
+                                <span style="white-space:nowrap;">(${optId})</span>
+                                <div>${renderImageTokens(txt)}</div>
+                        </div>`;
                         }).join('');
+                        // Wrap in flex container with appropriate direction
+                        optHtml = `<div style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
                     }
                     
                     // FIB options_pool as word bank
@@ -3553,11 +4099,8 @@
             const points = meta.marks || '1';
             const marksText = `[${points}]`;
             
-            // Apply print settings
-            const printSettings = layoutConfig.print_settings;
-            const printStyles = `page-break-inside: ${printSettings.page_break_inside}; ${printSettings.keep_with_next ? 'page-break-after: avoid;' : ''}`;
-            
-            container.innerHTML = `<div class="p-q-block" style="${printStyles}">
+            // Render content first to check if it needs multiple pages
+            container.innerHTML = `<div class="p-q-block">
                 <div class="p-q-header">
                     <div class="p-q-content">${promptHtml}</div>
                     <div class="p-q-marks">${marksText}</div>
