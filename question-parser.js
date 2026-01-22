@@ -1,36 +1,67 @@
 /**
- * Question Parser Module (Schema v4.0)
+ * Question Parser Module (Schema v4.5)
  * Shared parsing and normalization logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
  * This module provides functions to:
  * - Parse JSONL/JSON content into question objects
- * - Normalize questions from old schemas to v4.0 schema
+ * - Normalize questions from old schemas to v4.5 schema
  * - Extract and resolve image tokens [[tag]] in RichText
  * - Utility helpers for working with question data
  * 
- * Schema v4.0 Key Features:
+ * Schema v4.5 Key Features:
  * - Images embedded as [[tag]] tokens in RichText strings
  * - Polymorphic 'data' field based on question 'type'
- * - Types: MCQ, FIB, MATCH, SUBJECTIVE, COMPOSITE
- * - Mandatory 'style' object in all data types
- * - Layout values: 'vertical', 'horizontal', 'matrix' (for sub_questions_layout only)
+ * - Types: MCQ, FIB, MATCH, SUBJECTIVE, TABLE, COMPOSITE
+ * - TABLE type for structured 2D grid with TableStyle (table_grid_lines)
+ * - Type-safe 'style' object (mandatory) with composed mix-ins:
+ *   - MCQ/FIB: BaseStyle + OptionsStyle (image_layout, options_layout)
+ *   - COMPOSITE: BaseStyle + CompositeStyleBlock (image_layout, sub_questions_layout)
+ *   - TABLE: BaseStyle + TableStyleBlock (image_layout, table_grid_lines, hide_header)
+ *   - SUBJECTIVE/MATCH: BaseStyle only (image_layout)
+ * - sub_questions_layout values: 'vertical', 'horizontal', 'matrix'
+ * - table_grid_lines values: 'all', 'none', 'horizontal', 'vertical'
+ * - hide_header values: 'none', 'row', 'column', 'both'
  */
 
 // =====================================================
 // CONSTANTS
 // =====================================================
 
-const QUESTION_TYPES = ['MCQ', 'FIB', 'MATCH', 'SUBJECTIVE', 'COMPOSITE'];
+const QUESTION_TYPES = ['MCQ', 'FIB', 'MATCH', 'SUBJECTIVE', 'TABLE', 'COMPOSITE'];
 const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
 const POOL_TYPES = ['Practice', 'Exam'];
 const LAYOUT_VALUES = ['vertical', 'horizontal'];
-const SUB_LAYOUT_VALUES = ['vertical', 'horizontal', 'matrix'];
+const SUB_LAYOUT_VALUES = ['vertical', 'horizontal', 'matrix']; // v4.5: added 'matrix'
+const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical']; // v4.5: table_grid_lines
+const TABLE_HIDE_HEADER_VALUES = ['none', 'row', 'column', 'both']; // v4.5: hide_header
 
 // Regex for image tokens in RichText
 const IMAGE_TOKEN_REGEX = /\[\[([^\]]+)\]\]/g;
 
-// Default style config for v4.0
+// Default style configs for v4.5 (type-specific)
+const BASE_STYLE = {
+    image_layout: 'vertical'
+};
+
+const MCQ_STYLE = {
+    image_layout: 'vertical',
+    options_layout: 'vertical'
+};
+
+const COMPOSITE_STYLE = {
+    image_layout: 'vertical',
+    sub_questions_layout: 'vertical'
+};
+
+// v4.5: Table-specific style
+const TABLE_STYLE = {
+    image_layout: 'vertical',
+    table_grid_lines: 'all',
+    hide_header: 'none'
+};
+
+// Legacy: Combined default for backwards compatibility
 const DEFAULT_STYLE = {
     image_layout: 'vertical',
     options_layout: 'vertical',
@@ -244,11 +275,11 @@ function mapOldTypeToNew(oldType) {
 }
 
 /**
- * Convert old content structure to v4.0 data structure
+ * Convert old content structure to v4.2 data structure
  * @param {Object} content - Old content object
- * @param {string} newType - New v4.0 type
+ * @param {string} newType - New v4.2 type
  * @param {string} oldType - Original old type
- * @returns {Object} Data object for v4.0 schema
+ * @returns {Object} Data object for v4.2 schema
  */
 function convertContentToData(content, newType, oldType) {
     if (!content) content = {};
@@ -268,6 +299,9 @@ function convertContentToData(content, newType, oldType) {
         
         case 'SUBJECTIVE':
             return buildSubjectiveData(mainContent, oldType);
+        
+        case 'TABLE':
+            return buildTableData(mainContent, content);
         
         case 'COMPOSITE':
             return buildCompositeData(content);
@@ -332,12 +366,12 @@ function assetToToken(asset) {
 }
 
 /**
- * Build MCQ data structure
+ * Build MCQ data structure (v4.1 - uses MCQ_STYLE)
  */
 function buildMCQData(content, options, oldType) {
     const data = {
         content: content,
-        style: { ...DEFAULT_STYLE },
+        style: { ...MCQ_STYLE },
         options: (options || []).map((opt, idx) => ({
             id: opt.id || opt.opt_id || String.fromCharCode(97 + idx),
             text: buildOptionText(opt)
@@ -377,12 +411,12 @@ function buildOptionText(opt) {
 }
 
 /**
- * Build FIB (Fill in Blank) data structure
+ * Build FIB (Fill in Blank) data structure (v4.1 - uses MCQ_STYLE)
  */
 function buildFIBData(content, stimulus) {
     const data = {
         content: content,
-        style: { ...DEFAULT_STYLE }
+        style: { ...MCQ_STYLE }
     };
     
     // Extract word bank if present
@@ -396,12 +430,12 @@ function buildFIBData(content, stimulus) {
 }
 
 /**
- * Build Match data structure
+ * Build Match data structure (v4.1 - uses BASE_STYLE)
  */
 function buildMatchData(content, stimulus) {
     const data = {
         content: content,
-        style: { ...DEFAULT_STYLE },
+        style: { ...BASE_STYLE },
         pairs: []
     };
     
@@ -423,12 +457,12 @@ function buildMatchData(content, stimulus) {
 }
 
 /**
- * Build Subjective data structure
+ * Build Subjective data structure (v4.2 - uses BASE_STYLE)
  */
 function buildSubjectiveData(content, oldType) {
     const data = {
         content: content,
-        style: { ...DEFAULT_STYLE }
+        style: { ...BASE_STYLE }
     };
     
     // Determine expected length from old type
@@ -442,7 +476,45 @@ function buildSubjectiveData(content, oldType) {
 }
 
 /**
- * Build Composite data structure
+ * Build Table data structure (v4.5 - uses TABLE_STYLE with table_grid_lines)
+ * For structured 2D grid interactions like Tick Columns or HTO math
+ */
+function buildTableData(content, oldContent) {
+    const data = {
+        content: content,
+        style: { ...TABLE_STYLE },
+        rows: [],
+        columns: []
+    };
+    
+    // Try to extract rows/columns from old content if present
+    if (oldContent?.rows && Array.isArray(oldContent.rows)) {
+        data.rows = oldContent.rows.map((row, i) => ({
+            id: row.id || `row_${i}`,
+            text: typeof row === 'string' ? row : (row.text || '')
+        }));
+    }
+    
+    if (oldContent?.columns && Array.isArray(oldContent.columns)) {
+        data.columns = oldContent.columns.map((col, i) => ({
+            id: col.id || `col_${i}`,
+            text: typeof col === 'string' ? col : (col.text || '')
+        }));
+    }
+    
+    // Preserve existing style settings if present
+    if (oldContent?.style?.table_grid_lines) {
+        data.style.table_grid_lines = oldContent.style.table_grid_lines;
+    }
+    if (oldContent?.style?.hide_header) {
+        data.style.hide_header = oldContent.style.hide_header;
+    }
+    
+    return data;
+}
+
+/**
+ * Build Composite data structure (v4.2 - uses COMPOSITE_STYLE)
  */
 function buildCompositeData(content) {
     // Build common content from stimulus
@@ -471,7 +543,7 @@ function buildCompositeData(content) {
     
     return {
         common_content: commonContent,
-        style: { ...DEFAULT_STYLE },
+        style: { ...COMPOSITE_STYLE },
         sub_questions: subQuestions
     };
 }
@@ -504,21 +576,21 @@ function ensureV40Defaults(obj) {
         obj.data = getDefaultDataForType(obj.type);
     }
     
-    // Ensure style object exists in data (mandatory in v4.0)
+    // Ensure style object exists in data (mandatory in v4.1)
     if (!obj.data.style) {
-        obj.data.style = { ...DEFAULT_STYLE };
+        obj.data.style = getStyleForType(obj.type);
     } else {
         // Normalize old style values (stack→vertical, grid→horizontal)
-        obj.data.style = normalizeStyleValues(obj.data.style);
+        obj.data.style = normalizeStyleValues(obj.data.style, obj.type);
     }
     
-    // Ensure sub-questions also have style
+    // Ensure sub-questions also have style (v4.1)
     if (obj.data.sub_questions && Array.isArray(obj.data.sub_questions)) {
         obj.data.sub_questions.forEach(sq => {
             if (sq.data && !sq.data.style) {
-                sq.data.style = { ...DEFAULT_STYLE };
+                sq.data.style = getStyleForType(sq.type);
             } else if (sq.data?.style) {
-                sq.data.style = normalizeStyleValues(sq.data.style);
+                sq.data.style = normalizeStyleValues(sq.data.style, sq.type);
             }
         });
     }
@@ -531,11 +603,12 @@ function ensureV40Defaults(obj) {
 }
 
 /**
- * Normalize style values from old schema (stack/grid) to v4.0 (vertical/horizontal)
+ * Normalize style values from old schema (stack/grid) to v4.5 (vertical/horizontal)
  * @param {Object} style - Style object
+ * @param {string} type - Question type (to apply type-specific defaults)
  * @returns {Object} Normalized style object
  */
-function normalizeStyleValues(style) {
+function normalizeStyleValues(style, type) {
     const normalized = { ...style };
     
     // Map old values to new
@@ -554,10 +627,32 @@ function normalizeStyleValues(style) {
         normalized.sub_questions_layout = valueMap[normalized.sub_questions_layout];
     }
     
-    // Ensure defaults for missing values
+    // Ensure defaults based on type (v4.5 type-specific styles)
     normalized.image_layout = normalized.image_layout || 'vertical';
-    normalized.options_layout = normalized.options_layout || 'vertical';
-    normalized.sub_questions_layout = normalized.sub_questions_layout || 'vertical';
+    
+    // Only add options_layout for MCQ/FIB types
+    if (type === 'MCQ' || type === 'FIB') {
+        normalized.options_layout = normalized.options_layout || 'vertical';
+    }
+    
+    // Only add sub_questions_layout for COMPOSITE type
+    if (type === 'COMPOSITE') {
+        normalized.sub_questions_layout = normalized.sub_questions_layout || 'vertical';
+    }
+    
+    // v4.5: Add table_grid_lines and hide_header for TABLE type
+    if (type === 'TABLE') {
+        normalized.table_grid_lines = normalized.table_grid_lines || 'all';
+        // Validate table_grid_lines value
+        if (!TABLE_GRID_VALUES.includes(normalized.table_grid_lines)) {
+            normalized.table_grid_lines = 'all';
+        }
+        normalized.hide_header = normalized.hide_header || 'none';
+        // Validate hide_header value
+        if (!TABLE_HIDE_HEADER_VALUES.includes(normalized.hide_header)) {
+            normalized.hide_header = 'none';
+        }
+    }
     
     return normalized;
 }
@@ -571,24 +666,56 @@ function ensureV36Defaults(obj) {
 }
 
 /**
- * Get default data structure for a question type (v4.0 - includes mandatory style)
+ * Get the appropriate style object for a question type (v4.5)
+ * @param {string} type - Question type
+ * @returns {Object} Style object with type-appropriate fields
  */
-function getDefaultDataForType(type) {
-    const baseStyle = { ...DEFAULT_STYLE };
-    
+function getStyleForType(type) {
     switch (type) {
         case 'MCQ':
-            return { content: '', style: baseStyle, options: [] };
         case 'FIB':
-            return { content: '', style: baseStyle };
-        case 'MATCH':
-            return { content: '', style: baseStyle, pairs: [] };
-        case 'SUBJECTIVE':
-            return { content: '', style: baseStyle, expected_length: 'short' };
+            return { ...MCQ_STYLE };
         case 'COMPOSITE':
-            return { common_content: '', style: baseStyle, sub_questions: [] };
+            return { ...COMPOSITE_STYLE };
+        case 'TABLE':
+            return { ...TABLE_STYLE };
+        case 'MATCH':
+        case 'SUBJECTIVE':
         default:
-            return { content: '', style: baseStyle };
+            return { ...BASE_STYLE };
+    }
+}
+
+/**
+ * Get default data structure for a question type (v4.5 - includes mandatory type-specific style)
+ */
+function getDefaultDataForType(type) {
+    switch (type) {
+        case 'MCQ':
+            return { content: '', style: getStyleForType('MCQ'), options: [] };
+        case 'FIB':
+            return { content: '', style: getStyleForType('FIB') };
+        case 'MATCH':
+            return { content: '', style: getStyleForType('MATCH'), pairs: [] };
+        case 'SUBJECTIVE':
+            return { content: '', style: getStyleForType('SUBJECTIVE'), expected_length: 'short' };
+        case 'TABLE':
+            return {
+                content: '', 
+                style: getStyleForType('TABLE'), 
+                rows: [
+                    { id: 'row_1', text: 'Row 1' },
+                    { id: 'row_2', text: 'Row 2' }
+                ],
+                columns: [
+                    { id: 'col_1', text: 'Column 1' },
+                    { id: 'col_2', text: 'Column 2' }
+                ]
+            };
+        case 'COMPOSITE':
+            return { common_content: '', style: getStyleForType('COMPOSITE'), sub_questions: [] };
+        default:
+            return { content: '', style: getStyleForType(type) };
     }
 }
 
@@ -674,7 +801,7 @@ function traverseAllRichText(question, transformer) {
     
     const type = question.type;
     
-    // Main content (MCQ, FIB, MATCH, SUBJECTIVE)
+    // Main content (MCQ, FIB, MATCH, SUBJECTIVE, TABLE)
     if (data.content !== undefined) {
         data.content = transformer(data.content, 'data.content');
     }
@@ -708,6 +835,22 @@ function traverseAllRichText(question, transformer) {
             }
             if (pair.right !== undefined) {
                 pair.right = transformer(pair.right, `data.pairs[${i}].right`);
+            }
+        });
+    }
+    
+    // TABLE rows and columns (v4.2)
+    if (data.rows && Array.isArray(data.rows)) {
+        data.rows.forEach((row, i) => {
+            if (row.text !== undefined) {
+                row.text = transformer(row.text, `data.rows[${i}].text`);
+            }
+        });
+    }
+    if (data.columns && Array.isArray(data.columns)) {
+        data.columns.forEach((col, i) => {
+            if (col.text !== undefined) {
+                col.text = transformer(col.text, `data.columns[${i}].text`);
             }
         });
     }
@@ -812,7 +955,7 @@ function prepareForExport(q) {
 }
 
 /**
- * Validate a question against v4.0 schema
+ * Validate a question against v4.2 schema
  * @param {Object} q - Question object
  * @returns {Object} { valid: boolean, errors: string[] }
  */
@@ -826,9 +969,9 @@ function validateQuestion(q) {
     if (!q.data) errors.push('Missing data');
     if (!q.solution) errors.push('Missing solution');
     
-    // v4.0: style is mandatory in data
+    // v4.2: style is mandatory in data
     if (q.data && !q.data.style) {
-        errors.push('Missing data.style (mandatory in v4.0)');
+        errors.push('Missing data.style (mandatory in v4.2)');
     }
     
     // Type-specific validation
@@ -838,8 +981,25 @@ function validateQuestion(q) {
     if (q.type === 'MATCH' && (!q.data?.pairs || q.data.pairs.length === 0)) {
         errors.push('MATCH requires at least one pair');
     }
+    if (q.type === 'TABLE') {
+        if (!q.data?.rows || q.data.rows.length === 0) {
+            errors.push('TABLE requires at least one row');
+        }
+        if (!q.data?.columns || q.data.columns.length === 0) {
+            errors.push('TABLE requires at least one column');
+        }
+    }
     if (q.type === 'COMPOSITE' && (!q.data?.sub_questions || q.data.sub_questions.length === 0)) {
         errors.push('COMPOSITE requires at least one sub-question');
+    }
+    
+    // v4.2: Validate sub-questions have style
+    if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
+        q.data.sub_questions.forEach((sq, i) => {
+            if (!sq.data?.style) {
+                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.2)`);
+            }
+        });
     }
     
     return {
@@ -859,6 +1019,7 @@ function getTypeDisplayName(type) {
         'FIB': 'Fill in the Blank',
         'MATCH': 'Match the Following',
         'SUBJECTIVE': 'Subjective',
+        'TABLE': 'Table/Grid',
         'COMPOSITE': 'Composite'
     };
     return names[type] || type;

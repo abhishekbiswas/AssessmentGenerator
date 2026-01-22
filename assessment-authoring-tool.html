@@ -646,8 +646,16 @@
         .p-table tbody tr:nth-child(even) { background: #fafafa; }
         
         .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .p-sub-item { margin-bottom: 0.75rem; text-align: justify; padding-left: 1.5rem; display: flex; align-items: baseline; }
+        .p-sub-item { margin-bottom: 0.75rem; text-align: justify; padding-left: 1.5rem; display: flex; align-items: flex-start; }
         .p-sub-label { font-weight: bold; margin-right: 0.5rem; flex-shrink: 0; }
+        
+        /* TABLE type styles (v4.3 - simple grid with empty cells) */
+        .p-table-container { display: flex; justify-content: center; margin: 1rem 0; width: 100%; }
+        .p-table-grid { border-collapse: collapse; width: 80%; }
+        .p-table-grid th, .p-table-grid td { border: 1px solid #d1d5db; padding: 0.5rem; text-align: center; vertical-align: middle; min-width: 40px; height: 36px; }
+        .p-table-grid th { background: #f3f4f6; font-weight: 600; font-size: 0.9em; }
+        .p-table-grid td { background: white; }
+        .p-table-grid .row-header { background: #f9fafb; font-weight: 500; text-align: left; }
         
         .p-asset { margin: 0.5rem 0; text-align: center; }
         .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
@@ -1021,6 +1029,96 @@
             padding-top: 0.75rem;
             border-top: 1px solid var(--border);
         }
+        
+        /* TABLE EDITOR STYLES (v4.5) */
+        .table-editor-section {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .table-editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .table-editor-column h4 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-editor-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        .table-editor-item .item-id {
+            width: 60px;
+            padding: 0.4rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            background: white;
+        }
+        .table-editor-item .item-text {
+            flex: 1;
+            padding: 0.4rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        .table-editor-item .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .table-editor-item .btn-delete:hover {
+            background: #fecaca;
+        }
+        .table-style-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f3f4f6;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        .table-style-options label {
+            font-size: 0.8rem;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        .table-grid-select {
+            padding: 0.35rem 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: white;
+        }
+        
         .pairs-column {
             margin-bottom: 0.75rem;
         }
@@ -1372,6 +1470,7 @@
                                         <option value="FIB">Fill in Blank</option>
                                         <option value="MATCH">Match</option>
                                         <option value="SUBJECTIVE">Subjective</option>
+                                        <option value="TABLE">Table</option>
                                         <option value="COMPOSITE">Composite</option>
                                     </select>
                                     <select class="btn btn-sm" id="meta-pool-type" onchange="updateMeta('pool_type', this.value)">
@@ -1539,6 +1638,49 @@
                                             </div>
                                         </div>
                                         <div id="options-list"></div>
+                                    </div>
+
+                                    <!-- TABLE Editor Section (for TABLE type) -->
+                                    <div id="table-editor-section" class="content-section table-editor-section" style="display:none;">
+                                        <div class="section-header" style="margin-bottom:1rem;">
+                                            <label class="section-label">📊 TABLE STRUCTURE</label>
+                                        </div>
+                                        <div class="table-editor-grid">
+                                            <div class="table-editor-column">
+                                                <h4>
+                                                    <span>📋 Rows (Left Labels)</span>
+                                                    <button class="btn btn-sm" onclick="addTableRow()" style="font-size:0.65rem;">+ Add Row</button>
+                                                </h4>
+                                                <div id="table-rows-list"></div>
+                                            </div>
+                                            <div class="table-editor-column">
+                                                <h4>
+                                                    <span>📊 Columns (Top Headers)</span>
+                                                    <button class="btn btn-sm" onclick="addTableColumn()" style="font-size:0.65rem;">+ Add Column</button>
+                                                </h4>
+                                                <div id="table-columns-list"></div>
+                                            </div>
+                                        </div>
+                                        <div class="table-style-options">
+                                            <label>
+                                                <span style="font-weight:600;">Grid Lines:</span>
+                                                <select id="table-grid-lines" class="table-grid-select" onchange="updateTableGridLines(this.value)">
+                                                    <option value="all">All (Full Grid)</option>
+                                                    <option value="none">None (No Lines)</option>
+                                                    <option value="horizontal">Horizontal Only</option>
+                                                    <option value="vertical">Vertical Only</option>
+                                                </select>
+                                            </label>
+                                            <label>
+                                                <span style="font-weight:600;">Hide Headers:</span>
+                                                <select id="table-hide-header" class="table-grid-select" onchange="updateTableHideHeader(this.value)">
+                                                    <option value="none">Show All</option>
+                                                    <option value="row">Hide Row Labels (Left)</option>
+                                                    <option value="column">Hide Column Headers (Top)</option>
+                                                    <option value="both">Hide Both</option>
+                                                </select>
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <!-- Sub-Questions Section -->
@@ -2184,6 +2326,7 @@
             document.getElementById('word-bank-section').style.display = 'none';
             document.getElementById('groups-section').style.display = 'none';
             document.getElementById('pairs-section').style.display = 'none';
+            document.getElementById('table-editor-section').style.display = 'none';
             
             // Read from v4.0 schema structure
             const meta = q.metadata || {};
@@ -2259,7 +2402,14 @@
                 };
                 renderPairs(pairsData);
             }
-
+            
+            // TABLE editor (v4.5)
+            const isTableType = qType === 'TABLE';
+            if(isTableType) {
+                document.getElementById('table-editor-section').style.display = 'block';
+                renderTableEditor(data);
+            }
+            
             // Sub-Questions Section (only for COMPOSITE type)
             const subqSection = document.getElementById('subquestions-section');
             const subquestions = data.sub_questions;
@@ -2374,6 +2524,7 @@
                 const isMcqType = val === 'MCQ';
                 const isCompositeType = val === 'COMPOSITE';
                 const isMatchType = val === 'MATCH';
+                const isTableType = val === 'TABLE';
                 
                 // Auto-add options for MCQ type
                 if(isMcqType && !q.data.options) {
@@ -2388,6 +2539,30 @@
                     q.data.pairs = [
                         { left: 'Item A', right: 'Match A' }
                     ];
+                }
+                
+                // Auto-add rows/columns for TABLE type (v4.5)
+                if(isTableType) {
+                    if(!q.data.rows || q.data.rows.length === 0) {
+                        q.data.rows = [
+                            { id: 'row_1', text: 'Row 1' },
+                            { id: 'row_2', text: 'Row 2' }
+                        ];
+                    }
+                    if(!q.data.columns || q.data.columns.length === 0) {
+                        q.data.columns = [
+                            { id: 'col_1', text: 'Column 1' },
+                            { id: 'col_2', text: 'Column 2' }
+                        ];
+                    }
+                    // Ensure TableStyle with table_grid_lines and hide_header
+                    if(!q.data.style) q.data.style = {};
+                    if(!q.data.style.table_grid_lines) {
+                        q.data.style.table_grid_lines = 'all';
+                    }
+                    if(!q.data.style.hide_header) {
+                        q.data.style.hide_header = 'none';
+                    }
                 }
                 
                 // Remove options for types that don't use them
@@ -2412,6 +2587,23 @@
                 if(!isCompositeType && q.data.sub_questions && q.data.sub_questions.length > 0) {
                     if(confirm('Changing to this type will remove the Sub-Questions section. Continue?')) {
                         delete q.data.sub_questions;
+                    } else {
+                        q.type = oldType; // Revert
+                        document.getElementById('meta-type').value = oldType;
+                        return;
+                    }
+                }
+                
+                // Remove rows/columns for non-table types
+                if(!isTableType && (q.data.rows || q.data.columns)) {
+                    if(confirm('Changing to this type will remove the Table structure (rows/columns). Continue?')) {
+                        delete q.data.rows;
+                        delete q.data.columns;
+                        // Remove table-specific styles
+                        if(q.data.style) {
+                            delete q.data.style.table_grid_lines;
+                            delete q.data.style.hide_header;
+                        }
                     } else {
                         q.type = oldType; // Revert
                         document.getElementById('meta-type').value = oldType;
@@ -2569,7 +2761,6 @@
                 if (layoutView && layoutView.style.display !== 'none') {
                     updateLayoutJsonView();
                 }
-                
             }
         }
 
@@ -2920,6 +3111,152 @@
                 renderPairs(stimulus.pairs);
             }
             updateJsonView();
+        }
+
+        // =====================================================
+        // TABLE EDITOR MANAGEMENT (v4.5)
+        // =====================================================
+        
+        function renderTableEditor(data) {
+            // Render rows
+            const rowsContainer = document.getElementById('table-rows-list');
+            rowsContainer.innerHTML = '';
+            const rows = data.rows || [];
+            rows.forEach((row, idx) => {
+                const item = document.createElement('div');
+                item.className = 'table-editor-item';
+                item.innerHTML = `
+                    <input type="text" class="item-id" value="${row.id || ''}" 
+                        onchange="updateTableRow(${idx}, 'id', this.value)" placeholder="ID" />
+                    <input type="text" class="item-text" value="${escapeHtml(row.text || '')}" 
+                        onchange="updateTableRow(${idx}, 'text', this.value)" placeholder="Row label text..." />
+                    <button class="btn-delete" onclick="deleteTableRow(${idx})">✕</button>
+                `;
+                rowsContainer.appendChild(item);
+            });
+            
+            // Render columns
+            const colsContainer = document.getElementById('table-columns-list');
+            colsContainer.innerHTML = '';
+            const cols = data.columns || [];
+            cols.forEach((col, idx) => {
+                const item = document.createElement('div');
+                item.className = 'table-editor-item';
+                item.innerHTML = `
+                    <input type="text" class="item-id" value="${col.id || ''}" 
+                        onchange="updateTableColumn(${idx}, 'id', this.value)" placeholder="ID" />
+                    <input type="text" class="item-text" value="${escapeHtml(col.text || '')}" 
+                        onchange="updateTableColumn(${idx}, 'text', this.value)" placeholder="Column header text..." />
+                    <button class="btn-delete" onclick="deleteTableColumn(${idx})">✕</button>
+                `;
+                colsContainer.appendChild(item);
+            });
+            
+            // Update style controls
+            const style = data.style || {};
+            const gridSelect = document.getElementById('table-grid-lines');
+            if (gridSelect) {
+                gridSelect.value = style.table_grid_lines || 'all';
+            }
+            const hideHeaderSelect = document.getElementById('table-hide-header');
+            if (hideHeaderSelect) {
+                hideHeaderSelect.value = style.hide_header || 'none';
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/&/g, '&amp;')
+                       .replace(/</g, '&lt;')
+                       .replace(/>/g, '&gt;')
+                       .replace(/"/g, '&quot;')
+                       .replace(/'/g, '&#039;');
+        }
+        
+        function addTableRow() {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.rows) q.data.rows = [];
+            const newIdx = q.data.rows.length;
+            q.data.rows.push({ id: `row_${newIdx + 1}`, text: '' });
+            renderTableEditor(q.data);
+            updateJsonView();
+            refreshPreviewIfVisible();
+        }
+        
+        function updateTableRow(idx, field, value) {
+            const q = activeData[activeIndex];
+            if (q.data?.rows?.[idx]) {
+                q.data.rows[idx][field] = value;
+                updateJsonView();
+                refreshPreviewIfVisible();
+            }
+        }
+        
+        function deleteTableRow(idx) {
+            const q = activeData[activeIndex];
+            if (q.data?.rows) {
+                q.data.rows.splice(idx, 1);
+                renderTableEditor(q.data);
+                updateJsonView();
+                refreshPreviewIfVisible();
+            }
+        }
+        
+        function addTableColumn() {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.columns) q.data.columns = [];
+            const newIdx = q.data.columns.length;
+            q.data.columns.push({ id: `col_${newIdx + 1}`, text: '' });
+            renderTableEditor(q.data);
+            updateJsonView();
+            refreshPreviewIfVisible();
+        }
+        
+        function updateTableColumn(idx, field, value) {
+            const q = activeData[activeIndex];
+            if (q.data?.columns?.[idx]) {
+                q.data.columns[idx][field] = value;
+                updateJsonView();
+                refreshPreviewIfVisible();
+            }
+        }
+        
+        function deleteTableColumn(idx) {
+            const q = activeData[activeIndex];
+            if (q.data?.columns) {
+                q.data.columns.splice(idx, 1);
+                renderTableEditor(q.data);
+                updateJsonView();
+                refreshPreviewIfVisible();
+            }
+        }
+        
+        function updateTableGridLines(value) {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.style) q.data.style = {};
+            q.data.style.table_grid_lines = value;
+            updateJsonView();
+            refreshPreviewIfVisible();
+        }
+        
+        function updateTableHideHeader(value) {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.style) q.data.style = {};
+            q.data.style.hide_header = value;
+            updateJsonView();
+            refreshPreviewIfVisible();
+        }
+        
+        function refreshPreviewIfVisible() {
+            const previewContainer = document.getElementById('view-preview');
+            if (previewContainer.classList.contains('active')) {
+                const q = activeData[activeIndex];
+                renderPreview(q, activeIndex);
+            }
         }
 
         // =====================================================
@@ -3340,13 +3677,8 @@
             const btnVertical = document.getElementById('btn-layout-vertical');
             const btnHorizontal = document.getElementById('btn-layout-horizontal');
             if (btnVertical && btnHorizontal) {
-                if(currentMode === 'vertical') {
-                    btnVertical.classList.add('active');
-                    btnHorizontal.classList.remove('active');
-            } else {
-                    btnVertical.classList.remove('active');
-                    btnHorizontal.classList.add('active');
-                }
+                btnVertical.classList.toggle('active', currentMode === 'vertical');
+                btnHorizontal.classList.toggle('active', currentMode === 'horizontal');
             }
             
             // Update subquestions section toggle
@@ -4038,9 +4370,104 @@
                     const rawOptId = opt.opt_id || opt.id || String.fromCharCode(65 + k); // Default to A, B, C, D...
                     const optId = getIdDisplayLabel(rawOptId);
                     return `<div class="p-option-item" style="${isOptHorizontal ? '' : 'margin-bottom:4px;'}">(${optId}) ${renderImageTokens(optText)}</div>`;
-                }).join('');
+                    }).join('');
                 // Wrap in flex container with appropriate direction
                 optionsHtml = `<div class="p-options" style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
+            }
+            
+            // TABLE type rendering (v4.5 - uses table_grid_lines and hide_header for control)
+            let tableHtml = '';
+            if(qType === 'TABLE' && data.rows && data.columns) {
+                const tableStyle = data.style || {};
+                // v4.5: table_grid_lines controls grid line visibility
+                const gridLines = tableStyle.table_grid_lines || 'all';
+                // v4.5: hide_header controls header visibility
+                const hideHeader = tableStyle.hide_header || 'none';
+                const showColumnHeader = hideHeader !== 'column' && hideHeader !== 'both';
+                const showRowHeader = hideHeader !== 'row' && hideHeader !== 'both';
+                
+                const numRows = data.rows.length;
+                const numCols = data.columns.length;
+                
+                // Helper to get cell border style based on grid lines setting and position
+                function getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
+                    const borderColor = '#d1d5db';
+                    switch(gridLines) {
+                        case 'none':
+                            // No internal borders, but keep outer edges
+                            return `border: none; ${isFirstCol ? `border-left: 1px solid ${borderColor};` : ''} ${isLastCol ? `border-right: 1px solid ${borderColor};` : ''} ${isFirstRow ? `border-top: 1px solid ${borderColor};` : ''} ${isLastRow ? `border-bottom: 1px solid ${borderColor};` : ''}`;
+                        case 'horizontal':
+                            // Horizontal lines only + left/right outer edges
+                            return `border-top: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; border-left: ${isFirstCol ? `1px solid ${borderColor}` : 'none'}; border-right: ${isLastCol ? `1px solid ${borderColor}` : 'none'};`;
+                        case 'vertical':
+                            // Vertical lines only + top/bottom outer edges
+                            return `border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor}; border-top: ${isFirstRow ? `1px solid ${borderColor}` : 'none'}; border-bottom: ${isLastRow ? `1px solid ${borderColor}` : 'none'};`;
+                        case 'all':
+                        default:
+                            return '';
+                    }
+                }
+                
+                const totalCols = showRowHeader ? numCols + 1 : numCols;
+                
+                // Build table header row (only if showColumnHeader is true)
+                let theadHtml = '';
+                if (showColumnHeader) {
+                    let headerCellsHtml = '';
+                    let colOffset = 0;
+                    // First header cell (top-left corner) - only if showing row headers
+                    if (showRowHeader) {
+                        const cellStyle = getCellBorderStyle(gridLines, true, false, true, false);
+                        headerCellsHtml += `<th style="${cellStyle}"></th>`;
+                        colOffset = 1;
+                    }
+                    headerCellsHtml += data.columns.map((col, colIdx) => {
+                        const isFirstCol = !showRowHeader && colIdx === 0;
+                        const isLastCol = colIdx === numCols - 1;
+                        const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, true, false);
+                        return `<th style="${cellStyle}">${renderImageTokens(col.text || col.id)}</th>`;
+                    }).join('');
+                    theadHtml = `<thead><tr>${headerCellsHtml}</tr></thead>`;
+                }
+                
+                // Build table rows with empty cells for student input
+                const tableRows = data.rows.map((row, rowIdx) => {
+                    const isFirstRow = !showColumnHeader && rowIdx === 0;
+                    const isLastRow = rowIdx === numRows - 1;
+                    
+                    let rowCellsHtml = '';
+                    let colOffset = 0;
+                    
+                    // Row header cell (leftmost column) - only if showRowHeader is true
+                    if (showRowHeader) {
+                        const cellStyle = getCellBorderStyle(gridLines, true, false, isFirstRow, isLastRow);
+                        rowCellsHtml += `<td class="row-header" style="${cellStyle}">${renderImageTokens(row.text || row.id)}</td>`;
+                        colOffset = 1;
+                    }
+                    
+                    rowCellsHtml += data.columns.map((col, colIdx) => {
+                        const isFirstCol = !showRowHeader && colIdx === 0;
+                        const isLastCol = colIdx === numCols - 1;
+                        const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
+                        return `<td style="${cellStyle}"></td>`;
+                    }).join('');
+                    
+                    return `<tr>${rowCellsHtml}</tr>`;
+                }).join('');
+                
+                // Table style - use border-collapse: separate for precise border control
+                const tableBorderStyle = 'border-collapse: collapse;';
+                
+                tableHtml = `
+                    <div class="p-table-container">
+                        <table class="p-table-grid" style="${tableBorderStyle}">
+                            ${theadHtml}
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
             
             // Sub-questions section for COMPOSITE type
@@ -4048,7 +4475,6 @@
             if(qType === 'COMPOSITE' && data.sub_questions && data.sub_questions.length > 0) {
                 // Use style.sub_questions_layout, default to vertical
                 const sectionSubLayout = data.style?.sub_questions_layout || 'vertical';
-                const isHorizontal = sectionSubLayout === 'horizontal';
                 const subs = data.sub_questions.map((sq, i) => {
                     const label = sq.id ? getIdDisplayLabel(sq.id) : String.fromCharCode(97 + i);
                     const sqData = sq.data || {};
@@ -4057,8 +4483,8 @@
                     // Sub-question options for MCQ
                     let optHtml = '';
                     if(sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
-                        // Check for options_layout in multiple locations (sqData.style, sq.style, or default)
-                        const optLayout = sqData.style?.options_layout || sq.style?.options_layout || 'horizontal';
+                        // v4.1: style is always inside data object
+                        const optLayout = sqData.style?.options_layout || 'horizontal';
                         const isOptHorizontal = optLayout === 'horizontal';
                         const optItems = sqData.options.map((o, k) => {
                             const txt = o.text || '';
@@ -4081,19 +4507,97 @@
                         sqWordBank = `<div style="font-size:0.8rem; color:#666; margin-top:4px;">Word bank: ${sqData.options_pool.join(', ')}</div>`;
                     }
                     
-                    // Vertical layout for individual sub-questions
+                    // TABLE type for sub-questions (v4.5 - uses table_grid_lines and hide_header)
+                    let sqTableHtml = '';
+                    if (sq.type === 'TABLE' && sqData.rows && sqData.columns) {
+                        const sqTableStyle = sqData.style || {};
+                        const sqGridLines = sqTableStyle.table_grid_lines || 'all';
+                        const sqHideHeader = sqTableStyle.hide_header || 'none';
+                        const sqShowColumnHeader = sqHideHeader !== 'column' && sqHideHeader !== 'both';
+                        const sqShowRowHeader = sqHideHeader !== 'row' && sqHideHeader !== 'both';
+                        const sqNumRows = sqData.rows.length;
+                        const sqNumCols = sqData.columns.length;
+                        
+                        // Helper to get cell border style based on grid lines setting and position
+                        function getSqCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
+                            const borderColor = '#d1d5db';
+                            switch(gridLines) {
+                                case 'none':
+                                    return `border: none; ${isFirstCol ? `border-left: 1px solid ${borderColor};` : ''} ${isLastCol ? `border-right: 1px solid ${borderColor};` : ''} ${isFirstRow ? `border-top: 1px solid ${borderColor};` : ''} ${isLastRow ? `border-bottom: 1px solid ${borderColor};` : ''}`;
+                                case 'horizontal':
+                                    return `border-top: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; border-left: ${isFirstCol ? `1px solid ${borderColor}` : 'none'}; border-right: ${isLastCol ? `1px solid ${borderColor}` : 'none'};`;
+                                case 'vertical':
+                                    return `border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor}; border-top: ${isFirstRow ? `1px solid ${borderColor}` : 'none'}; border-bottom: ${isLastRow ? `1px solid ${borderColor}` : 'none'};`;
+                                case 'all':
+                                default: return '';
+                            }
+                        }
+                        
+                        // Build header row (only if sqShowColumnHeader)
+                        let sqTheadHtml = '';
+                        if (sqShowColumnHeader) {
+                            let sqHeaderCellsHtml = '';
+                            if (sqShowRowHeader) {
+                                const cellStyle = getSqCellBorderStyle(sqGridLines, true, false, true, false);
+                                sqHeaderCellsHtml += `<th style="font-size:0.85em; padding:4px; ${cellStyle}"></th>`;
+                            }
+                            sqHeaderCellsHtml += sqData.columns.map((col, colIdx) => {
+                                const isFirstCol = !sqShowRowHeader && colIdx === 0;
+                                const isLastCol = colIdx === sqNumCols - 1;
+                                const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, true, false);
+                                return `<th style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(col.text || col.id)}</th>`;
+                        }).join('');
+                            sqTheadHtml = `<thead><tr>${sqHeaderCellsHtml}</tr></thead>`;
+                        }
+                        
+                        const sqTableRows = sqData.rows.map((row, rowIdx) => {
+                            const isFirstRow = !sqShowColumnHeader && rowIdx === 0;
+                            const isLastRow = rowIdx === sqNumRows - 1;
+                            
+                            let sqRowCellsHtml = '';
+                            if (sqShowRowHeader) {
+                                const cellStyle = getSqCellBorderStyle(sqGridLines, true, false, isFirstRow, isLastRow);
+                                sqRowCellsHtml += `<td class="row-header" style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(row.text || row.id)}</td>`;
+                            }
+                            
+                            sqRowCellsHtml += sqData.columns.map((col, colIdx) => {
+                                const isFirstCol = !sqShowRowHeader && colIdx === 0;
+                                const isLastCol = colIdx === sqNumCols - 1;
+                                const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
+                                return `<td style="padding:4px; ${cellStyle}"></td>`;
+                            }).join('');
+                            
+                            return `<tr>${sqRowCellsHtml}</tr>`;
+                        }).join('');
+                        
+                        sqTableHtml = `
+                            <div class="p-table-container" style="margin-top:8px;">
+                                <table class="p-table-grid" style="font-size:0.9em; border-collapse: collapse;">
+                                    ${sqTheadHtml}
+                                    <tbody>${sqTableRows}</tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                    
+                    // Content layout for individual sub-questions
                     const contentHtml = `
                             <div style="width:100%">
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
                                 <div style="flex:1;">${formatForPrint(sqContent) || '<em style="color:#999;">No text</em>'}</div>
                             </div>
                                 ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
+                                ${sqTableHtml}
                                 ${sqWordBank}
                             </div>`;
                     
                     return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span>${contentHtml}</div>`;
                 }).join('');
-                subHtml = isHorizontal ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+                
+                // Apply layout based on mode: vertical (stack) or horizontal (2 cols)
+                subHtml = sectionSubLayout === 'horizontal' 
+                    ? `<div class="p-sub-grid">${subs}</div>` 
+                    : `<div>${subs}</div>`;
             }
             
             const points = meta.marks || '1';
@@ -4105,7 +4609,7 @@
                     <div class="p-q-content">${promptHtml}</div>
                     <div class="p-q-marks">${marksText}</div>
                 </div>
-                ${stimHtml}${optionsHtml}${subHtml}
+                ${stimHtml}${optionsHtml}${tableHtml}${subHtml}
             </div>`;
         }
 
