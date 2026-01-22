@@ -490,14 +490,14 @@ function buildTableData(content, oldContent) {
     // Try to extract rows/columns from old content if present
     if (oldContent?.rows && Array.isArray(oldContent.rows)) {
         data.rows = oldContent.rows.map((row, i) => ({
-            id: row.id || `row_${i}`,
+            id: row.id || `r${i + 1}`,
             text: typeof row === 'string' ? row : (row.text || '')
         }));
     }
     
     if (oldContent?.columns && Array.isArray(oldContent.columns)) {
         data.columns = oldContent.columns.map((col, i) => ({
-            id: col.id || `col_${i}`,
+            id: col.id || `c${i + 1}`,
             text: typeof col === 'string' ? col : (col.text || '')
         }));
     }
@@ -704,12 +704,12 @@ function getDefaultDataForType(type) {
                 content: '', 
                 style: getStyleForType('TABLE'), 
                 rows: [
-                    { id: 'row_1', text: 'Row 1' },
-                    { id: 'row_2', text: 'Row 2' }
+                    { id: 'r1', text: 'Row 1' },
+                    { id: 'r2', text: 'Row 2' }
                 ],
                 columns: [
-                    { id: 'col_1', text: 'Column 1' },
-                    { id: 'col_2', text: 'Column 2' }
+                    { id: 'c1', text: 'Column 1' },
+                    { id: 'c2', text: 'Column 2' }
                 ]
             };
         case 'COMPOSITE':
