@@ -1,27 +1,29 @@
 /**
- * Question Parser Module (Schema v4.5)
+ * Question Parser Module (Schema v4.6)
  * Shared parsing and normalization logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
  * This module provides functions to:
  * - Parse JSONL/JSON content into question objects
- * - Normalize questions from old schemas to v4.5 schema
+ * - Normalize questions from old schemas to v4.6 schema
  * - Extract and resolve image tokens [[tag]] in RichText
  * - Utility helpers for working with question data
  * 
- * Schema v4.5 Key Features:
+ * Schema v4.6 Key Features:
  * - Images embedded as [[tag]] tokens in RichText strings
  * - Polymorphic 'data' field based on question 'type'
  * - Types: MCQ, FIB, MATCH, SUBJECTIVE, TABLE, COMPOSITE
- * - TABLE type for structured 2D grid with TableStyle (table_grid_lines)
+ * - TABLE type: { content, style, table: { header?, rows } }
+ *   - table.header: optional array of RichText for column headers
+ *   - table.rows: required 2D array of RichText cells
  * - Type-safe 'style' object (mandatory) with composed mix-ins:
  *   - MCQ/FIB: BaseStyle + OptionsStyle (image_layout, options_layout)
- *   - COMPOSITE: BaseStyle + CompositeStyleBlock (image_layout, sub_questions_layout)
- *   - TABLE: BaseStyle + TableStyleBlock (image_layout, table_grid_lines, hide_header)
+ *   - COMPOSITE: BaseStyle + CompositeStyle (image_layout, sub_questions_layout)
+ *   - TABLE: BaseStyle + TableStyle (image_layout, table_grid_lines, hide_header)
  *   - SUBJECTIVE/MATCH: BaseStyle only (image_layout)
  * - sub_questions_layout values: 'vertical', 'horizontal', 'matrix'
  * - table_grid_lines values: 'all', 'none', 'horizontal', 'vertical'
- * - hide_header values: 'none', 'row', 'column', 'both'
+ * - hide_header: boolean (true hides the header row)
  */
 
 // =====================================================
@@ -32,14 +34,13 @@ const QUESTION_TYPES = ['MCQ', 'FIB', 'MATCH', 'SUBJECTIVE', 'TABLE', 'COMPOSITE
 const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
 const POOL_TYPES = ['Practice', 'Exam'];
 const LAYOUT_VALUES = ['vertical', 'horizontal'];
-const SUB_LAYOUT_VALUES = ['vertical', 'horizontal', 'matrix']; // v4.5: added 'matrix'
-const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical']; // v4.5: table_grid_lines
-const TABLE_HIDE_HEADER_VALUES = ['none', 'row', 'column', 'both']; // v4.5: hide_header
+const SUB_LAYOUT_VALUES = ['vertical', 'horizontal', 'matrix'];
+const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical'];
 
 // Regex for image tokens in RichText
 const IMAGE_TOKEN_REGEX = /\[\[([^\]]+)\]\]/g;
 
-// Default style configs for v4.5 (type-specific)
+// Default style configs for v4.6 (type-specific)
 const BASE_STYLE = {
     image_layout: 'vertical'
 };
@@ -54,11 +55,11 @@ const COMPOSITE_STYLE = {
     sub_questions_layout: 'vertical'
 };
 
-// v4.5: Table-specific style
+// v4.6: Table-specific style (hide_header is boolean)
 const TABLE_STYLE = {
     image_layout: 'vertical',
     table_grid_lines: 'all',
-    hide_header: 'none'
+    hide_header: false
 };
 
 // Legacy: Combined default for backwards compatibility
@@ -476,38 +477,63 @@ function buildSubjectiveData(content, oldType) {
 }
 
 /**
- * Build Table data structure (v4.5 - uses TABLE_STYLE with table_grid_lines)
+ * Build Table data structure (v4.6)
  * For structured 2D grid interactions like Tick Columns or HTO math
+ * New structure: { content, style, table: { header?, rows } }
+ * - table.header: optional array of RichText for column headers
+ * - table.rows: required 2D array of RichText cells
  */
 function buildTableData(content, oldContent) {
     const data = {
         content: content,
         style: { ...TABLE_STYLE },
-        rows: [],
-        columns: []
+        table: {
+            rows: [['', ''], ['', '']] // Default 2x2 empty grid
+        }
     };
     
-    // Try to extract rows/columns from old content if present
-    if (oldContent?.rows && Array.isArray(oldContent.rows)) {
-        data.rows = oldContent.rows.map((row, i) => ({
-            id: row.id || `r${i + 1}`,
-            text: typeof row === 'string' ? row : (row.text || '')
-        }));
-    }
-    
-    if (oldContent?.columns && Array.isArray(oldContent.columns)) {
-        data.columns = oldContent.columns.map((col, i) => ({
-            id: col.id || `c${i + 1}`,
-            text: typeof col === 'string' ? col : (col.text || '')
-        }));
+    // Try to extract table data from old content if present
+    if (oldContent?.table) {
+        // Already in v4.6 format
+        if (oldContent.table.rows && Array.isArray(oldContent.table.rows)) {
+            data.table.rows = oldContent.table.rows;
+        }
+        if (oldContent.table.header && Array.isArray(oldContent.table.header)) {
+            data.table.header = oldContent.table.header;
+        }
+    } else if (oldContent?.rows && oldContent?.columns) {
+        // Convert from old v4.5 format (rows/columns as arrays of objects)
+        const numRows = oldContent.rows.length || 2;
+        const numCols = oldContent.columns.length || 2;
+        
+        // Extract column headers
+        data.table.header = oldContent.columns.map(col => 
+            typeof col === 'string' ? col : (col.text || '')
+        );
+        
+        // Create empty rows grid with row labels in first column
+        data.table.rows = oldContent.rows.map(row => {
+            const rowLabel = typeof row === 'string' ? row : (row.text || '');
+            const cells = [rowLabel];
+            for (let i = 1; i < numCols; i++) {
+                cells.push('');
+            }
+            return cells;
+        });
     }
     
     // Preserve existing style settings if present
     if (oldContent?.style?.table_grid_lines) {
         data.style.table_grid_lines = oldContent.style.table_grid_lines;
     }
-    if (oldContent?.style?.hide_header) {
-        data.style.hide_header = oldContent.style.hide_header;
+    if (oldContent?.style?.hide_header !== undefined) {
+        // Convert old string values to boolean if needed
+        if (typeof oldContent.style.hide_header === 'boolean') {
+            data.style.hide_header = oldContent.style.hide_header;
+        } else {
+            // Old format used 'none', 'row', 'column', 'both'
+            data.style.hide_header = oldContent.style.hide_header !== 'none';
+        }
     }
     
     return data;
@@ -640,17 +666,18 @@ function normalizeStyleValues(style, type) {
         normalized.sub_questions_layout = normalized.sub_questions_layout || 'vertical';
     }
     
-    // v4.5: Add table_grid_lines and hide_header for TABLE type
+    // v4.6: Add table_grid_lines and hide_header for TABLE type
     if (type === 'TABLE') {
         normalized.table_grid_lines = normalized.table_grid_lines || 'all';
         // Validate table_grid_lines value
         if (!TABLE_GRID_VALUES.includes(normalized.table_grid_lines)) {
             normalized.table_grid_lines = 'all';
         }
-        normalized.hide_header = normalized.hide_header || 'none';
-        // Validate hide_header value
-        if (!TABLE_HIDE_HEADER_VALUES.includes(normalized.hide_header)) {
-            normalized.hide_header = 'none';
+        // v4.6: hide_header is boolean (convert old string values)
+        if (typeof normalized.hide_header === 'string') {
+            normalized.hide_header = normalized.hide_header !== 'none';
+        } else if (normalized.hide_header === undefined) {
+            normalized.hide_header = false;
         }
     }
     
@@ -687,7 +714,7 @@ function getStyleForType(type) {
 }
 
 /**
- * Get default data structure for a question type (v4.5 - includes mandatory type-specific style)
+ * Get default data structure for a question type (v4.6 - includes mandatory type-specific style)
  */
 function getDefaultDataForType(type) {
     switch (type) {
@@ -700,17 +727,16 @@ function getDefaultDataForType(type) {
         case 'SUBJECTIVE':
             return { content: '', style: getStyleForType('SUBJECTIVE'), expected_length: 'short' };
         case 'TABLE':
-            return {
+    return {
                 content: '', 
                 style: getStyleForType('TABLE'), 
-                rows: [
-                    { id: 'r1', text: 'Row 1' },
-                    { id: 'r2', text: 'Row 2' }
-                ],
-                columns: [
-                    { id: 'c1', text: 'Column 1' },
-                    { id: 'c2', text: 'Column 2' }
-                ]
+                table: {
+                    header: ['Column 1', 'Column 2'],
+                    rows: [
+                        ['Row 1', ''],
+                        ['Row 2', '']
+                    ]
+                }
             };
         case 'COMPOSITE':
             return { common_content: '', style: getStyleForType('COMPOSITE'), sub_questions: [] };
@@ -839,15 +865,34 @@ function traverseAllRichText(question, transformer) {
         });
     }
     
-    // TABLE rows and columns (v4.2)
-    if (data.rows && Array.isArray(data.rows)) {
+    // TABLE structure (v4.6): table.header and table.rows (2D array)
+    if (data.table) {
+        if (data.table.header && Array.isArray(data.table.header)) {
+            data.table.header = data.table.header.map((cell, i) => 
+                transformer(cell, `data.table.header[${i}]`)
+            );
+        }
+        if (data.table.rows && Array.isArray(data.table.rows)) {
+            data.table.rows = data.table.rows.map((row, i) => {
+                if (Array.isArray(row)) {
+                    return row.map((cell, j) => 
+                        transformer(cell, `data.table.rows[${i}][${j}]`)
+                    );
+                }
+                return row;
+            });
+        }
+    }
+    
+    // Legacy TABLE rows and columns (for backwards compatibility)
+    if (data.rows && Array.isArray(data.rows) && !data.table) {
         data.rows.forEach((row, i) => {
             if (row.text !== undefined) {
                 row.text = transformer(row.text, `data.rows[${i}].text`);
             }
         });
     }
-    if (data.columns && Array.isArray(data.columns)) {
+    if (data.columns && Array.isArray(data.columns) && !data.table) {
         data.columns.forEach((col, i) => {
             if (col.text !== undefined) {
                 col.text = transformer(col.text, `data.columns[${i}].text`);
@@ -955,7 +1000,7 @@ function prepareForExport(q) {
 }
 
 /**
- * Validate a question against v4.2 schema
+ * Validate a question against v4.6 schema
  * @param {Object} q - Question object
  * @returns {Object} { valid: boolean, errors: string[] }
  */
@@ -969,9 +1014,9 @@ function validateQuestion(q) {
     if (!q.data) errors.push('Missing data');
     if (!q.solution) errors.push('Missing solution');
     
-    // v4.2: style is mandatory in data
+    // v4.6: style is mandatory in data
     if (q.data && !q.data.style) {
-        errors.push('Missing data.style (mandatory in v4.2)');
+        errors.push('Missing data.style (mandatory in v4.6)');
     }
     
     // Type-specific validation
@@ -982,22 +1027,21 @@ function validateQuestion(q) {
         errors.push('MATCH requires at least one pair');
     }
     if (q.type === 'TABLE') {
-        if (!q.data?.rows || q.data.rows.length === 0) {
-            errors.push('TABLE requires at least one row');
-        }
-        if (!q.data?.columns || q.data.columns.length === 0) {
-            errors.push('TABLE requires at least one column');
+        if (!q.data?.table) {
+            errors.push('TABLE requires a table object');
+        } else if (!q.data.table.rows || q.data.table.rows.length === 0) {
+            errors.push('TABLE requires at least one row in table.rows');
         }
     }
     if (q.type === 'COMPOSITE' && (!q.data?.sub_questions || q.data.sub_questions.length === 0)) {
         errors.push('COMPOSITE requires at least one sub-question');
     }
     
-    // v4.2: Validate sub-questions have style
+    // v4.6: Validate sub-questions have style
     if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
         q.data.sub_questions.forEach((sq, i) => {
             if (!sq.data?.style) {
-                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.2)`);
+                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.6)`);
             }
         });
     }

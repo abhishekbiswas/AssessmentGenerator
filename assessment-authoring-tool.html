@@ -1030,85 +1030,26 @@
             border-top: 1px solid var(--border);
         }
         
-        /* TABLE EDITOR STYLES (v4.5) */
+        /* TABLE EDITOR STYLES (v4.6) */
         .table-editor-section {
             background: white;
             padding: 1rem;
             border-radius: 6px;
             border: 1px solid var(--border);
         }
-        .table-editor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .table-editor-column h4 {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #6b7280;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .table-editor-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: #f9fafb;
-            padding: 0.5rem;
-            border-radius: 4px;
-            border: 1px solid #e5e7eb;
-        }
-        .table-editor-item .item-id {
-            width: 60px;
-            padding: 0.4rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-align: center;
-            background: white;
-        }
-        .table-editor-item .item-text {
-            flex: 1;
-            padding: 0.4rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            background: white;
-        }
-        .table-editor-item .btn-delete {
-            background: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-        .table-editor-item .btn-delete:hover {
-            background: #fecaca;
-        }
         .table-style-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem;
             align-items: center;
-            padding: 0.75rem;
-            background: #f3f4f6;
-            border-radius: 4px;
-            margin-top: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
         }
         .table-style-options label {
             font-size: 0.8rem;
             color: #374151;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             cursor: pointer;
         }
         .table-grid-select {
@@ -1117,6 +1058,81 @@
             border-radius: 4px;
             font-size: 0.8rem;
             background: white;
+        }
+        .table-grid-editor-container {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .table-grid-editor {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 400px;
+        }
+        .table-grid-editor th,
+        .table-grid-editor td {
+            border: 1px solid #d1d5db;
+            padding: 0;
+            position: relative;
+        }
+        .table-grid-editor th {
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .table-grid-editor .header-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .table-grid-editor .header-input {
+            flex: 1;
+            border: none;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: transparent;
+            text-align: center;
+            min-width: 80px;
+        }
+        .table-grid-editor .cell-input {
+            width: 100%;
+            border: none;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            background: white;
+            min-width: 80px;
+        }
+        .table-grid-editor .cell-input:focus,
+        .table-grid-editor .header-input:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
+        }
+        .table-grid-editor .corner-cell {
+            background: #e2e8f0;
+            min-width: 40px;
+        }
+        .table-grid-editor .row-actions,
+        .table-grid-editor .col-actions {
+            padding: 0.25rem;
+            text-align: center;
+            background: #fef2f2;
+        }
+        .table-grid-editor .btn-delete-row,
+        .table-grid-editor .btn-delete-col {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.65rem;
+        }
+        .table-grid-editor .btn-delete-row:hover,
+        .table-grid-editor .btn-delete-col:hover {
+            background: #fecaca;
         }
         
         .pairs-column {
@@ -1640,47 +1656,35 @@
                                         <div id="options-list"></div>
                                     </div>
 
-                                    <!-- TABLE Editor Section (for TABLE type) -->
+                                    <!-- TABLE Editor Section (for TABLE type - v4.6) -->
                                     <div id="table-editor-section" class="content-section table-editor-section" style="display:none;">
                                         <div class="section-header" style="margin-bottom:1rem;">
-                                            <label class="section-label">📊 TABLE STRUCTURE</label>
-                                        </div>
-                                        <div class="table-editor-grid">
-                                            <div class="table-editor-column">
-                                                <h4>
-                                                    <span>📋 Rows (Left Labels)</span>
-                                                    <button class="btn btn-sm" onclick="addTableRow()" style="font-size:0.65rem;">+ Add Row</button>
-                                                </h4>
-                                                <div id="table-rows-list"></div>
-                                            </div>
-                                            <div class="table-editor-column">
-                                                <h4>
-                                                    <span>📊 Columns (Top Headers)</span>
-                                                    <button class="btn btn-sm" onclick="addTableColumn()" style="font-size:0.65rem;">+ Add Column</button>
-                                                </h4>
-                                                <div id="table-columns-list"></div>
+                                            <label class="section-label">📊 TABLE EDITOR</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <button class="btn btn-sm" onclick="addTableRow()">+ Row</button>
+                                                <button class="btn btn-sm" onclick="addTableColumn()">+ Column</button>
                                             </div>
                                         </div>
-                                        <div class="table-style-options">
-                                            <label>
-                                                <span style="font-weight:600;">Grid Lines:</span>
+                                        
+                                        <!-- Table Style Options -->
+                                        <div class="table-style-options" style="margin-bottom:1rem;">
+                                            <label style="display:flex; align-items:center; gap:0.5rem;">
+                                                <span style="font-weight:600; font-size:0.8rem;">Grid Lines:</span>
                                                 <select id="table-grid-lines" class="table-grid-select" onchange="updateTableGridLines(this.value)">
-                                                    <option value="all">All (Full Grid)</option>
-                                                    <option value="none">None (No Lines)</option>
-                                                    <option value="horizontal">Horizontal Only</option>
-                                                    <option value="vertical">Vertical Only</option>
+                                                    <option value="all">All</option>
+                                                    <option value="none">None</option>
+                                                    <option value="horizontal">Horizontal</option>
+                                                    <option value="vertical">Vertical</option>
                                                 </select>
                                             </label>
-                                            <label>
-                                                <span style="font-weight:600;">Hide Headers:</span>
-                                                <select id="table-hide-header" class="table-grid-select" onchange="updateTableHideHeader(this.value)">
-                                                    <option value="none">Show All</option>
-                                                    <option value="row">Hide Row Labels (Left)</option>
-                                                    <option value="column">Hide Column Headers (Top)</option>
-                                                    <option value="both">Hide Both</option>
-                                                </select>
+                                            <label style="display:flex; align-items:center; gap:0.5rem;">
+                                                <input type="checkbox" id="table-hide-header" onchange="updateTableHideHeader(this.checked)">
+                                                <span style="font-weight:600; font-size:0.8rem;">Hide Header Row</span>
                                             </label>
                                         </div>
+                                        
+                                        <!-- Editable Table Grid -->
+                                        <div id="table-grid-editor" class="table-grid-editor-container"></div>
                                     </div>
 
                                     <!-- Sub-Questions Section -->
@@ -2381,7 +2385,7 @@
                     renderMainOptions(options);
                 // Set options layout toggle state (default to horizontal)
                 updateOptionsLayoutButtons(data.style?.options_layout || 'horizontal');
-            } else {
+                } else {
                 optionsSection.style.display = 'none';
             }
 
@@ -2403,13 +2407,16 @@
                 renderPairs(pairsData);
             }
             
-            // TABLE editor (v4.5)
+            // TABLE editor (v4.6)
             const isTableType = qType === 'TABLE';
+            const tableSection = document.getElementById('table-editor-section');
             if(isTableType) {
-                document.getElementById('table-editor-section').style.display = 'block';
+                tableSection.style.display = 'block';
                 renderTableEditor(data);
+            } else {
+                tableSection.style.display = 'none';
             }
-            
+
             // Sub-Questions Section (only for COMPOSITE type)
             const subqSection = document.getElementById('subquestions-section');
             const subquestions = data.sub_questions;
@@ -3117,40 +3124,65 @@
         // TABLE EDITOR MANAGEMENT (v4.5)
         // =====================================================
         
+        // =====================================================
+        // TABLE EDITOR FUNCTIONS (v4.6 schema)
+        // table.header: optional array of RichText (column headers)
+        // table.rows: required 2D array of RichText (cells)
+        // =====================================================
+        
         function renderTableEditor(data) {
-            // Render rows
-            const rowsContainer = document.getElementById('table-rows-list');
-            rowsContainer.innerHTML = '';
-            const rows = data.rows || [];
-            rows.forEach((row, idx) => {
-                const item = document.createElement('div');
-                item.className = 'table-editor-item';
-                item.innerHTML = `
-                    <input type="text" class="item-id" value="${row.id || ''}" 
-                        onchange="updateTableRow(${idx}, 'id', this.value)" placeholder="ID" />
-                    <input type="text" class="item-text" value="${escapeHtml(row.text || '')}" 
-                        onchange="updateTableRow(${idx}, 'text', this.value)" placeholder="Row label text..." />
-                    <button class="btn-delete" onclick="deleteTableRow(${idx})">✕</button>
-                `;
-                rowsContainer.appendChild(item);
-            });
+            const container = document.getElementById('table-grid-editor');
+            if (!container) return;
             
-            // Render columns
-            const colsContainer = document.getElementById('table-columns-list');
-            colsContainer.innerHTML = '';
-            const cols = data.columns || [];
-            cols.forEach((col, idx) => {
-                const item = document.createElement('div');
-                item.className = 'table-editor-item';
-                item.innerHTML = `
-                    <input type="text" class="item-id" value="${col.id || ''}" 
-                        onchange="updateTableColumn(${idx}, 'id', this.value)" placeholder="ID" />
-                    <input type="text" class="item-text" value="${escapeHtml(col.text || '')}" 
-                        onchange="updateTableColumn(${idx}, 'text', this.value)" placeholder="Column header text..." />
-                    <button class="btn-delete" onclick="deleteTableColumn(${idx})">✕</button>
-                `;
-                colsContainer.appendChild(item);
+            // Ensure table structure exists
+            if (!data.table) {
+                data.table = { rows: [['', ''], ['', '']] };
+            }
+            
+            const table = data.table;
+            const header = table.header || [];
+            const rows = table.rows || [];
+            const numCols = Math.max(header.length, rows.length > 0 ? rows[0].length : 2);
+            
+            // Build editable table HTML
+            let html = '<table class="table-grid-editor">';
+            
+            // Header row (if exists)
+            html += '<thead><tr>';
+            html += '<th class="corner-cell"></th>'; // Corner cell
+            for (let c = 0; c < numCols; c++) {
+                const headerVal = header[c] || '';
+                html += `<th>
+                    <div class="header-cell">
+                        <input type="text" class="header-input" value="${escapeHtml(headerVal)}" 
+                            placeholder="Header ${c + 1}"
+                            onchange="updateTableHeader(${c}, this.value)" />
+                    </div>
+                </th>`;
+            }
+            html += '<th class="col-actions"><button class="btn-delete-col" onclick="deleteTableColumn()" title="Delete last column">−Col</button></th>';
+            html += '</tr></thead>';
+            
+            // Data rows
+            html += '<tbody>';
+            rows.forEach((row, r) => {
+                html += '<tr>';
+                html += `<td class="row-actions"><button class="btn-delete-row" onclick="deleteTableRow(${r})" title="Delete row">✕</button></td>`;
+                for (let c = 0; c < numCols; c++) {
+                    const cellVal = (row && row[c]) || '';
+                    html += `<td>
+                        <input type="text" class="cell-input" value="${escapeHtml(cellVal)}" 
+                            placeholder="Cell"
+                            onchange="updateTableCell(${r}, ${c}, this.value)" />
+                    </td>`;
+                }
+                html += '<td></td>';
+                html += '</tr>';
             });
+            html += '</tbody>';
+            
+            html += '</table>';
+            container.innerHTML = html;
             
             // Update style controls
             const style = data.style || {};
@@ -3158,9 +3190,9 @@
             if (gridSelect) {
                 gridSelect.value = style.table_grid_lines || 'all';
             }
-            const hideHeaderSelect = document.getElementById('table-hide-header');
-            if (hideHeaderSelect) {
-                hideHeaderSelect.value = style.hide_header || 'none';
+            const hideHeaderCheckbox = document.getElementById('table-hide-header');
+            if (hideHeaderCheckbox) {
+                hideHeaderCheckbox.checked = style.hide_header === true;
             }
         }
         
@@ -3173,64 +3205,115 @@
                        .replace(/'/g, '&#039;');
         }
         
+        function ensureTableStructure(q) {
+            if (!q.data) q.data = { content: '', style: { image_layout: 'vertical', table_grid_lines: 'all', hide_header: false } };
+            if (!q.data.table) q.data.table = { rows: [] };
+            if (!q.data.table.rows) q.data.table.rows = [];
+        }
+        
         function addTableRow() {
             const q = activeData[activeIndex];
-            if (!q.data) q.data = {};
-            if (!q.data.rows) q.data.rows = [];
-            const newIdx = q.data.rows.length;
-            q.data.rows.push({ id: `r${newIdx + 1}`, text: '' });
+            ensureTableStructure(q);
+            
+            const numCols = q.data.table.header?.length || (q.data.table.rows[0]?.length || 2);
+            const newRow = Array(numCols).fill('');
+            q.data.table.rows.push(newRow);
+            
             renderTableEditor(q.data);
             updateJsonView();
             refreshPreviewIfVisible();
         }
         
-        function updateTableRow(idx, field, value) {
+        function deleteTableRow(rowIdx) {
             const q = activeData[activeIndex];
-            if (q.data?.rows?.[idx]) {
-                q.data.rows[idx][field] = value;
-                updateJsonView();
-                refreshPreviewIfVisible();
-            }
-        }
-        
-        function deleteTableRow(idx) {
-            const q = activeData[activeIndex];
-            if (q.data?.rows) {
-                q.data.rows.splice(idx, 1);
+            if (q.data?.table?.rows && q.data.table.rows.length > 1) {
+                q.data.table.rows.splice(rowIdx, 1);
                 renderTableEditor(q.data);
                 updateJsonView();
                 refreshPreviewIfVisible();
+            } else {
+                alert('Table must have at least one row.');
             }
         }
         
         function addTableColumn() {
             const q = activeData[activeIndex];
-            if (!q.data) q.data = {};
-            if (!q.data.columns) q.data.columns = [];
-            const newIdx = q.data.columns.length;
-            q.data.columns.push({ id: `c${newIdx + 1}`, text: '' });
+            ensureTableStructure(q);
+            
+            // Add header
+            if (!q.data.table.header) q.data.table.header = [];
+            q.data.table.header.push('');
+            
+            // Add cell to each row
+            q.data.table.rows.forEach(row => {
+                row.push('');
+            });
+            
             renderTableEditor(q.data);
             updateJsonView();
             refreshPreviewIfVisible();
         }
         
-        function updateTableColumn(idx, field, value) {
+        function deleteTableColumn() {
             const q = activeData[activeIndex];
-            if (q.data?.columns?.[idx]) {
-                q.data.columns[idx][field] = value;
-                updateJsonView();
-                refreshPreviewIfVisible();
-            }
-        }
-        
-        function deleteTableColumn(idx) {
-            const q = activeData[activeIndex];
-            if (q.data?.columns) {
-                q.data.columns.splice(idx, 1);
+            const numCols = q.data?.table?.header?.length || (q.data?.table?.rows[0]?.length || 0);
+            
+            if (numCols > 1) {
+                // Remove from header
+                if (q.data.table.header && q.data.table.header.length > 0) {
+                    q.data.table.header.pop();
+                }
+                // Remove from each row
+                q.data.table.rows.forEach(row => {
+                    if (row.length > 0) row.pop();
+                });
+                
                 renderTableEditor(q.data);
                 updateJsonView();
                 refreshPreviewIfVisible();
+            } else {
+                alert('Table must have at least one column.');
             }
+        }
+        
+        function updateTableHeader(colIdx, value) {
+            const q = activeData[activeIndex];
+            ensureTableStructure(q);
+            
+            if (!q.data.table.header) {
+                // Initialize header array if needed
+                const numCols = q.data.table.rows[0]?.length || 2;
+                q.data.table.header = Array(numCols).fill('');
+            }
+            
+            // Expand header if needed
+            while (q.data.table.header.length <= colIdx) {
+                q.data.table.header.push('');
+            }
+            
+            q.data.table.header[colIdx] = value;
+            updateJsonView();
+            refreshPreviewIfVisible();
+        }
+        
+        function updateTableCell(rowIdx, colIdx, value) {
+            const q = activeData[activeIndex];
+            ensureTableStructure(q);
+            
+            // Ensure row exists
+            while (q.data.table.rows.length <= rowIdx) {
+                const numCols = q.data.table.header?.length || 2;
+                q.data.table.rows.push(Array(numCols).fill(''));
+            }
+            
+            // Ensure column exists in row
+            while (q.data.table.rows[rowIdx].length <= colIdx) {
+                q.data.table.rows[rowIdx].push('');
+            }
+            
+            q.data.table.rows[rowIdx][colIdx] = value;
+            updateJsonView();
+            refreshPreviewIfVisible();
         }
         
         function updateTableGridLines(value) {
@@ -3242,11 +3325,11 @@
             refreshPreviewIfVisible();
         }
         
-        function updateTableHideHeader(value) {
+        function updateTableHideHeader(checked) {
             const q = activeData[activeIndex];
             if (!q.data) q.data = {};
             if (!q.data.style) q.data.style = {};
-            q.data.style.hide_header = value;
+            q.data.style.hide_header = checked;
             updateJsonView();
             refreshPreviewIfVisible();
         }
@@ -3724,6 +3807,7 @@
                         <option value="FIB" ${sq.type === 'FIB' ? 'selected' : ''}>Fill Blank</option>
                         <option value="MATCH" ${sq.type === 'MATCH' ? 'selected' : ''}>Match</option>
                         <option value="SUBJECTIVE" ${sq.type === 'SUBJECTIVE' ? 'selected' : ''}>Subjective</option>
+                        <option value="TABLE" ${sq.type === 'TABLE' ? 'selected' : ''}>Table</option>
                     `;
                     typeSelect.onchange = (e) => updateSubQuestionType(sqIdx, e.target.value);
                     
@@ -4375,19 +4459,20 @@
                 optionsHtml = `<div class="p-options" style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
             }
             
-            // TABLE type rendering (v4.5 - uses table_grid_lines and hide_header for control)
+            // TABLE type rendering (v4.6 - uses data.table with header and rows)
             let tableHtml = '';
-            if(qType === 'TABLE' && data.rows && data.columns) {
+            if(qType === 'TABLE' && data.table && data.table.rows) {
                 const tableStyle = data.style || {};
-                // v4.5: table_grid_lines controls grid line visibility
+                // v4.6: table_grid_lines controls grid line visibility
                 const gridLines = tableStyle.table_grid_lines || 'all';
-                // v4.5: hide_header controls header visibility
-                const hideHeader = tableStyle.hide_header || 'none';
-                const showColumnHeader = hideHeader !== 'column' && hideHeader !== 'both';
-                const showRowHeader = hideHeader !== 'row' && hideHeader !== 'both';
+                // v4.6: hide_header is boolean
+                const hideHeader = tableStyle.hide_header === true;
                 
-                const numRows = data.rows.length;
-                const numCols = data.columns.length;
+                const tableData = data.table;
+                const header = tableData.header || [];
+                const rows = tableData.rows || [];
+                const numRows = rows.length;
+                const numCols = Math.max(header.length, rows[0]?.length || 0);
                 
                 // Helper to get cell border style based on grid lines setting and position
                 function getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
@@ -4408,54 +4493,34 @@
                     }
                 }
                 
-                const totalCols = showRowHeader ? numCols + 1 : numCols;
-                
-                // Build table header row (only if showColumnHeader is true)
+                // Build table header row (only if header exists and not hidden)
                 let theadHtml = '';
-                if (showColumnHeader) {
-                    let headerCellsHtml = '';
-                    let colOffset = 0;
-                    // First header cell (top-left corner) - only if showing row headers
-                    if (showRowHeader) {
-                        const cellStyle = getCellBorderStyle(gridLines, true, false, true, false);
-                        headerCellsHtml += `<th style="${cellStyle}"></th>`;
-                        colOffset = 1;
-                    }
-                    headerCellsHtml += data.columns.map((col, colIdx) => {
-                        const isFirstCol = !showRowHeader && colIdx === 0;
+                if (header.length > 0 && !hideHeader) {
+                    let headerCellsHtml = header.map((cell, colIdx) => {
+                        const isFirstCol = colIdx === 0;
                         const isLastCol = colIdx === numCols - 1;
                         const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, true, false);
-                        return `<th style="${cellStyle}">${renderImageTokens(col.text || col.id)}</th>`;
+                        return `<th style="${cellStyle}">${renderImageTokens(cell || '')}</th>`;
                     }).join('');
                     theadHtml = `<thead><tr>${headerCellsHtml}</tr></thead>`;
                 }
                 
-                // Build table rows with empty cells for student input
-                const tableRows = data.rows.map((row, rowIdx) => {
-                    const isFirstRow = !showColumnHeader && rowIdx === 0;
+                // Build table rows
+                const tableRows = rows.map((row, rowIdx) => {
+                    const isFirstRow = (header.length === 0 || hideHeader) && rowIdx === 0;
                     const isLastRow = rowIdx === numRows - 1;
                     
-                    let rowCellsHtml = '';
-                    let colOffset = 0;
-                    
-                    // Row header cell (leftmost column) - only if showRowHeader is true
-                    if (showRowHeader) {
-                        const cellStyle = getCellBorderStyle(gridLines, true, false, isFirstRow, isLastRow);
-                        rowCellsHtml += `<td class="row-header" style="${cellStyle}">${renderImageTokens(row.text || row.id)}</td>`;
-                        colOffset = 1;
-                    }
-                    
-                    rowCellsHtml += data.columns.map((col, colIdx) => {
-                        const isFirstCol = !showRowHeader && colIdx === 0;
-                        const isLastCol = colIdx === numCols - 1;
+                    const rowCells = (row || []).map((cell, colIdx) => {
+                        const isFirstCol = colIdx === 0;
+                        const isLastCol = colIdx === (row.length - 1);
                         const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
-                        return `<td style="${cellStyle}"></td>`;
+                        return `<td style="${cellStyle}">${renderImageTokens(cell || '')}</td>`;
                     }).join('');
                     
-                    return `<tr>${rowCellsHtml}</tr>`;
+                    return `<tr>${rowCells}</tr>`;
                 }).join('');
                 
-                // Table style - use border-collapse: separate for precise border control
+                // Table style - use border-collapse: collapse
                 const tableBorderStyle = 'border-collapse: collapse;';
                 
                 tableHtml = `
@@ -4507,16 +4572,18 @@
                         sqWordBank = `<div style="font-size:0.8rem; color:#666; margin-top:4px;">Word bank: ${sqData.options_pool.join(', ')}</div>`;
                     }
                     
-                    // TABLE type for sub-questions (v4.5 - uses table_grid_lines and hide_header)
+                    // TABLE type for sub-questions (v4.6 - uses data.table with header and rows)
                     let sqTableHtml = '';
-                    if (sq.type === 'TABLE' && sqData.rows && sqData.columns) {
+                    if (sq.type === 'TABLE' && sqData.table && sqData.table.rows) {
                         const sqTableStyle = sqData.style || {};
                         const sqGridLines = sqTableStyle.table_grid_lines || 'all';
-                        const sqHideHeader = sqTableStyle.hide_header || 'none';
-                        const sqShowColumnHeader = sqHideHeader !== 'column' && sqHideHeader !== 'both';
-                        const sqShowRowHeader = sqHideHeader !== 'row' && sqHideHeader !== 'both';
-                        const sqNumRows = sqData.rows.length;
-                        const sqNumCols = sqData.columns.length;
+                        const sqHideHeader = sqTableStyle.hide_header === true;
+                        
+                        const sqTableData = sqData.table;
+                        const sqHeader = sqTableData.header || [];
+                        const sqRows = sqTableData.rows || [];
+                        const sqNumRows = sqRows.length;
+                        const sqNumCols = Math.max(sqHeader.length, sqRows[0]?.length || 0);
                         
                         // Helper to get cell border style based on grid lines setting and position
                         function getSqCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
@@ -4533,41 +4600,30 @@
                             }
                         }
                         
-                        // Build header row (only if sqShowColumnHeader)
+                        // Build header row (only if header exists and not hidden)
                         let sqTheadHtml = '';
-                        if (sqShowColumnHeader) {
-                            let sqHeaderCellsHtml = '';
-                            if (sqShowRowHeader) {
-                                const cellStyle = getSqCellBorderStyle(sqGridLines, true, false, true, false);
-                                sqHeaderCellsHtml += `<th style="font-size:0.85em; padding:4px; ${cellStyle}"></th>`;
-                            }
-                            sqHeaderCellsHtml += sqData.columns.map((col, colIdx) => {
-                                const isFirstCol = !sqShowRowHeader && colIdx === 0;
+                        if (sqHeader.length > 0 && !sqHideHeader) {
+                            let sqHeaderCellsHtml = sqHeader.map((cell, colIdx) => {
+                                const isFirstCol = colIdx === 0;
                                 const isLastCol = colIdx === sqNumCols - 1;
                                 const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, true, false);
-                                return `<th style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(col.text || col.id)}</th>`;
+                                return `<th style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(cell || '')}</th>`;
                         }).join('');
                             sqTheadHtml = `<thead><tr>${sqHeaderCellsHtml}</tr></thead>`;
                         }
                         
-                        const sqTableRows = sqData.rows.map((row, rowIdx) => {
-                            const isFirstRow = !sqShowColumnHeader && rowIdx === 0;
+                        const sqTableRows = sqRows.map((row, rowIdx) => {
+                            const isFirstRow = (sqHeader.length === 0 || sqHideHeader) && rowIdx === 0;
                             const isLastRow = rowIdx === sqNumRows - 1;
                             
-                            let sqRowCellsHtml = '';
-                            if (sqShowRowHeader) {
-                                const cellStyle = getSqCellBorderStyle(sqGridLines, true, false, isFirstRow, isLastRow);
-                                sqRowCellsHtml += `<td class="row-header" style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(row.text || row.id)}</td>`;
-                            }
-                            
-                            sqRowCellsHtml += sqData.columns.map((col, colIdx) => {
-                                const isFirstCol = !sqShowRowHeader && colIdx === 0;
-                                const isLastCol = colIdx === sqNumCols - 1;
+                            const sqRowCells = (row || []).map((cell, colIdx) => {
+                                const isFirstCol = colIdx === 0;
+                                const isLastCol = colIdx === (row.length - 1);
                                 const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
-                                return `<td style="padding:4px; ${cellStyle}"></td>`;
+                                return `<td style="padding:4px; ${cellStyle}">${renderImageTokens(cell || '')}</td>`;
                             }).join('');
                             
-                            return `<tr>${sqRowCellsHtml}</tr>`;
+                            return `<tr>${sqRowCells}</tr>`;
                         }).join('');
                         
                         sqTableHtml = `

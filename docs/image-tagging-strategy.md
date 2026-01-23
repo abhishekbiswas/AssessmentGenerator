@@ -1,8 +1,8 @@
-# Image Tagging Strategy for Bulk Upload (Schema v4.0)
+# Image Tagging Strategy for Bulk Upload (Schema v4.6)
 
 ## Schema Overview
 
-In schema v4.0, images are embedded as **tokens** within RichText strings using the `[[image-id]]` syntax:
+In schema v4.6, images are embedded as **tokens** within RichText strings using the `[[image-id]]` syntax:
 
 ```
 "content": "Look at the diagram below:\n\n[[Q1.content.1]]\n\nWhat shape is shown?"
@@ -403,7 +403,7 @@ After publish, tokens are replaced with CDN URLs:
 
 ### Key Differences from Previous Schema
 
-| Aspect | Old Schema (v2) | New Schema (v4.0) |
+| Aspect | Old Schema (v2) | New Schema (v4.6) |
 |--------|-----------------|-------------------|
 | Image reference | Separate `assets[]` arrays | `[[tag]]` tokens in RichText |
 | Location | Fixed paths (prompt, stimulus, options) | Anywhere in RichText string |
