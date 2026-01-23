@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Educational Question Schema (v4.8)",
-  "description": "Enhanced schema with type-safe styling. Removed oneOf from image_size for flexibility.",
+  "title": "Educational Question Schema (v4.9)",
+  "description": "Enhanced schema with type-safe styling. Added column_widths to TableStyle.",
   "type": "object",
   "required": ["id", "metadata", "type", "data", "solution"],
   "properties": {
@@ -108,6 +108,11 @@
           "type": "boolean",
           "default": "false",
           "description": "Controls visibility of row or column headers."
+        },
+        "column_widths": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional width values for each column (e.g. ['20%', '80%'])."
         }
       }
     },

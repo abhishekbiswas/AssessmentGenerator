@@ -1232,6 +1232,43 @@
             background: #fecaca;
         }
         
+        /* Column resize handles (v4.9) */
+        .table-grid-editor .col-resize-handle {
+            position: absolute;
+            right: -3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+        }
+        .table-grid-editor .col-resize-handle:hover,
+        .table-grid-editor .col-resize-handle.resizing {
+            background: #3b82f6;
+        }
+        .table-grid-editor th.resizable {
+            position: relative;
+        }
+        .table-grid-editor .col-width-indicator {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+        .table-grid-editor th.resizing .col-width-indicator {
+            opacity: 1;
+        }
+        
         .pairs-column {
             margin-bottom: 0.75rem;
         }
@@ -1764,7 +1801,7 @@
                                         </div>
                                         
                                         <!-- Table Style Options -->
-                                        <div class="table-style-options" style="margin-bottom:1rem;">
+                                        <div class="table-style-options" style="margin-bottom:1rem; display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
                                             <label style="display:flex; align-items:center; gap:0.5rem;">
                                                 <span style="font-weight:600; font-size:0.8rem;">Grid Lines:</span>
                                                 <select id="table-grid-lines" class="table-grid-select" onchange="updateTableGridLines(this.value)">
@@ -1778,7 +1815,9 @@
                                                 <input type="checkbox" id="table-hide-header" onchange="updateTableHideHeader(this.checked)">
                                                 <span style="font-weight:600; font-size:0.8rem;">Hide Header Row</span>
                                             </label>
+                                            <button class="btn btn-sm" style="font-size:0.7rem; padding:0.25rem 0.5rem;" onclick="clearColumnWidths()" title="Reset all column widths to auto">↺ Reset Widths</button>
                                         </div>
+                                        <div style="font-size:0.7rem; color:#6b7280; margin-bottom:0.5rem;">💡 Drag column borders to resize. Widths are saved automatically.</div>
                                         
                                         <!-- Editable Table Grid -->
                                         <div id="table-grid-editor" class="table-grid-editor-container"></div>
@@ -3513,20 +3552,40 @@
             const rows = table.rows || [];
             const numCols = Math.max(header.length, rows.length > 0 ? rows[0].length : 2);
             
+            // v4.9: Get column widths from style
+            const style = data.style || {};
+            const columnWidths = style.column_widths || [];
+            
             // Build editable table HTML
-            let html = '<table class="table-grid-editor">';
+            let html = '<table class="table-grid-editor" id="table-editor-table">';
+            
+            // Colgroup for column widths
+            html += '<colgroup>';
+            html += '<col style="width:40px;">'; // Corner/row-actions column
+            for (let c = 0; c < numCols; c++) {
+                const colWidth = columnWidths[c] || '';
+                html += `<col data-col="${c}" ${colWidth ? `style="width:${colWidth}"` : ''}>`;
+            }
+            html += '<col style="width:50px;">'; // Actions column
+            html += '</colgroup>';
             
             // Header row (if exists)
             html += '<thead><tr>';
             html += '<th class="corner-cell"></th>'; // Corner cell
             for (let c = 0; c < numCols; c++) {
                 const headerVal = header[c] || '';
-                html += `<th>
+                const colWidth = columnWidths[c] || '';
+                const isLastDataCol = c === numCols - 1;
+                // Display width as percentage or "auto"
+                const widthDisplay = colWidth ? colWidth : 'auto';
+                html += `<th class="resizable" data-col="${c}">
                     <div class="header-cell">
                         <input type="text" class="header-input" value="${escapeHtml(headerVal)}" 
                             placeholder="Header ${c + 1}"
                             onchange="updateTableHeader(${c}, this.value)" />
                     </div>
+                    ${!isLastDataCol ? `<div class="col-resize-handle" data-col="${c}" onmousedown="initColResize(event, ${c})"></div>` : ''}
+                    <div class="col-width-indicator">${widthDisplay}</div>
                 </th>`;
             }
             html += '<th class="col-actions"><button class="btn-delete-col" onclick="deleteTableColumn()" title="Delete last column">−Col</button></th>';
@@ -3554,7 +3613,6 @@
             container.innerHTML = html;
             
             // Update style controls
-            const style = data.style || {};
             const gridSelect = document.getElementById('table-grid-lines');
             if (gridSelect) {
                 gridSelect.value = style.table_grid_lines || 'all';
@@ -3618,6 +3676,14 @@
                 row.push('');
             });
             
+            // v4.9: Recalculate column widths to distribute evenly
+            const numCols = q.data.table.header.length;
+            if (q.data.style?.column_widths && q.data.style.column_widths.length > 0) {
+                // Redistribute existing widths proportionally
+                const equalWidth = (100 / numCols).toFixed(1) + '%';
+                q.data.style.column_widths = Array(numCols).fill(equalWidth);
+            }
+            
             renderTableEditor(q.data);
             updateJsonView();
             refreshPreviewIfVisible();
@@ -3636,12 +3702,189 @@
                 q.data.table.rows.forEach(row => {
                     if (row.length > 0) row.pop();
                 });
+                // v4.9: Recalculate column widths after removing a column
+                if (q.data.style?.column_widths && q.data.style.column_widths.length > 0) {
+                    q.data.style.column_widths.pop();
+                    // Redistribute remaining widths to total 100%
+                    const remaining = q.data.style.column_widths;
+                    if (remaining.length > 0) {
+                        // Parse existing percentages and recalculate
+                        let total = 0;
+                        const values = remaining.map(w => {
+                            const val = parseFloat(w) || (100 / remaining.length);
+                            total += val;
+                            return val;
+                        });
+                        // Normalize to 100%
+                        q.data.style.column_widths = values.map(v => ((v / total) * 100).toFixed(1) + '%');
+                    }
+                }
                 
                 renderTableEditor(q.data);
                 updateJsonView();
                 refreshPreviewIfVisible();
             } else {
                 alert('Table must have at least one column.');
+            }
+        }
+        
+        // v4.9: Column resize functionality (percentage-based)
+        let isColResizing = false;
+        let colResizeStartX = 0;
+        let colResizeColIndex = -1;
+        let colResizeStartWidths = []; // All column widths at start
+        let colResizeTableWidth = 0;
+        let colResizeTable = null;
+        let colResizeHeader = null;
+        let colResizeNumCols = 0;
+        
+        function initColResize(e, colIndex) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (activeIndex < 0 || !activeData[activeIndex]) return;
+            
+            const table = document.getElementById('table-editor-table');
+            if (!table) return;
+            
+            isColResizing = true;
+            colResizeStartX = e.clientX;
+            colResizeColIndex = colIndex;
+            colResizeTable = table;
+            
+            // Get the header cells and their current widths
+            const headerCells = table.querySelectorAll('thead th.resizable');
+            colResizeNumCols = headerCells.length;
+            colResizeHeader = headerCells[colIndex];
+            
+            // Calculate total width of data columns (excluding corner and action columns)
+            colResizeTableWidth = 0;
+            colResizeStartWidths = [];
+            headerCells.forEach((th, i) => {
+                const width = th.offsetWidth;
+                colResizeStartWidths.push(width);
+                colResizeTableWidth += width;
+            });
+            
+            if (colResizeHeader) {
+                colResizeHeader.classList.add('resizing');
+            }
+            
+            document.addEventListener('mousemove', handleColResize);
+            document.addEventListener('mouseup', stopColResize);
+        }
+        
+        function handleColResize(e) {
+            if (!isColResizing || !colResizeHeader || colResizeNumCols < 2) return;
+            
+            const deltaX = e.clientX - colResizeStartX;
+            const minWidthPx = 40; // Minimum column width in pixels
+            
+            // Calculate new width for the resized column
+            const currentColStartWidth = colResizeStartWidths[colResizeColIndex];
+            const nextColStartWidth = colResizeStartWidths[colResizeColIndex + 1];
+            
+            // The resized column takes from the next column
+            let newCurrentWidth = Math.max(minWidthPx, currentColStartWidth + deltaX);
+            let newNextWidth = Math.max(minWidthPx, nextColStartWidth - deltaX);
+            
+            // Ensure we don't exceed bounds
+            if (newCurrentWidth < minWidthPx) {
+                newCurrentWidth = minWidthPx;
+                newNextWidth = currentColStartWidth + nextColStartWidth - minWidthPx;
+            }
+            if (newNextWidth < minWidthPx) {
+                newNextWidth = minWidthPx;
+                newCurrentWidth = currentColStartWidth + nextColStartWidth - minWidthPx;
+            }
+            
+            // Convert to percentages
+            const currentPct = (newCurrentWidth / colResizeTableWidth * 100).toFixed(1);
+            const nextPct = (newNextWidth / colResizeTableWidth * 100).toFixed(1);
+            
+            // Update the col elements
+            const cols = colResizeTable.querySelectorAll('colgroup col');
+            const currentColEl = cols[colResizeColIndex + 1]; // +1 because first col is for row actions
+            const nextColEl = cols[colResizeColIndex + 2];
+            
+            if (currentColEl) {
+                currentColEl.style.width = currentPct + '%';
+            }
+            if (nextColEl) {
+                nextColEl.style.width = nextPct + '%';
+            }
+            
+            // Update indicator
+            const indicator = colResizeHeader.querySelector('.col-width-indicator');
+            if (indicator) {
+                indicator.textContent = currentPct + '%';
+            }
+        }
+        
+        function stopColResize() {
+            if (isColResizing && colResizeTable && colResizeColIndex >= 0) {
+                // Calculate final percentages for ALL columns
+                const headerCells = colResizeTable.querySelectorAll('thead th.resizable');
+                const finalWidths = [];
+                let totalWidth = 0;
+                
+                headerCells.forEach(th => {
+                    const width = th.offsetWidth;
+                    finalWidths.push(width);
+                    totalWidth += width;
+                });
+                
+                // Convert all widths to percentages
+                const percentages = finalWidths.map(w => {
+                    const pct = (w / totalWidth * 100).toFixed(1);
+                    return pct + '%';
+                });
+                
+                // Save to question data
+                updateAllColumnWidths(percentages);
+                
+                if (colResizeHeader) {
+                    colResizeHeader.classList.remove('resizing');
+                }
+            }
+            
+            isColResizing = false;
+            colResizeStartX = 0;
+            colResizeColIndex = -1;
+            colResizeStartWidths = [];
+            colResizeTableWidth = 0;
+            colResizeTable = null;
+            colResizeHeader = null;
+            colResizeNumCols = 0;
+            
+            document.removeEventListener('mousemove', handleColResize);
+            document.removeEventListener('mouseup', stopColResize);
+        }
+        
+        function updateAllColumnWidths(percentages) {
+            if (activeIndex < 0 || !activeData[activeIndex]) return;
+            
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.style) q.data.style = {};
+            
+            // Set all column widths
+            q.data.style.column_widths = percentages;
+            
+            updateJsonView();
+            renderList();
+            refreshPreviewIfVisible();
+        }
+        
+        function clearColumnWidths() {
+            if (activeIndex < 0 || !activeData[activeIndex]) return;
+            
+            const q = activeData[activeIndex];
+            if (q.data?.style?.column_widths) {
+                delete q.data.style.column_widths;
+                renderTableEditor(q.data);
+                updateJsonView();
+                refreshPreviewIfVisible();
             }
         }
         
@@ -4883,6 +5126,8 @@
                 const gridLines = tableStyle.table_grid_lines || 'all';
                 // v4.6: hide_header is boolean
                 const hideHeader = tableStyle.hide_header === true;
+                // v4.9: column_widths for custom column sizing
+                const columnWidths = tableStyle.column_widths || [];
                 
                 const tableData = data.table;
                 const header = tableData.header || [];
@@ -4907,6 +5152,17 @@
                         default:
                             return '';
                     }
+                }
+                
+                // v4.9: Build colgroup for column widths
+                let colgroupHtml = '';
+                if (columnWidths.length > 0) {
+                    const colItems = [];
+                    for (let c = 0; c < numCols; c++) {
+                        const colWidth = columnWidths[c] || '';
+                        colItems.push(`<col ${colWidth ? `style="width:${colWidth}"` : ''}>`);
+                    }
+                    colgroupHtml = `<colgroup>${colItems.join('')}</colgroup>`;
                 }
                 
                 // Build table header row (only if header exists and not hidden)
@@ -4942,6 +5198,7 @@
                 tableHtml = `
                     <div class="p-table-container">
                         <table class="p-table-grid" style="${tableBorderStyle}">
+                            ${colgroupHtml}
                             ${theadHtml}
                             <tbody>
                                 ${tableRows}

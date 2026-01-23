@@ -56,11 +56,12 @@ const COMPOSITE_STYLE = {
     sub_questions_layout: 'vertical'
 };
 
-// v4.8: Table-specific style (hide_header is boolean)
+// v4.9: Table-specific style (hide_header is boolean, column_widths is optional array)
 const TABLE_STYLE = {
     image_layout: 'vertical',
     table_grid_lines: 'all',
     hide_header: false
+    // column_widths: [] - optional, not set by default
 };
 
 // Legacy: Combined default for backwards compatibility
@@ -536,6 +537,10 @@ function buildTableData(content, oldContent) {
             data.style.hide_header = oldContent.style.hide_header !== 'none';
         }
     }
+    // v4.9: Preserve column_widths if present
+    if (oldContent?.style?.column_widths && Array.isArray(oldContent.style.column_widths)) {
+        data.style.column_widths = oldContent.style.column_widths;
+    }
     
     return data;
 }
@@ -557,7 +562,7 @@ function buildCompositeData(content) {
     // Convert sub-questions
     const subQuestions = (content.subquestions || content.sub_questions || []).map(sq => {
         const subType = mapOldTypeToNew(sq.type || 'short_answer');
-        return {
+    return {
             id: sq.sub_id || sq.id || 'a',
             type: subType,
             data: convertContentToData({
@@ -776,6 +781,10 @@ function normalizeStyleValues(style, type) {
             normalized.hide_header = normalized.hide_header !== 'none';
         } else if (normalized.hide_header === undefined) {
             normalized.hide_header = false;
+        }
+        // v4.9: column_widths - preserve if valid array
+        if (normalized.column_widths && !Array.isArray(normalized.column_widths)) {
+            delete normalized.column_widths;
         }
     }
     
