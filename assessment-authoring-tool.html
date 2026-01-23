@@ -586,6 +586,7 @@
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
             box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 11pt; line-height: 1.4; color: #000;
+            text-align: left;
         }
         
         .a4-pages-container {
@@ -657,19 +658,115 @@
         .p-table-grid td { background: white; }
         .p-table-grid .row-header { background: #f9fafb; font-weight: 500; text-align: left; }
         
-        .p-asset { margin: 0.5rem 0; text-align: center; }
-        .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; }
-        .p-asset-placeholder { display: block; border: 1px dashed #9ca3af; background: #f9fafb; padding: 1.5rem 1rem; margin: 0.75rem 0; color: #6b7280; font-family: sans-serif; font-size: 0.8rem; text-align: center; border-radius: 6px; }
+        .p-asset { margin: 0.5rem auto; text-align: center; }
+        .p-asset img { max-width: 100%; max-height: 200px; border: 1px solid #ccc; display: block; margin: 0 auto; }
+        .p-asset-placeholder { display: block; border: 1px dashed #9ca3af; background: #f9fafb; padding: 1.5rem 1rem; margin: 0.75rem auto; color: #6b7280; font-family: sans-serif; font-size: 0.8rem; text-align: center; border-radius: 6px; width: fit-content; }
+        
+        /* Resizable image container (v4.8) */
+        .p-asset-resizable {
+            position: relative;
+            display: block;
+            margin: 0.5rem auto;
+            width: fit-content;
+            text-align: center;
+        }
+        .p-asset-resizable img {
+            display: block;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+            cursor: default;
+        }
+        .p-asset-resizable:hover img {
+            border-color: #3b82f6;
+        }
+        /* During resize, prevent layout shifts by fixing container dimensions */
+        .p-asset-resizable.resizing {
+            /* Container size is fixed during resize to prevent text reflow */
+        }
+        .p-asset-resizable .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .p-asset-resizable:hover .resize-handle {
+            opacity: 1;
+        }
+        .p-asset-resizable .resize-handle-se {
+            right: -6px;
+            bottom: -6px;
+            cursor: se-resize;
+        }
+        .p-asset-resizable .resize-handle-e {
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: e-resize;
+        }
+        .p-asset-resizable .resize-handle-s {
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: s-resize;
+        }
+        .p-asset-resizable .size-tooltip {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 12;
+        }
+        .p-asset-resizable.resizing .size-tooltip {
+            opacity: 1;
+        }
+        .p-asset-resizable .reset-size-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            font-size: 12px;
+            line-height: 14px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 11;
+        }
+        .p-asset-resizable:hover .reset-size-btn {
+            opacity: 1;
+        }
+        .p-asset-resizable .reset-size-btn:hover {
+            background: #dc2626;
+        }
 
         /* Grid layout for preview sections (text left, media right) */
         .p-section-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
-        .p-section-grid .p-section-text { flex: 1; }
+        .p-section-grid .p-section-text { flex: 1; text-align: left; }
         .p-section-grid .p-section-media { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; max-width: 200px; }
         .p-section-grid .p-section-media .p-asset { margin: 0; }
         .p-section-grid .p-section-media .p-asset img { max-width: 180px; max-height: 150px; }
         
         /* Vertical layout (default - text above media) */
-        .p-section-stack { display: flex; flex-direction: column; }
+        .p-section-stack { display: flex; flex-direction: column; text-align: left; }
+        .p-section-stack .p-section-text { text-align: left; }
         .p-section-stack .p-section-media { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
         
         /* Options grid layout in preview */
@@ -2432,6 +2529,7 @@
 
             // Update subquestions layout buttons (default to vertical)
             updateLayoutButtons(data.style?.sub_questions_layout || 'vertical');
+            
             updateJsonView();
         }
 
@@ -2472,6 +2570,277 @@
             if (!q.solution) q.solution = {};
             q.solution.text = val;
             updateJsonView();
+        }
+
+        // v4.8: Image size drag controls - dimensions stored in tag [[id|height:H|width:W]]
+        let isResizing = false;
+        let resizeStartX = 0;
+        let resizeStartY = 0;
+        let resizeStartWidth = 0;
+        let resizeStartHeight = 0;
+        let resizeDirection = '';
+        let resizeTarget = null;
+        let resizeContainer = null;
+        let resizeImageTag = ''; // Store the original tag being resized
+        
+        // Parse image tag to extract id and dimensions
+        // Format: [[id]] or [[id|height:H|width:W]]
+        function parseImageTag(tag) {
+            const parts = tag.split('|');
+            const result = { id: parts[0], width: null, height: null };
+            
+            for (let i = 1; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (part.startsWith('width:')) {
+                    result.width = parseInt(part.substring(6));
+                } else if (part.startsWith('height:')) {
+                    result.height = parseInt(part.substring(7));
+                }
+            }
+            return result;
+        }
+        
+        // Build image tag with dimensions
+        // Format: [[id|height:H|width:W]]
+        function buildImageTag(id, width, height) {
+            let tag = id;
+            if (height) tag += `|height:${Math.round(height)}`;
+            if (width) tag += `|width:${Math.round(width)}`;
+            return `[[${tag}]]`;
+        }
+        
+        // Update image tag in content with new dimensions
+        function updateImageTagInContent(imageId, width, height) {
+            if (activeIndex < 0 || !activeData[activeIndex]) {
+                console.warn('No active question to update image tag');
+                return;
+            }
+            
+            const q = activeData[activeIndex];
+            if (!q.data) return;
+            
+            // Regex to find image tags with this ID (with or without dimensions)
+            const tagRegex = new RegExp(`\\[\\[${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
+            const newTag = buildImageTag(imageId, width, height);
+            
+            // Update content field
+            if (q.data.content) {
+                q.data.content = q.data.content.replace(tagRegex, newTag);
+            }
+            
+            // Update common_content for COMPOSITE
+            if (q.data.common_content) {
+                q.data.common_content = q.data.common_content.replace(tagRegex, newTag);
+            }
+            
+            // Update options for MCQ
+            if (q.data.options) {
+                q.data.options.forEach(opt => {
+                    if (opt.text) {
+                        opt.text = opt.text.replace(tagRegex, newTag);
+                    }
+                });
+            }
+            
+            // Update pairs for MATCH
+            if (q.data.pairs) {
+                q.data.pairs.forEach(pair => {
+                    if (pair.left) pair.left = pair.left.replace(tagRegex, newTag);
+                    if (pair.right) pair.right = pair.right.replace(tagRegex, newTag);
+                });
+            }
+            
+            // Update sub_questions for COMPOSITE
+            if (q.data.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.data?.content) {
+                        sq.data.content = sq.data.content.replace(tagRegex, newTag);
+                    }
+                    if (sq.data?.options) {
+                        sq.data.options.forEach(opt => {
+                            if (opt.text) {
+                                opt.text = opt.text.replace(tagRegex, newTag);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Update JSON view and list
+            updateJsonView();
+            renderList();
+            
+            // Also update the prompt textarea if in edit mode
+            const promptInput = document.getElementById('input-prompt');
+            if (promptInput && q.type === 'COMPOSITE') {
+                promptInput.value = q.data.common_content || '';
+            } else if (promptInput) {
+                promptInput.value = q.data.content || '';
+            }
+        }
+        
+        // Helper to escape regex special characters
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // Clear image dimensions from tag
+        function clearImageSize(imageId) {
+            if (activeIndex < 0 || !activeData[activeIndex]) return;
+            
+            const q = activeData[activeIndex];
+            if (!q.data) return;
+            
+            // Regex to find image tags with this ID
+            const tagRegex = new RegExp(`\\[\\[${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
+            const newTag = `[[${imageId}]]`; // Tag without dimensions
+            
+            // Update all content fields
+            if (q.data.content) {
+                q.data.content = q.data.content.replace(tagRegex, newTag);
+            }
+            if (q.data.common_content) {
+                q.data.common_content = q.data.common_content.replace(tagRegex, newTag);
+            }
+            if (q.data.options) {
+                q.data.options.forEach(opt => {
+                    if (opt.text) opt.text = opt.text.replace(tagRegex, newTag);
+                });
+            }
+            if (q.data.pairs) {
+                q.data.pairs.forEach(pair => {
+                    if (pair.left) pair.left = pair.left.replace(tagRegex, newTag);
+                    if (pair.right) pair.right = pair.right.replace(tagRegex, newTag);
+                });
+            }
+            if (q.data.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.data?.content) {
+                        sq.data.content = sq.data.content.replace(tagRegex, newTag);
+                    }
+                    if (sq.data?.options) {
+                        sq.data.options.forEach(opt => {
+                            if (opt.text) opt.text = opt.text.replace(tagRegex, newTag);
+                        });
+                    }
+                });
+            }
+            
+            updateJsonView(); 
+            renderList();
+            refreshPreviewIfVisible();
+        }
+        
+        function initImageResize(e, direction, container) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Ensure we have an active question
+            if (activeIndex < 0 || !activeData[activeIndex]) {
+                console.warn('No active question for resize');
+                return;
+            }
+            
+            isResizing = true;
+            resizeDirection = direction;
+            resizeContainer = container;
+            resizeTarget = container.querySelector('img');
+            resizeImageTag = container.dataset.tag || ''; // Get the image tag/id
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            resizeStartWidth = resizeTarget.offsetWidth;
+            resizeStartHeight = resizeTarget.offsetHeight;
+            
+            // Lock container dimensions to prevent text reflow during resize
+            container.style.width = container.offsetWidth + 'px';
+            container.style.height = container.offsetHeight + 'px';
+            container.style.overflow = 'visible';
+            
+            container.classList.add('resizing');
+            document.addEventListener('mousemove', handleImageResize);
+            document.addEventListener('mouseup', stopImageResize);
+        }
+        
+        function handleImageResize(e) {
+            if (!isResizing || !resizeTarget) return;
+            
+            const deltaX = e.clientX - resizeStartX;
+            const deltaY = e.clientY - resizeStartY;
+            
+            let newWidth = resizeStartWidth;
+            let newHeight = resizeStartHeight;
+            
+            if (resizeDirection === 'se' || resizeDirection === 'e') {
+                newWidth = Math.max(50, resizeStartWidth + deltaX);
+            }
+            if (resizeDirection === 'se' || resizeDirection === 's') {
+                newHeight = Math.max(50, resizeStartHeight + deltaY);
+            }
+            
+            // Maintain aspect ratio for corner resize
+            if (resizeDirection === 'se') {
+                const aspectRatio = resizeStartWidth / resizeStartHeight;
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    newHeight = newWidth / aspectRatio;
+                } else {
+                    newWidth = newHeight * aspectRatio;
+                }
+            }
+            
+            resizeTarget.style.width = Math.round(newWidth) + 'px';
+            resizeTarget.style.height = Math.round(newHeight) + 'px';
+            
+            // Update tooltip with current dimensions
+            const tooltip = resizeContainer.querySelector('.size-tooltip');
+            if (tooltip) {
+                tooltip.textContent = `${Math.round(newWidth)} × ${Math.round(newHeight)}`;
+            }
+        }
+        
+        function stopImageResize() {
+            if (isResizing && resizeTarget && resizeImageTag) {
+                const finalWidth = Math.round(resizeTarget.offsetWidth);
+                const finalHeight = Math.round(resizeTarget.offsetHeight);
+                
+                // Parse the tag to get just the ID (without any existing dimensions)
+                const parsed = parseImageTag(resizeImageTag);
+                
+                // Update the image tag in content with new dimensions
+                updateImageTagInContent(parsed.id, finalWidth, finalHeight);
+                
+                // Release the locked container dimensions
+                resizeContainer.style.width = '';
+                resizeContainer.style.height = '';
+                resizeContainer.style.overflow = '';
+                
+                resizeContainer.classList.remove('resizing');
+                
+                // Update the tooltip to show final size with checkmark
+                const tooltip = resizeContainer.querySelector('.size-tooltip');
+                if (tooltip) {
+                    tooltip.textContent = `${finalWidth} × ${finalHeight} ✓`;
+                }
+            }
+            
+            // Also release dimensions if resize was cancelled
+            if (resizeContainer) {
+                resizeContainer.style.width = '';
+                resizeContainer.style.height = '';
+                resizeContainer.style.overflow = '';
+            }
+            
+            isResizing = false;
+            resizeTarget = null;
+            resizeContainer = null;
+            resizeImageTag = '';
+            document.removeEventListener('mousemove', handleImageResize);
+            document.removeEventListener('mouseup', stopImageResize);
+        }
+        
+        function resetImageSize(e, imageId) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearImageSize(imageId);
         }
 
         function insertImageTag(inputId) {
@@ -4358,16 +4727,39 @@
             }
             return width; 
         }
+        // v4.8: formatForPrint handles image tags with embedded dimensions [[id|height:H|width:W]]
+        // Images are wrapped in resizable containers for drag-to-resize in preview
         function formatForPrint(text, options) {
             if(!text) return '';
             let result = text;
             
-            // Handle image tokens [[tag]] - render actual image if available, otherwise placeholder
-            result = result.replace(/\[\[([^\]]+)\]\]/g, (match, tag) => {
-                if (uploadedImages[tag]) {
-                    return `<div class="p-asset"><img src="${uploadedImages[tag]}" alt="${tag}" style="max-width:100%; max-height:200px;"></div>`;
+            // Handle image tokens [[id]] or [[id|height:H|width:W]]
+            result = result.replace(/\[\[([^\]]+)\]\]/g, (match, tagContent) => {
+                // Parse tag to extract id and dimensions
+                const parsed = parseImageTag(tagContent);
+                const imageId = parsed.id;
+                
+                if (uploadedImages[imageId]) {
+                    // Build style from tag dimensions
+                    let imgStyle = '';
+                    if (parsed.width) imgStyle += `width:${parsed.width}px;`;
+                    if (parsed.height) imgStyle += `height:${parsed.height}px;`;
+                    if (!parsed.width && !parsed.height) imgStyle = 'max-width:100%; max-height:200px;';
+                    
+                    const tooltipText = (parsed.width && parsed.height) 
+                        ? `${parsed.width} × ${parsed.height}` 
+                        : 'Drag to resize';
+                    
+                    return `<div class="p-asset-resizable" data-tag="${tagContent}">
+                        <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
+                        <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
+                        <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
+                        <div class="resize-handle resize-handle-s" onmousedown="initImageResize(event, 's', this.parentElement)"></div>
+                        <div class="size-tooltip">${tooltipText}</div>
+                        <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
+                    </div>`;
                 }
-                return `<div class="p-asset-placeholder">📷 Image: ${tag}</div>`;
+                return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
             });
             
             // Handle {{gap}} placeholders for FIB
@@ -4395,14 +4787,38 @@
             container.style.fontSize = theme.base_font_size;
             container.style.lineHeight = theme.line_height;
             
-            // Helper to render image tokens [[tag]] - actual image if available, otherwise placeholder
+            // Helper to render image tokens [[id]] or [[id|height:H|width:W]]
+            // v4.8: Dimensions are embedded in the tag itself
             const renderImageTokens = (text) => {
                 if (!text) return '';
-                return text.replace(/\[\[([^\]]+)\]\]/g, (match, tag) => {
-                    if (uploadedImages[tag]) {
-                        return `<div class="p-asset"><img src="${uploadedImages[tag]}" alt="${tag}" style="max-width:100%; max-height:150px;"></div>`;
+                // Match [[tag]] where tag can include | for parameters
+                return text.replace(/\[\[([^\]]+)\]\]/g, (match, tagContent) => {
+                    // Parse tag to extract id and dimensions
+                    const parsed = parseImageTag(tagContent);
+                    const imageId = parsed.id;
+                    
+                    // Check if we have the image uploaded (match by ID without dimensions)
+                    if (uploadedImages[imageId]) {
+                        // Build style from tag dimensions
+                        let imgStyle = '';
+                        if (parsed.width) imgStyle += `width:${parsed.width}px;`;
+                        if (parsed.height) imgStyle += `height:${parsed.height}px;`;
+                        if (!parsed.width && !parsed.height) imgStyle = 'max-width:100%; max-height:150px;';
+                        
+                        const tooltipText = (parsed.width && parsed.height) 
+                            ? `${parsed.width} × ${parsed.height}` 
+                            : 'Drag to resize';
+                        
+                        return `<div class="p-asset-resizable" data-tag="${tagContent}">
+                            <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
+                            <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
+                            <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
+                            <div class="resize-handle resize-handle-s" onmousedown="initImageResize(event, 's', this.parentElement)"></div>
+                            <div class="size-tooltip">${tooltipText}</div>
+                            <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
+                        </div>`;
                     }
-                    return `<div class="p-asset-placeholder">📷 Image: ${tag}</div>`;
+                    return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
                 });
             };
             

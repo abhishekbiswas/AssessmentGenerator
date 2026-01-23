@@ -40,7 +40,8 @@ const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical'];
 // Regex for image tokens in RichText
 const IMAGE_TOKEN_REGEX = /\[\[([^\]]+)\]\]/g;
 
-// Default style configs for v4.6 (type-specific)
+// Default style configs for v4.8 (type-specific)
+// Note: image dimensions are now embedded in image tags: [[id|height:H|width:W]]
 const BASE_STYLE = {
     image_layout: 'vertical'
 };
@@ -55,7 +56,7 @@ const COMPOSITE_STYLE = {
     sub_questions_layout: 'vertical'
 };
 
-// v4.6: Table-specific style (hide_header is boolean)
+// v4.8: Table-specific style (hide_header is boolean)
 const TABLE_STYLE = {
     image_layout: 'vertical',
     table_grid_lines: 'all',
@@ -618,7 +619,16 @@ function ensureV40Defaults(obj) {
             } else if (sq.data?.style) {
                 sq.data.style = normalizeStyleValues(sq.data.style, sq.type);
             }
+            // Normalize sub-question TABLE data if needed
+            if (sq.type === 'TABLE' && sq.data) {
+                sq.data = normalizeTableData(sq.data);
+            }
         });
+    }
+    
+    // Normalize TABLE type data (v4.6)
+    if (obj.type === 'TABLE' && obj.data) {
+        obj.data = normalizeTableData(obj.data);
     }
     
     // Ensure solution
@@ -626,6 +636,94 @@ function ensureV40Defaults(obj) {
     if (typeof obj.solution === 'string') obj.solution = { text: obj.solution };
     
     return obj;
+}
+
+/**
+ * Normalize table data to v4.6 format
+ * Handles various legacy formats and converts to standard { table: { header?, rows } }
+ * @param {Object} data - Table question data
+ * @returns {Object} Normalized data with proper table structure
+ */
+function normalizeTableData(data) {
+    if (!data) return data;
+    
+    // Already has proper table structure with 2D rows array
+    if (data.table?.rows && Array.isArray(data.table.rows) && 
+        data.table.rows.length > 0 && Array.isArray(data.table.rows[0])) {
+        // Normalize header if it's array of objects
+        if (data.table.header && data.table.header.length > 0 && typeof data.table.header[0] === 'object') {
+            data.table.header = data.table.header.map(h => h.text || h.id || '');
+        }
+        return data;
+    }
+    
+    // Handle table with rows as array of objects [{id, text}, ...]
+    if (data.table?.rows && Array.isArray(data.table.rows) && 
+        data.table.rows.length > 0 && typeof data.table.rows[0] === 'object' && !Array.isArray(data.table.rows[0])) {
+        
+        const oldRows = data.table.rows;
+        const oldHeader = data.table.header || [];
+        
+        // Extract column headers
+        let header = [];
+        if (oldHeader.length > 0) {
+            header = oldHeader.map(h => typeof h === 'object' ? (h.text || h.id || '') : h);
+        }
+        
+        // Build 2D rows array: each row becomes [rowLabel, empty, empty, ...]
+        const numCols = Math.max(header.length, 1);
+        const newRows = oldRows.map(row => {
+            const rowLabel = typeof row === 'object' ? (row.text || row.id || '') : row;
+            const cells = [rowLabel];
+            for (let i = 1; i < numCols; i++) {
+                cells.push('');
+            }
+            return cells;
+        });
+        
+        data.table = {
+            rows: newRows
+        };
+        if (header.length > 0) {
+            data.table.header = header;
+        }
+        
+        return data;
+    }
+    
+    // Handle old format with rows/columns at root level (v4.5 and earlier)
+    if (data.rows && data.columns) {
+        const header = data.columns.map(col => 
+            typeof col === 'object' ? (col.text || col.id || '') : col
+        );
+        
+        const numCols = data.columns.length || 1;
+        const rows = data.rows.map(row => {
+            const rowLabel = typeof row === 'object' ? (row.text || row.id || '') : row;
+            const cells = [rowLabel];
+            for (let i = 1; i < numCols; i++) {
+                cells.push('');
+            }
+            return cells;
+        });
+        
+        // Move to table structure
+        data.table = { header, rows };
+        delete data.rows;
+        delete data.columns;
+        
+        return data;
+    }
+    
+    // Ensure table structure exists with defaults
+    if (!data.table) {
+        data.table = {
+            header: ['Column 1', 'Column 2'],
+            rows: [['Row 1', ''], ['Row 2', '']]
+        };
+    }
+    
+    return data;
 }
 
 /**

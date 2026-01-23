@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Educational Question Schema (v4.6)",
-  "description": "Enhanced schema with type-safe styling. TableData now requires only 'rows' in the table object.",
+  "title": "Educational Question Schema (v4.8)",
+  "description": "Enhanced schema with type-safe styling. Removed oneOf from image_size for flexibility.",
   "type": "object",
   "required": ["id", "metadata", "type", "data", "solution"],
   "properties": {
@@ -46,7 +46,7 @@
   "definitions": {
     "RichText": {
       "type": "string",
-      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[id]])."
+      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[id|height:50|width:75]])."
     },
     "SolutionText": {
       "type": "object",
