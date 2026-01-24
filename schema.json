@@ -46,7 +46,7 @@
   "definitions": {
     "RichText": {
       "type": "string",
-      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[id|height:50|width:75]])."
+      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[image:id|height:50|width:75]])."
     },
     "SolutionText": {
       "type": "object",

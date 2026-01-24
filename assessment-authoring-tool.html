@@ -642,10 +642,11 @@
         .p-group-line { border-bottom: 1px solid #ccc; margin: 0.75rem 0.5rem; }
         
         /* Pairs for match_columns */
-        .p-pairs-container { display: flex; gap: 2rem; margin: 1rem 0; justify-content: center; }
-        .p-pairs-column { flex: 1; max-width: 200px; }
-        .p-pairs-header { font-weight: bold; text-align: center; margin-bottom: 0.5rem; font-size: 10pt; }
-        .p-pairs-item { padding: 0.4rem 0.75rem; margin-bottom: 0.5rem; border: 1px solid #000; background: white; }
+        .p-pairs-container { display: inline-flex; gap: 1.5rem; margin: 1rem 0; }
+        .p-pairs-wrapper { width: 80%; margin: 0 auto; text-align: center; }
+        .p-pairs-column { min-width: 50px; display: flex; flex-direction: column; flex: 0 0 auto; }
+        .p-pairs-header { font-weight: bold; text-align: left; margin-bottom: 0.5rem; font-size: 10pt; padding-left: 0.75rem; }
+        .p-pairs-item { padding: 0.4rem 0.75rem; margin-bottom: 0.5rem; border: 1px solid #000; background: white; text-align: left; white-space: nowrap; }
         .p-pairs-item-id { font-weight: bold; margin-right: 0.5rem; }
         
         /* Items to sort */
@@ -5108,14 +5109,16 @@
                     `<div class="p-pairs-item"><span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>${renderImageTokens(p.right)}</div>`
                     ).join('');
                 stimHtml += `
-                        <div class="p-pairs-container">
-                            <div class="p-pairs-column">
-                                <div class="p-pairs-header">Column A</div>
-                                ${leftItems}
-                            </div>
-                            <div class="p-pairs-column">
-                                <div class="p-pairs-header">Column B</div>
-                                ${rightItems}
+                        <div class="p-pairs-wrapper">
+                            <div class="p-pairs-container">
+                                <div class="p-pairs-column">
+                                    <div class="p-pairs-header">Column A</div>
+                                    ${leftItems}
+                                </div>
+                                <div class="p-pairs-column">
+                                    <div class="p-pairs-header">Column B</div>
+                                    ${rightItems}
+                                </div>
                             </div>
                         </div>`;
                 }
