@@ -618,7 +618,21 @@
         .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
         .p-stimulus { padding: 0.75rem 0; margin-bottom: 1rem; text-align: justify; }
-        .p-word-bank { background: white; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 0.75rem; font-style: normal; font-size: 10pt; text-align: center; }
+        .p-word-bank { 
+            background: white; 
+            padding: 0.75rem 1rem; 
+            border: 2px dashed #666; 
+            border-radius: 8px; 
+            margin: 1rem auto; 
+            font-style: normal; 
+            font-size: 11pt; 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 1.5rem 2rem;
+            width: 80%;
+        }
+        .p-word-bank-item { white-space: nowrap; }
         
         /* Groups for sorting/classification */
         .p-groups-container { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
@@ -1093,13 +1107,38 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            margin-bottom: 0.5rem;
             background: white;
-            padding: 0.5rem;
-            border-radius: 4px;
-            border: 1px solid #e5e7eb;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #fcd34d;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .word-bank-item input { flex: 1; padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem; }
+        .word-bank-item input { 
+            flex: 1; 
+            padding: 0.3rem 0.5rem; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 4px; 
+            font-size: 0.85rem; 
+            min-width: 80px;
+            max-width: 150px;
+        }
+        .word-bank-item input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        }
+        .word-bank-item .delete-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        .word-bank-item .delete-btn:hover {
+            background: #fee2e2;
+        }
 
         /* GROUPS EDITOR (for sorting/classification) */
         .groups-section {
@@ -1702,16 +1741,16 @@
                                     <div class="content-section" style="background:white; padding:1rem; border-radius:6px; border:1px solid var(--border);">
                                         <div class="section-header">
                                             <label class="section-label">QUESTION CONTENT</label>
-                                            <div style="display:flex; gap:0.5rem; align-items:center;">
-                                                <button class="btn btn-sm" onclick="insertImageTag('input-prompt')">+ Add Image</button>
-                                            </div>
                                         </div>
                                         <div id="prompt-content" class="section-content-stack">
                                             <div class="section-text-area">
                                                 <textarea class="input-bare prompt-input" id="input-prompt" oninput="updatePrompt(this.value)" placeholder="Enter text..."></textarea>
                                             </div>
                                             <div class="section-media-area">
-                                        <div id="prompt-assets" class="asset-container"></div>
+                                                <div id="prompt-assets" class="asset-container">
+                                                    <span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span><br>
+                                                    <span style="font-size:0.7rem; color:#999;">Blanks: Use {{gap}} tokens in content</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1736,15 +1775,6 @@
                                         <div id="stimulus-assets" class="asset-container"></div>
                                             </div>
                                     </div>
-
-                                        <!-- Word Bank Section (inside Stimulus) -->
-                                        <div id="word-bank-section" class="word-bank-section" style="display:none;">
-                                            <div class="section-header">
-                                                <label style="font-size:0.7rem; font-weight:700; color:var(--text-muted);">WORD BANK</label>
-                                                <button class="btn btn-sm" onclick="addWordBankItem()" style="font-size:0.7rem;">+ Add Word</button>
-                                            </div>
-                                            <div id="word-bank-list"></div>
-                                        </div>
 
                                         <!-- Groups Section (inside Stimulus - for sorting/classification) -->
                                         <div id="groups-section" class="groups-section" style="display:none;">
@@ -1788,6 +1818,18 @@
                                             </div>
                                         </div>
                                         <div id="options-list"></div>
+                                    </div>
+
+                                    <!-- Word Bank Section (options_pool for FIB / shared for COMPOSITE) -->
+                                    <div id="word-bank-section" class="content-section" style="display:none; background:#fffbeb; padding:1rem; border-radius:6px; border:1px solid #fcd34d;">
+                                        <div class="section-header">
+                                            <label class="section-label" id="word-bank-label" style="color:#92400e;">WORD BANK (options_pool)</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <button class="btn btn-sm" onclick="addWordBankItem()" style="font-size:0.7rem; background:#fef3c7; border-color:#fcd34d; color:#92400e;">+ Add Word</button>
+                                            </div>
+                                        </div>
+                                        <p id="word-bank-hint" style="font-size:0.7rem; color:#b45309; margin:0.5rem 0;">Words available for fill-in-the-blank questions</p>
+                                        <div id="word-bank-list" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
                                     </div>
 
                                     <!-- TABLE Editor Section (for TABLE type - v4.6) -->
@@ -2528,8 +2570,21 @@
             // FIB options_pool as word bank
             if(isFibType && data.options_pool && data.options_pool.length > 0) {
                 document.getElementById('word-bank-section').style.display = 'block';
-                const wordBankItems = data.options_pool.map((text, idx) => ({ id: `wb_${idx}`, text }));
-                renderWordBank(wordBankItems);
+                document.getElementById('word-bank-label').textContent = 'WORD BANK (options_pool)';
+                document.getElementById('word-bank-hint').textContent = 'Words available for fill-in-the-blank questions';
+                renderWordBank(data.options_pool);
+            }
+            
+            // COMPOSITE: Check for shared options_pool across FIB sub-questions
+            if(isCompositeType && data.sub_questions) {
+                const fibSubs = data.sub_questions.filter(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
+                if (fibSubs.length > 0) {
+                    // Show word bank section for shared editing
+                    document.getElementById('word-bank-section').style.display = 'block';
+                    document.getElementById('word-bank-label').textContent = 'SHARED WORD BANK (options_pool)';
+                    document.getElementById('word-bank-hint').textContent = 'Editing here updates all FIB sub-questions';
+                    renderWordBank(fibSubs[0].data.options_pool);
+                }
             }
             
             // MATCH pairs
@@ -3302,68 +3357,132 @@
         
         function toggleWordBank() {
             const q = activeData[activeIndex];
-            // v4.0 FIB uses data.options_pool
-            if (q.type !== 'FIB') return;
+            // v4.0 FIB uses data.options_pool, COMPOSITE uses shared pool across FIB sub-questions
+            if (q.type !== 'FIB' && q.type !== 'COMPOSITE') return;
             
             const section = document.getElementById('word-bank-section');
             if(section.style.display === 'none') {
                 section.style.display = 'block';
                 if (!q.data) q.data = {};
-                if(!q.data.options_pool) q.data.options_pool = [];
-                if(q.data.options_pool.length === 0) {
-                    addWordBankItem();
+                
+                if (q.type === 'FIB') {
+                    if(!q.data.options_pool) q.data.options_pool = [];
+                    if(q.data.options_pool.length === 0) {
+                        addWordBankItem();
+                    }
+                } else if (q.type === 'COMPOSITE' && q.data.sub_questions) {
+                    // Initialize options_pool for all FIB sub-questions
+                    const fibSubs = q.data.sub_questions.filter(sq => sq.type === 'FIB');
+                    if (fibSubs.length > 0) {
+                        fibSubs.forEach(sq => {
+                            if (!sq.data) sq.data = {};
+                            if (!sq.data.options_pool) sq.data.options_pool = [];
+                        });
+                        // If all empty, add one item
+                        if (fibSubs[0].data.options_pool.length === 0) {
+                            addWordBankItem();
+                        } else {
+                            renderWordBank(fibSubs[0].data.options_pool);
+                        }
+                    }
                 }
             } else {
                 section.style.display = 'none';
             }
         }
 
-        function renderWordBank(wordBank) {
+        // v4.0: Render options_pool (word bank) for FIB type
+        // For COMPOSITE with shared pool, renders the shared editor
+        function renderWordBank(optionsPool) {
             const container = document.getElementById('word-bank-list');
             container.innerHTML = '';
             
-            wordBank.forEach((item, idx) => {
+            optionsPool.forEach((word, idx) => {
                 const el = document.createElement('div');
                 el.className = 'word-bank-item';
                 el.innerHTML = `
-                    <span style="font-size:0.7rem; font-weight:700; color:#92400e; min-width:40px;">${item.id || `wb_${idx+1}`}</span>
-                    <input type="text" value="${item.text || ''}" placeholder="Enter text..." 
+                    <input type="text" value="${word || ''}" placeholder="Word ${idx + 1}..." 
                            oninput="updateWordBankItem(${idx}, this.value)">
-                    <button class="btn btn-sm delete-sub-btn" onclick="deleteWordBankItem(${idx})">✕</button>
+                    <button class="delete-btn" onclick="deleteWordBankItem(${idx})" title="Remove word">✕</button>
                 `;
                 container.appendChild(el);
             });
         }
 
+        // v4.0: Add word to options_pool
         function addWordBankItem() {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if(!stimulus) return;
-            if(!stimulus.word_bank) stimulus.word_bank = [];
-            const newIdx = stimulus.word_bank.length;
-            stimulus.word_bank.push({ id: `wb_${newIdx + 1}`, text: '', assets: [] });
-            renderWordBank(stimulus.word_bank);
+            if (!q.data) q.data = {};
+            
+            // For FIB type
+            if (q.type === 'FIB') {
+                if (!q.data.options_pool) q.data.options_pool = [];
+                q.data.options_pool.push('');
+                renderWordBank(q.data.options_pool);
+            }
+            // For COMPOSITE type - add to all FIB sub-questions
+            else if (q.type === 'COMPOSITE' && q.data.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.type === 'FIB') {
+                        if (!sq.data) sq.data = {};
+                        if (!sq.data.options_pool) sq.data.options_pool = [];
+                        sq.data.options_pool.push('');
+                    }
+                });
+                // Render the shared pool (use first FIB sub-question's pool)
+                const firstFib = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool);
+                if (firstFib) renderWordBank(firstFib.data.options_pool);
+            }
+            
             document.getElementById('word-bank-section').style.display = 'block';
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
+        // v4.0: Update word in options_pool
         function updateWordBankItem(idx, value) {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if (stimulus?.word_bank?.[idx]) {
-                stimulus.word_bank[idx].text = value;
+            
+            // For FIB type
+            if (q.type === 'FIB' && q.data?.options_pool) {
+                q.data.options_pool[idx] = value;
             }
+            // For COMPOSITE type - update all FIB sub-questions' options_pool
+            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.type === 'FIB' && sq.data?.options_pool) {
+                        sq.data.options_pool[idx] = value;
+                    }
+                });
+            }
+            
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
+        // v4.0: Delete word from options_pool
         function deleteWordBankItem(idx) {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if (stimulus?.word_bank) {
-                stimulus.word_bank.splice(idx, 1);
-                renderWordBank(stimulus.word_bank);
+            
+            // For FIB type
+            if (q.type === 'FIB' && q.data?.options_pool) {
+                q.data.options_pool.splice(idx, 1);
+                renderWordBank(q.data.options_pool);
             }
+            // For COMPOSITE type - delete from all FIB sub-questions
+            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.type === 'FIB' && sq.data?.options_pool) {
+                        sq.data.options_pool.splice(idx, 1);
+                    }
+                });
+                // Render the shared pool (use first FIB sub-question's pool)
+                const firstFib = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool);
+                if (firstFib) renderWordBank(firstFib.data.options_pool);
+            }
+            
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
         // =====================================================
@@ -4512,7 +4631,7 @@
                     // Asset container - v4.0 uses [[tag]] tokens, not assets array
                     const assetCont = document.createElement('div');
                     assetCont.className = 'asset-container';
-                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span>';
+                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span><br><span style="font-size:0.7rem; color:#999;">Blanks: Use {{gap}} tokens in content</span>';
                     contentWrapper.appendChild(assetCont);
                     
                     card.appendChild(contentWrapper);
@@ -4592,119 +4711,6 @@
                     }
                     
                     card.appendChild(actionsRow);
-                    
-                    // Grading section (replaces Answer/Rubric)
-                    const grading = sq.grading || { kind: 'text', values: [], points: '1' };
-                    const hasGradingValues = grading.values && grading.values.length > 0;
-                    
-                    // Add Grading button if no values yet
-                    const addSectionsDiv = document.createElement('div');
-                    addSectionsDiv.style.marginTop = '0.5rem';
-                    addSectionsDiv.style.display = 'flex';
-                    addSectionsDiv.style.gap = '0.5rem';
-                    
-                    if (!hasGradingValues) {
-                        const addGradingBtn = document.createElement('button');
-                        addGradingBtn.className = 'btn btn-sm';
-                        addGradingBtn.style.fontSize = '0.65rem';
-                        addGradingBtn.style.color = '#047857';
-                        addGradingBtn.innerText = '+ Grading';
-                        addGradingBtn.onclick = () => {
-                            if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
-                            sq.grading.values = [''];
-                            renderSubQuestions(q);
-                            updateJsonView();
-                        };
-                        addSectionsDiv.appendChild(addGradingBtn);
-                    }
-                    
-                    if (addSectionsDiv.children.length > 0) {
-                        card.appendChild(addSectionsDiv);
-                    }
-                    
-                    // Grading section (only if has values)
-                    if (hasGradingValues) {
-                        const gradingDiv = document.createElement('div');
-                        gradingDiv.style.marginTop = '0.75rem';
-                        gradingDiv.style.borderTop = '1px solid #e5e7eb';
-                        gradingDiv.style.paddingTop = '0.5rem';
-                        
-                        const gradingHeader = document.createElement('div');
-                        gradingHeader.style.display = 'flex';
-                        gradingHeader.style.alignItems = 'center';
-                        gradingHeader.style.gap = '0.5rem';
-                        gradingHeader.style.marginBottom = '0.25rem';
-                        gradingHeader.innerHTML = `<span style="font-size:0.7rem; color:#047857; font-weight:700;">GRADING</span>`;
-                        
-                        const kindSelect = document.createElement('select');
-                        kindSelect.style.fontSize = '0.7rem';
-                        kindSelect.style.padding = '2px 4px';
-                        kindSelect.style.border = '1px solid #6ee7b7';
-                        kindSelect.style.borderRadius = '4px';
-                        kindSelect.innerHTML = `
-                            <option value="text" ${grading.kind === 'text' ? 'selected' : ''}>Text</option>
-                            <option value="single_selection" ${grading.kind === 'single_selection' ? 'selected' : ''}>Single Selection</option>
-                            <option value="multiple_selection" ${grading.kind === 'multiple_selection' ? 'selected' : ''}>Multiple Selection</option>
-                            <option value="sample_text" ${grading.kind === 'sample_text' ? 'selected' : ''}>Sample Text</option>
-                            <option value="matching" ${grading.kind === 'matching' ? 'selected' : ''}>Matching</option>
-                            <option value="sequencing" ${grading.kind === 'sequencing' ? 'selected' : ''}>Sequencing</option>
-                            <option value="grouping" ${grading.kind === 'grouping' ? 'selected' : ''}>Grouping</option>
-                            <option value="coordinate" ${grading.kind === 'coordinate' ? 'selected' : ''}>Coordinate</option>
-                        `;
-                        kindSelect.onchange = (e) => {
-                            sq.grading.kind = e.target.value;
-                            updateJsonView();
-                        };
-                        
-                        // Remove grading button
-                        const removeGradingBtn = document.createElement('button');
-                        removeGradingBtn.className = 'btn btn-sm';
-                        removeGradingBtn.style.fontSize = '0.6rem';
-                        removeGradingBtn.style.padding = '2px 6px';
-                        removeGradingBtn.style.color = '#991b1b';
-                        removeGradingBtn.innerText = '✕';
-                        removeGradingBtn.onclick = () => {
-                            sq.grading.values = [];
-                            renderSubQuestions(q);
-                            updateJsonView();
-                        };
-                        
-                        gradingHeader.appendChild(kindSelect);
-                        gradingHeader.appendChild(removeGradingBtn);
-                        gradingDiv.appendChild(gradingHeader);
-                        
-                        const valuesInput = document.createElement('input');
-                        valuesInput.className = 'input-bare';
-                        valuesInput.style.color = '#047857';
-                        valuesInput.style.fontSize = '0.9rem';
-                        valuesInput.value = grading.values.join(', ');
-                        valuesInput.placeholder = grading.kind === 'single_selection' ? 'Enter option ID' : 'Enter values (comma-separated)';
-                        valuesInput.oninput = (e) => { 
-                            sq.grading.values = e.target.value.split(',').map(v => v.trim()).filter(v => v);
-                            updateJsonView(); 
-                        };
-                        gradingDiv.appendChild(valuesInput);
-                        
-                        // Explanation field
-                        const explanationLabel = document.createElement('label');
-                        explanationLabel.style.cssText = 'display:block; font-size:0.65rem; color:#047857; font-weight:600; margin-top:0.5rem; margin-bottom:0.25rem;';
-                        explanationLabel.innerText = 'Explanation (Optional)';
-                        gradingDiv.appendChild(explanationLabel);
-                        
-                        const explanationInput = document.createElement('textarea');
-                        explanationInput.className = 'input-bare';
-                        explanationInput.style.cssText = 'font-size:0.85rem; min-height:50px; color:#047857; background:#f0fdf4; border:1px solid #6ee7b7; border-radius:4px;';
-                        explanationInput.value = grading.explanation || '';
-                        explanationInput.placeholder = 'Explain the correct answer...';
-                        explanationInput.oninput = (e) => {
-                            if (!sq.grading) sq.grading = { kind: 'text', values: [], points: '1' };
-                            sq.grading.explanation = e.target.value;
-                            updateJsonView();
-                        };
-                        gradingDiv.appendChild(explanationInput);
-                        
-                        card.appendChild(gradingDiv);
-                    }
                     
                     container.appendChild(card);
                 });
@@ -5077,10 +5083,11 @@
             // Stimulus section - not used in v4.0, content is inline
             let stimHtml = '';
             
-            // Word bank for FIB type
+            // Word bank for FIB type - render below content
+            let wordBankHtml = '';
             if (qType === 'FIB' && data.options_pool && data.options_pool.length > 0) {
-                const words = data.options_pool.join(' &nbsp;|&nbsp; ');
-                stimHtml = `<div class="p-word-bank">${words}</div>`;
+                const wordItems = data.options_pool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
+                wordBankHtml = `<div class="p-word-bank">${wordItems}</div>`;
             }
             
             // Pairs for MATCH type
@@ -5213,7 +5220,30 @@
             
             // Sub-questions section for COMPOSITE type
             let subHtml = '';
+            let sharedWordBankHtml = '';
             if(qType === 'COMPOSITE' && data.sub_questions && data.sub_questions.length > 0) {
+                // Check if all FIB sub-questions share the same options_pool
+                const fibSubQuestions = data.sub_questions.filter(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
+                let hasSharedOptionsPool = false;
+                let sharedOptionsPool = [];
+                
+                if (fibSubQuestions.length > 1) {
+                    // Check if all FIB sub-questions have the same options_pool
+                    const firstPool = JSON.stringify(fibSubQuestions[0].data.options_pool.slice().sort());
+                    hasSharedOptionsPool = fibSubQuestions.every(sq => 
+                        JSON.stringify(sq.data.options_pool.slice().sort()) === firstPool
+                    );
+                    if (hasSharedOptionsPool) {
+                        sharedOptionsPool = fibSubQuestions[0].data.options_pool;
+                    }
+                }
+                
+                // Render shared word bank once below all sub-questions if applicable
+                if (hasSharedOptionsPool && sharedOptionsPool.length > 0) {
+                    const wordItems = sharedOptionsPool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
+                    sharedWordBankHtml = `<div class="p-word-bank">${wordItems}</div>`;
+                }
+                
                 // Use style.sub_questions_layout, default to vertical
                 const sectionSubLayout = data.style?.sub_questions_layout || 'vertical';
                 const subs = data.sub_questions.map((sq, i) => {
@@ -5242,10 +5272,11 @@
                         optHtml = `<div style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
                     }
                     
-                    // FIB options_pool as word bank
+                    // FIB options_pool as word bank - only show if NOT using shared pool
                     let sqWordBank = '';
-                    if (sq.type === 'FIB' && sqData.options_pool && sqData.options_pool.length > 0) {
-                        sqWordBank = `<div style="font-size:0.8rem; color:#666; margin-top:4px;">Word bank: ${sqData.options_pool.join(', ')}</div>`;
+                    if (sq.type === 'FIB' && sqData.options_pool && sqData.options_pool.length > 0 && !hasSharedOptionsPool) {
+                        const sqWordItems = sqData.options_pool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
+                        sqWordBank = `<div class="p-word-bank" style="margin-top:8px; font-size:9pt;">${sqWordItems}</div>`;
                     }
                     
                     // TABLE type for sub-questions (v4.6 - uses data.table with header and rows)
@@ -5336,12 +5367,13 @@
             const marksText = `[${points}]`;
             
             // Render content first to check if it needs multiple pages
+            // For COMPOSITE: sharedWordBankHtml renders below content but above sub-questions
             container.innerHTML = `<div class="p-q-block">
                 <div class="p-q-header">
                     <div class="p-q-content">${promptHtml}</div>
                     <div class="p-q-marks">${marksText}</div>
                 </div>
-                ${stimHtml}${optionsHtml}${tableHtml}${subHtml}
+                ${stimHtml}${optionsHtml}${tableHtml}${wordBankHtml}${sharedWordBankHtml}${subHtml}
             </div>`;
         }
 
