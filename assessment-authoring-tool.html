@@ -5005,8 +5005,11 @@
                 return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
             });
             
-            // Handle {{gap}} placeholders for FIB
-            result = result.replace(/\{\{gap\}\}/g, '<span style="display:inline-block; border-bottom:2px solid #000; min-width:60px; margin:0 4px;">&nbsp;</span>');
+            // Handle {{gap}} or {{gap|width:<integer>}} placeholders for FIB
+            result = result.replace(/\{\{gap(?:\|width:(\d+))?\}\}/g, (match, widthParam) => {
+                const width = widthParam ? `${widthParam}px` : '60px';
+                return `<span style="display:inline-block; border-bottom:2px solid #000; min-width:${width}; margin:0 4px;">&nbsp;</span>`;
+            });
             
             // Handle __ blanks
             if(result.includes('__')) {
