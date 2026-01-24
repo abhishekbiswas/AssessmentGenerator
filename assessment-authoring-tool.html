@@ -1159,11 +1159,51 @@
         .groups-item .group-id { width: 40px; padding: 0.4rem; border: 1px solid #fcd34d; border-radius: 4px; font-size: 0.85rem; font-weight: 600; text-align: center; background: white; }
         .groups-item input.group-text { flex: 1; padding: 0.4rem; border: 1px solid #fcd34d; border-radius: 4px; font-size: 0.85rem; }
 
-        /* PAIRS EDITOR (for match_columns) */
-        .pairs-section {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
+        /* PAIRS EDITOR (for MATCH type - v4.0) */
+        .pair-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #c4b5fd;
+        }
+        .pair-item .pair-num {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6d28d9;
+            min-width: 24px;
+        }
+        .pair-item input {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            min-width: 100px;
+        }
+        .pair-item input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+        .pair-item .pair-arrow {
+            color: #8b5cf6;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .pair-item .delete-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        .pair-item .delete-btn:hover {
+            background: #fee2e2;
         }
         
         /* TABLE EDITOR STYLES (v4.6) */
@@ -1785,23 +1825,6 @@
                                             <div id="groups-list"></div>
                                         </div>
 
-                                        <!-- Pairs Section (inside Stimulus - for match_columns) -->
-                                        <div id="pairs-section" class="pairs-section" style="display:none;">
-                                            <div class="pairs-column">
-                                                <div class="pairs-column-header">
-                                                    <label>LEFT COLUMN</label>
-                                                    <button class="btn btn-sm" onclick="addPairItem('left')" style="font-size:0.65rem; background:#f5f3ff; border-color:#c4b5fd;">+ Add</button>
-                                                </div>
-                                                <div id="pairs-left-list"></div>
-                                            </div>
-                                            <div class="pairs-column">
-                                                <div class="pairs-column-header">
-                                                    <label>RIGHT COLUMN</label>
-                                                    <button class="btn btn-sm" onclick="addPairItem('right')" style="font-size:0.65rem; background:#f5f3ff; border-color:#c4b5fd;">+ Add</button>
-                                                </div>
-                                                <div id="pairs-right-list"></div>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <!-- Options Section (for MCQ/sequencing/sorting types) -->
@@ -1830,6 +1853,18 @@
                                         </div>
                                         <p id="word-bank-hint" style="font-size:0.7rem; color:#b45309; margin:0.5rem 0;">Words available for fill-in-the-blank questions</p>
                                         <div id="word-bank-list" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                                    </div>
+
+                                    <!-- Pairs Section (for MATCH type - v4.0) -->
+                                    <div id="pairs-section" class="content-section" style="display:none; background:#f5f3ff; padding:1rem; border-radius:6px; border:1px solid #c4b5fd;">
+                                        <div class="section-header">
+                                            <label class="section-label" style="color:#6d28d9;">MATCH PAIRS</label>
+                                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                                <button class="btn btn-sm" onclick="addMatchPair()" style="font-size:0.7rem; background:#ede9fe; border-color:#c4b5fd; color:#6d28d9;">+ Add Pair</button>
+                                            </div>
+                                        </div>
+                                        <p style="font-size:0.7rem; color:#7c3aed; margin:0.5rem 0;">Match items from Column A with Column B</p>
+                                        <div id="pairs-list" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
                                     </div>
 
                                     <!-- TABLE Editor Section (for TABLE type - v4.6) -->
@@ -2587,15 +2622,11 @@
                 }
             }
             
-            // MATCH pairs
-            if(isMatchType && data.pairs && data.pairs.length > 0) {
+            // MATCH pairs (v4.0 schema: data.pairs array with {left, right} objects)
+            if(isMatchType) {
                 document.getElementById('pairs-section').style.display = 'block';
-                // Convert v4.0 pairs format to old format for display
-                const pairsData = {
-                    left_column: data.pairs.map((p, i) => ({ id: `l${i}`, text: p.left })),
-                    right_column: data.pairs.map((p, i) => ({ id: `r${i}`, text: p.right }))
-                };
-                renderPairs(pairsData);
+                if (!data.pairs) data.pairs = [];
+                renderMatchPairs(data.pairs);
             }
             
             // TABLE editor (v4.6)
@@ -3556,95 +3587,67 @@
         }
 
         // =====================================================
-        // PAIRS MANAGEMENT (for match_columns)
+        // PAIRS MANAGEMENT (v4.0 schema: data.pairs array with {left, right} objects)
         // =====================================================
         
-        function togglePairs() {
-            const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if(!stimulus) return;
+        // Render match pairs in the edit view
+        function renderMatchPairs(pairs) {
+            const container = document.getElementById('pairs-list');
+            container.innerHTML = '';
             
-            const section = document.getElementById('pairs-section');
-            if(section.style.display === 'none') {
-                section.style.display = 'block';
-                if(!stimulus.pairs) stimulus.pairs = { left_column: [], right_column: [] };
-                if(stimulus.pairs.left_column.length === 0 && stimulus.pairs.right_column.length === 0) {
-                    addPairItem('left');
-                    addPairItem('right');
-                }
-            } else {
-                section.style.display = 'none';
+            if (!pairs || pairs.length === 0) {
+                container.innerHTML = '<p style="font-size:0.8rem; color:#7c3aed; font-style:italic;">No pairs yet. Click "+ Add Pair" to create one.</p>';
+                return;
             }
-        }
-
-        function renderPairs(pairs) {
-            // Render left column
-            const leftContainer = document.getElementById('pairs-left-list');
-            leftContainer.innerHTML = '';
-            (pairs.left_column || []).forEach((item, idx) => {
-                const el = document.createElement('div');
-                el.className = 'pairs-item';
-                el.innerHTML = `
-                    <input type="text" class="pair-id" value="${item.id || ''}" placeholder="ID" 
-                           oninput="updatePairItem('left', ${idx}, 'id', this.value)">
-                    <input type="text" class="pair-text" value="${item.text || ''}" placeholder="Item text..." 
-                           oninput="updatePairItem('left', ${idx}, 'text', this.value)">
-                    <button class="btn btn-sm delete-sub-btn" onclick="deletePairItem('left', ${idx})">✕</button>
-                `;
-                leftContainer.appendChild(el);
-            });
-
-            // Render right column
-            const rightContainer = document.getElementById('pairs-right-list');
-            rightContainer.innerHTML = '';
-            (pairs.right_column || []).forEach((item, idx) => {
-                const el = document.createElement('div');
-                el.className = 'pairs-item';
-                el.innerHTML = `
-                    <input type="text" class="pair-id" value="${item.id || ''}" placeholder="ID" 
-                           oninput="updatePairItem('right', ${idx}, 'id', this.value)">
-                    <input type="text" class="pair-text" value="${item.text || ''}" placeholder="Definition text..." 
-                           oninput="updatePairItem('right', ${idx}, 'text', this.value)">
-                    <button class="btn btn-sm delete-sub-btn" onclick="deletePairItem('right', ${idx})">✕</button>
-                `;
-                rightContainer.appendChild(el);
-            });
-        }
-
-        function addPairItem(column) {
-            const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            if(!stimulus) return;
-            if(!stimulus.pairs) stimulus.pairs = { left_column: [], right_column: [] };
             
-            const colKey = column === 'left' ? 'left_column' : 'right_column';
-            const prefix = column === 'left' ? 'l' : 'r';
-            const newIdx = stimulus.pairs[colKey].length;
-            stimulus.pairs[colKey].push({ id: `${prefix}${newIdx + 1}`, text: '' });
-            renderPairs(stimulus.pairs);
+            pairs.forEach((pair, idx) => {
+                const el = document.createElement('div');
+                el.className = 'pair-item';
+                el.innerHTML = `
+                    <span class="pair-num">${idx + 1}.</span>
+                    <input type="text" value="${pair.left || ''}" placeholder="Column A item..." 
+                           oninput="updateMatchPair(${idx}, 'left', this.value)">
+                    <span class="pair-arrow">↔</span>
+                    <input type="text" value="${pair.right || ''}" placeholder="Column B item..." 
+                           oninput="updateMatchPair(${idx}, 'right', this.value)">
+                    <button class="delete-btn" onclick="deleteMatchPair(${idx})" title="Remove pair">✕</button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // Add a new match pair
+        function addMatchPair() {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            if (!q.data.pairs) q.data.pairs = [];
+            
+            q.data.pairs.push({ left: '', right: '' });
+            renderMatchPairs(q.data.pairs);
             document.getElementById('pairs-section').style.display = 'block';
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
-        function updatePairItem(column, idx, field, value) {
+        // Update a match pair field
+        function updateMatchPair(idx, field, value) {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            const colKey = column === 'left' ? 'left_column' : 'right_column';
-            if (stimulus?.pairs?.[colKey]?.[idx]) {
-                stimulus.pairs[colKey][idx][field] = value;
+            if (q.data?.pairs?.[idx]) {
+                q.data.pairs[idx][field] = value;
             }
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
-        function deletePairItem(column, idx) {
+        // Delete a match pair
+        function deleteMatchPair(idx) {
             const q = activeData[activeIndex];
-            const stimulus = q.content?.stimulus;
-            const colKey = column === 'left' ? 'left_column' : 'right_column';
-            if (stimulus?.pairs?.[colKey]) {
-                stimulus.pairs[colKey].splice(idx, 1);
-                renderPairs(stimulus.pairs);
+            if (q.data?.pairs) {
+                q.data.pairs.splice(idx, 1);
+                renderMatchPairs(q.data.pairs);
             }
             updateJsonView();
+            renderPreview(q, activeIndex);
         }
 
         // =====================================================
