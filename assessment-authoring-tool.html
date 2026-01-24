@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assessment Question Management | Bryt</title>
+    
+    <!-- Markdown Parser (marked.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- LaTeX Math Rendering (KaTeX) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -648,6 +656,13 @@
         .p-pairs-header { font-weight: bold; text-align: left; margin-bottom: 0.5rem; font-size: 10pt; padding-left: 0.75rem; }
         .p-pairs-item { padding: 0.4rem 0.75rem; margin-bottom: 0.5rem; border: 1px solid #000; background: white; text-align: left; white-space: nowrap; }
         .p-pairs-item-id { font-weight: bold; margin-right: 0.5rem; }
+        
+        /* Math (KaTeX) and Markdown styles */
+        .katex-display { margin: 0.5rem 0; text-align: center; }
+        .katex { font-size: 1.1em; }
+        strong, b { font-weight: 600; }
+        em, i { font-style: italic; }
+        code { background: #f3f4f6; padding: 0.1em 0.3em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
         
         /* Items to sort */
         .p-items-box { margin-top: 1rem; padding: 0.75rem; border: 1px dashed #999; }
@@ -1789,8 +1804,7 @@
                                             </div>
                                             <div class="section-media-area">
                                                 <div id="prompt-assets" class="asset-container">
-                                                    <span style="font-size:0.7rem; color:#999;">Images: Use [[image:tag]] tokens in content</span><br>
-                                                    <span style="font-size:0.7rem; color:#999;">Blanks: Use [[gap]] tokens in content</span>
+                                                    <span style="font-size:0.7rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic*</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -4641,7 +4655,7 @@
                     // Asset container - v4.0 uses [[image:tag]] tokens, not assets array
                     const assetCont = document.createElement('div');
                     assetCont.className = 'asset-container';
-                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[image:tag]] tokens in content</span><br><span style="font-size:0.7rem; color:#999;">Blanks: Use [[gap]] tokens in content</span>';
+                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic*</span>';
                     contentWrapper.appendChild(assetCont);
                     
                     card.appendChild(contentWrapper);
@@ -4986,20 +5000,80 @@
             }
             return width; 
         }
+        // Helper function to render LaTeX math using KaTeX
+        // Supports $...$ for inline and $$...$$ for display math
+        function renderLatexMath(text) {
+            if (!text || typeof katex === 'undefined') return text;
+            
+            // Render display math first ($$...$$)
+            text = text.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+                try {
+                    return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    console.warn('KaTeX display error:', e);
+                    return match;
+                }
+            });
+            
+            // Render inline math ($...$) - be careful not to match $$
+            text = text.replace(/\$([^$]+)\$/g, (match, math) => {
+                try {
+                    return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                } catch (e) {
+                    console.warn('KaTeX inline error:', e);
+                    return match;
+                }
+            });
+            
+            return text;
+        }
+        
+        // Helper function to render Markdown using marked.js
+        function renderMarkdown(text) {
+            if (!text || typeof marked === 'undefined') return text;
+            
+            try {
+                // Configure marked for inline rendering (no wrapping <p> tags for simple text)
+                marked.setOptions({
+                    breaks: true,  // Convert \n to <br>
+                    gfm: true      // GitHub Flavored Markdown
+                });
+                
+                // Use parseInline for text that shouldn't be wrapped in <p>
+                return marked.parseInline(text);
+            } catch (e) {
+                console.warn('Marked error:', e);
+                return text;
+            }
+        }
+        
         // v4.8: formatForPrint handles image tags with embedded dimensions [[image:id|height:H|width:W]]
+        // Also supports Markdown and LaTeX math ($...$ and $$...$$)
+        // Custom tags [[image:...]] and [[gap...]] are protected from Markdown/LaTeX processing
         // Images are wrapped in resizable containers for drag-to-resize in preview
         function formatForPrint(text, options) {
             if(!text) return '';
             let result = text;
             
+            // Step 1: Handle legacy __ blanks FIRST (before any placeholders)
+            // This must happen before we create placeholders to avoid conflicts
+            if(result.includes('__') && !result.includes('[[')) {
+                const w = getBlankStyle(text, options);
+                result = result.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
+            }
+            
+            // Step 2: Protect custom tokens with Unicode placeholders (won't be affected by Markdown/LaTeX)
+            // Using Unicode private-use characters as delimiters: \uE000 and \uE001
+            const imagePlaceholders = [];
+            const gapPlaceholders = [];
+            
             // Handle image tokens [[image:id]] or [[image:id|height:H|width:W]]
             result = result.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
-                // Parse tag to extract id and dimensions
                 const parsed = parseImageTag(tagContent);
                 const imageId = parsed.id;
                 
+                let replacement;
                 if (uploadedImages[imageId]) {
-                    // Build style from tag dimensions
                     let imgStyle = '';
                     if (parsed.width) imgStyle += `width:${parsed.width}px;`;
                     if (parsed.height) imgStyle += `height:${parsed.height}px;`;
@@ -5009,7 +5083,7 @@
                         ? `${parsed.width} × ${parsed.height}` 
                         : 'Drag to resize';
                     
-                    return `<div class="p-asset-resizable" data-tag="${tagContent}">
+                    replacement = `<div class="p-asset-resizable" data-tag="${tagContent}">
                         <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
                         <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
                         <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
@@ -5017,21 +5091,38 @@
                         <div class="size-tooltip">${tooltipText}</div>
                         <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
                     </div>`;
+                } else {
+                    replacement = `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
                 }
-                return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
+                
+                const placeholder = `\uE000IMG${imagePlaceholders.length}\uE001`;
+                imagePlaceholders.push(replacement);
+                return placeholder;
             });
             
             // Handle [[gap]] or [[gap|width:<integer>]] placeholders for FIB
             result = result.replace(/\[\[gap(?:\|width:(\d+))?\]\]/g, (match, widthParam) => {
                 const width = widthParam ? `${widthParam}px` : '60px';
-                return `<span style="display:inline-block; border-bottom:2px solid #000; min-width:${width}; margin:0 4px;">&nbsp;</span>`;
+                const replacement = `<span style="display:inline-block; border-bottom:2px solid #000; min-width:${width}; margin:0 4px;">&nbsp;</span>`;
+                const placeholder = `\uE000GAP${gapPlaceholders.length}\uE001`;
+                gapPlaceholders.push(replacement);
+                return placeholder;
             });
             
-            // Handle __ blanks
-            if(result.includes('__')) {
-                const w = getBlankStyle(text, options);
-                result = result.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
-            }
+            // Step 3: Render LaTeX math (before Markdown to preserve math formatting)
+            result = renderLatexMath(result);
+            
+            // Step 4: Render Markdown
+            result = renderMarkdown(result);
+            
+            // Step 5: Restore placeholders (custom tags are now safely rendered)
+            imagePlaceholders.forEach((html, i) => {
+                result = result.replace(`\uE000IMG${i}\uE001`, html);
+            });
+            gapPlaceholders.forEach((html, i) => {
+                result = result.replace(`\uE000GAP${i}\uE001`, html);
+            });
+            
             return result;
         }
 
@@ -5049,19 +5140,24 @@
             container.style.fontSize = theme.base_font_size;
             container.style.lineHeight = theme.line_height;
             
-            // Helper to render image tokens [[image:id]] or [[image:id|height:H|width:W]]
-            // v4.8: Dimensions are embedded in the tag itself
+            // Helper to render custom tokens and rich text (Markdown + LaTeX)
+            // Handles [[image:id]], [[gap]], and supports $...$ / $$...$$ math and **bold** *italic*
+            // Custom tokens are protected from Markdown/LaTeX processing using Unicode placeholders
             const renderImageTokens = (text) => {
                 if (!text) return '';
-                // Match [[image:tag]] where tag can include | for parameters
-                return text.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
-                    // Parse tag to extract id and dimensions
+                let result = text;
+                
+                // Step 1: Protect custom tokens with Unicode placeholders (\uE000...\uE001)
+                const imagePlaceholders = [];
+                const gapPlaceholders = [];
+                
+                // Handle [[image:id]] or [[image:id|height:H|width:W]]
+                result = result.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
                     const parsed = parseImageTag(tagContent);
                     const imageId = parsed.id;
                     
-                    // Check if we have the image uploaded (match by ID without dimensions)
+                    let replacement;
                     if (uploadedImages[imageId]) {
-                        // Build style from tag dimensions
                         let imgStyle = '';
                         if (parsed.width) imgStyle += `width:${parsed.width}px;`;
                         if (parsed.height) imgStyle += `height:${parsed.height}px;`;
@@ -5071,7 +5167,7 @@
                             ? `${parsed.width} × ${parsed.height}` 
                             : 'Drag to resize';
                         
-                        return `<div class="p-asset-resizable" data-tag="${tagContent}">
+                        replacement = `<div class="p-asset-resizable" data-tag="${tagContent}">
                             <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
                             <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
                             <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
@@ -5079,9 +5175,39 @@
                             <div class="size-tooltip">${tooltipText}</div>
                             <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
                         </div>`;
+                    } else {
+                        replacement = `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
                     }
-                    return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
+                    
+                    const placeholder = `\uE000RIMG${imagePlaceholders.length}\uE001`;
+                    imagePlaceholders.push(replacement);
+                    return placeholder;
                 });
+                
+                // Handle [[gap]] or [[gap|width:<integer>]]
+                result = result.replace(/\[\[gap(?:\|width:(\d+))?\]\]/g, (match, widthParam) => {
+                    const width = widthParam ? `${widthParam}px` : '60px';
+                    const replacement = `<span style="display:inline-block; border-bottom:2px solid #000; min-width:${width}; margin:0 4px;">&nbsp;</span>`;
+                    const placeholder = `\uE000RGAP${gapPlaceholders.length}\uE001`;
+                    gapPlaceholders.push(replacement);
+                    return placeholder;
+                });
+                
+                // Step 2: Render LaTeX math
+                result = renderLatexMath(result);
+                
+                // Step 3: Render Markdown
+                result = renderMarkdown(result);
+                
+                // Step 4: Restore placeholders
+                imagePlaceholders.forEach((html, i) => {
+                    result = result.replace(`\uE000RIMG${i}\uE001`, html);
+                });
+                gapPlaceholders.forEach((html, i) => {
+                    result = result.replace(`\uE000RGAP${i}\uE001`, html);
+                });
+                
+                return result;
             };
             
             // Main content - for COMPOSITE it's common_content, others use content
