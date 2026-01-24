@@ -1788,8 +1788,8 @@
                                             </div>
                                             <div class="section-media-area">
                                                 <div id="prompt-assets" class="asset-container">
-                                                    <span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span><br>
-                                                    <span style="font-size:0.7rem; color:#999;">Blanks: Use {{gap}} tokens in content</span>
+                                                    <span style="font-size:0.7rem; color:#999;">Images: Use [[image:tag]] tokens in content</span><br>
+                                                    <span style="font-size:0.7rem; color:#999;">Blanks: Use [[gap]] tokens in content</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2340,10 +2340,10 @@
             e.target.value = '';
         });
 
-        // Collect all [[tag]] references from loaded questions
+        // Collect all [[image:tag]] references from loaded questions
         function collectAllImageTags() {
             const tags = new Set();
-            const tagRegex = /\[\[([^\]]+)\]\]/g;
+            const tagRegex = /\[\[image:([^\]]+)\]\]/g;
             
             if (!activeData) return tags;
             
@@ -2475,7 +2475,7 @@
                 // Get preview text from data.content or data.common_content (for COMPOSITE)
                 const contentText = data.content || data.common_content || '';
                 // Strip image tokens for preview
-                const promptText = contentText.replace(/\[\[[^\]]+\]\]/g, '[img]').substring(0, 100) || 'No content';
+                const promptText = contentText.replace(/\[\[image:[^\]]+\]\]/g, '[img]').substring(0, 100) || 'No content';
 
                 item.innerHTML = `
                     <div class="q-item-header">
@@ -2575,7 +2575,7 @@
             // For COMPOSITE, main content is common_content; for others, it's content
             const mainContent = data.common_content || data.content || '';
             document.getElementById('input-prompt').value = mainContent;
-            // v4.0 uses [[tag]] tokens for images, not assets array
+            // v4.0 uses [[image:tag]] tokens for images, not assets array
             renderAssetList([], 'prompt-assets', () => {});
 
             // Stimulus Section - v4.0 doesn't have separate stimulus
@@ -2697,7 +2697,7 @@
             updateJsonView();
         }
 
-        // v4.8: Image size drag controls - dimensions stored in tag [[id|height:H|width:W]]
+        // v4.8: Image size drag controls - dimensions stored in tag [[image:id|height:H|width:W]]
         let isResizing = false;
         let resizeStartX = 0;
         let resizeStartY = 0;
@@ -2709,9 +2709,15 @@
         let resizeImageTag = ''; // Store the original tag being resized
         
         // Parse image tag to extract id and dimensions
-        // Format: [[id]] or [[id|height:H|width:W]]
+        // Format: [[image:id]] or [[image:id|height:H|width:W]]
+        // The tag passed here is the content inside [[ ]], e.g., "image:id|height:50|width:75"
         function parseImageTag(tag) {
-            const parts = tag.split('|');
+            // Remove 'image:' prefix if present
+            let cleanTag = tag;
+            if (tag.startsWith('image:')) {
+                cleanTag = tag.substring(6);
+            }
+            const parts = cleanTag.split('|');
             const result = { id: parts[0], width: null, height: null };
             
             for (let i = 1; i < parts.length; i++) {
@@ -2726,12 +2732,12 @@
         }
         
         // Build image tag with dimensions
-        // Format: [[id|height:H|width:W]]
+        // Format: [[image:id|height:H|width:W]]
         function buildImageTag(id, width, height) {
             let tag = id;
             if (height) tag += `|height:${Math.round(height)}`;
             if (width) tag += `|width:${Math.round(width)}`;
-            return `[[${tag}]]`;
+            return `[[image:${tag}]]`;
         }
         
         // Update image tag in content with new dimensions
@@ -2744,8 +2750,8 @@
             const q = activeData[activeIndex];
             if (!q.data) return;
             
-            // Regex to find image tags with this ID (with or without dimensions)
-            const tagRegex = new RegExp(`\\[\\[${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
+            // Regex to find image tags with this ID (with or without dimensions) - format: [[image:id...]]
+            const tagRegex = new RegExp(`\\[\\[image:${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
             const newTag = buildImageTag(imageId, width, height);
             
             // Update content field
@@ -2817,8 +2823,8 @@
             if (!q.data) return;
             
             // Regex to find image tags with this ID
-            const tagRegex = new RegExp(`\\[\\[${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
-            const newTag = `[[${imageId}]]`; // Tag without dimensions
+            const tagRegex = new RegExp(`\\[\\[image:${escapeRegex(imageId)}(\\|[^\\]]*)?\\]\\]`, 'g');
+            const newTag = `[[image:${imageId}]]`; // Tag without dimensions
             
             // Update all content fields
             if (q.data.content) {
@@ -2975,7 +2981,7 @@
             const imageId = prompt('Enter Image ID (e.g., Q1.content.1):', '');
             if (!imageId || !imageId.trim()) return;
             
-            const tag = `[[${imageId.trim()}]]`;
+            const tag = `[[image:${imageId.trim()}]]`;
             
             // Insert at cursor position
             const start = textarea.selectionStart;
@@ -3138,15 +3144,15 @@
         }
         
         function addAssetToPrompt() {
-            // v4.0 uses [[tag]] tokens, not assets array
-            // No-op - user should add [[tag]] token manually
-            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the content.');
+            // v4.0 uses [[image:tag]] tokens, not assets array
+            // No-op - user should add [[image:tag]] token manually
+            alert('In v4.0 schema, add images by typing [[image:tag]] tokens in the content.');
         }
 
         function addAssetToStimulus() {
             const q = activeData[activeIndex];
-            // v4.0 uses [[tag]] tokens, not assets array
-            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the content.');
+            // v4.0 uses [[image:tag]] tokens, not assets array
+            alert('In v4.0 schema, add images by typing [[image:tag]] tokens in the content.');
         }
 
         function distributeTotalMarks(newTotal) {
@@ -3378,8 +3384,8 @@
         }
 
         function addOptionMedia(idx) {
-            // v4.0 uses [[tag]] tokens in option text, not assets array
-            alert('In v4.0 schema, add images by typing [[image-tag]] tokens in the option text.');
+            // v4.0 uses [[image:tag]] tokens in option text, not assets array
+            alert('In v4.0 schema, add images by typing [[image:tag]] tokens in the option text.');
         }
 
         // =====================================================
@@ -4631,10 +4637,10 @@
                     textArea.appendChild(input);
                     contentWrapper.appendChild(textArea);
                     
-                    // Asset container - v4.0 uses [[tag]] tokens, not assets array
+                    // Asset container - v4.0 uses [[image:tag]] tokens, not assets array
                     const assetCont = document.createElement('div');
                     assetCont.className = 'asset-container';
-                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[tag]] tokens in content</span><br><span style="font-size:0.7rem; color:#999;">Blanks: Use {{gap}} tokens in content</span>';
+                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: Use [[image:tag]] tokens in content</span><br><span style="font-size:0.7rem; color:#999;">Blanks: Use [[gap]] tokens in content</span>';
                     contentWrapper.appendChild(assetCont);
                     
                     card.appendChild(contentWrapper);
@@ -4979,14 +4985,14 @@
             }
             return width; 
         }
-        // v4.8: formatForPrint handles image tags with embedded dimensions [[id|height:H|width:W]]
+        // v4.8: formatForPrint handles image tags with embedded dimensions [[image:id|height:H|width:W]]
         // Images are wrapped in resizable containers for drag-to-resize in preview
         function formatForPrint(text, options) {
             if(!text) return '';
             let result = text;
             
-            // Handle image tokens [[id]] or [[id|height:H|width:W]]
-            result = result.replace(/\[\[([^\]]+)\]\]/g, (match, tagContent) => {
+            // Handle image tokens [[image:id]] or [[image:id|height:H|width:W]]
+            result = result.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
                 // Parse tag to extract id and dimensions
                 const parsed = parseImageTag(tagContent);
                 const imageId = parsed.id;
@@ -5014,8 +5020,8 @@
                 return `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
             });
             
-            // Handle {{gap}} or {{gap|width:<integer>}} placeholders for FIB
-            result = result.replace(/\{\{gap(?:\|width:(\d+))?\}\}/g, (match, widthParam) => {
+            // Handle [[gap]] or [[gap|width:<integer>]] placeholders for FIB
+            result = result.replace(/\[\[gap(?:\|width:(\d+))?\]\]/g, (match, widthParam) => {
                 const width = widthParam ? `${widthParam}px` : '60px';
                 return `<span style="display:inline-block; border-bottom:2px solid #000; min-width:${width}; margin:0 4px;">&nbsp;</span>`;
             });
@@ -5042,12 +5048,12 @@
             container.style.fontSize = theme.base_font_size;
             container.style.lineHeight = theme.line_height;
             
-            // Helper to render image tokens [[id]] or [[id|height:H|width:W]]
+            // Helper to render image tokens [[image:id]] or [[image:id|height:H|width:W]]
             // v4.8: Dimensions are embedded in the tag itself
             const renderImageTokens = (text) => {
                 if (!text) return '';
-                // Match [[tag]] where tag can include | for parameters
-                return text.replace(/\[\[([^\]]+)\]\]/g, (match, tagContent) => {
+                // Match [[image:tag]] where tag can include | for parameters
+                return text.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
                     // Parse tag to extract id and dimensions
                     const parsed = parseImageTag(tagContent);
                     const imageId = parsed.id;

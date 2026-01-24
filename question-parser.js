@@ -6,11 +6,11 @@
  * This module provides functions to:
  * - Parse JSONL/JSON content into question objects
  * - Normalize questions from old schemas to v4.6 schema
- * - Extract and resolve image tokens [[tag]] in RichText
+ * - Extract and resolve image tokens [[image:tag]] in RichText
  * - Utility helpers for working with question data
  * 
  * Schema v4.6 Key Features:
- * - Images embedded as [[tag]] tokens in RichText strings
+ * - Images embedded as [[image:tag]] tokens in RichText strings
  * - Polymorphic 'data' field based on question 'type'
  * - Types: MCQ, FIB, MATCH, SUBJECTIVE, TABLE, COMPOSITE
  * - TABLE type: { content, style, table: { header?, rows } }
@@ -37,11 +37,11 @@ const LAYOUT_VALUES = ['vertical', 'horizontal'];
 const SUB_LAYOUT_VALUES = ['vertical', 'horizontal', 'matrix'];
 const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical'];
 
-// Regex for image tokens in RichText
-const IMAGE_TOKEN_REGEX = /\[\[([^\]]+)\]\]/g;
+// Regex for image tokens in RichText - format: [[image:id]] or [[image:id|height:H|width:W]]
+const IMAGE_TOKEN_REGEX = /\[\[image:([^\]]+)\]\]/g;
 
 // Default style configs for v4.8 (type-specific)
-// Note: image dimensions are now embedded in image tags: [[id|height:H|width:W]]
+// Note: image dimensions are now embedded in image tags: [[image:id|height:H|width:W]]
 const BASE_STYLE = {
     image_layout: 'vertical'
 };
@@ -316,7 +316,7 @@ function convertContentToData(content, newType, oldType) {
 
 /**
  * Build RichText content from prompt and stimulus
- * Converts old assets to [[tag]] tokens
+ * Converts old assets to [[image:tag]] tokens
  * @param {Object|string} prompt - Prompt data
  * @param {Object} stimulus - Stimulus data
  * @returns {string} RichText content
@@ -354,7 +354,7 @@ function buildRichTextContent(prompt, stimulus) {
 }
 
 /**
- * Convert asset object to [[tag]] token
+ * Convert asset object to [[image:tag]] token
  * @param {Object} asset - Asset object
  * @returns {string|null} Token string or null
  */
@@ -365,7 +365,7 @@ function assetToToken(asset) {
     const tag = asset.asset_id || asset.filename?.replace(/\.[^.]+$/, '') || asset.tag || asset.id;
     if (!tag || tag === '#') return null;
     
-    return `[[${tag}]]`;
+    return `[[image:${tag}]]`;
 }
 
 /**
