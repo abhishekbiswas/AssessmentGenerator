@@ -1821,7 +1821,7 @@
                                             </div>
                                             <div class="section-media-area">
                                                 <div id="prompt-assets" class="asset-container">
-                                                    <span style="font-size:0.7rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic*</span>
+                                                    <span style="font-size:0.65rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic* &lt;u&gt;underline&lt;/u&gt;</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1875,12 +1875,16 @@
                                         <div id="options-list"></div>
                                     </div>
 
+                                    <!-- Add Word Bank Button (shown for FIB without options_pool) -->
+                                    <button id="add-word-bank-btn" class="btn btn-sm" onclick="addWordBank()" style="display:none; margin-top:0.5rem; font-size:0.75rem; background:#fffbeb; border-color:#fcd34d; color:#92400e;">+ Add Word Bank (options_pool)</button>
+
                                     <!-- Word Bank Section (options_pool for FIB / shared for COMPOSITE) -->
                                     <div id="word-bank-section" class="content-section" style="display:none; background:#fffbeb; padding:1rem; border-radius:6px; border:1px solid #fcd34d;">
                                         <div class="section-header">
                                             <label class="section-label" id="word-bank-label" style="color:#92400e;">WORD BANK (options_pool)</label>
                                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                                 <button class="btn btn-sm" onclick="addWordBankItem()" style="font-size:0.7rem; background:#fef3c7; border-color:#fcd34d; color:#92400e;">+ Add Word</button>
+                                                <button class="btn btn-sm" onclick="deleteWordBank()" style="font-size:0.7rem; background:#fee2e2; border-color:#fca5a5; color:#dc2626;" title="Delete entire word bank">🗑️ Delete</button>
                                             </div>
                                         </div>
                                         <p id="word-bank-hint" style="font-size:0.7rem; color:#b45309; margin:0.5rem 0;">Words available for fill-in-the-blank questions</p>
@@ -2581,6 +2585,7 @@
             document.getElementById('options-section').style.display = 'none';
             document.getElementById('subquestions-section').style.display = 'none';
             document.getElementById('word-bank-section').style.display = 'none';
+            document.getElementById('add-word-bank-btn').style.display = 'none';
             document.getElementById('groups-section').style.display = 'none';
             document.getElementById('pairs-section').style.display = 'none';
             document.getElementById('table-editor-section').style.display = 'none';
@@ -2616,7 +2621,8 @@
             const mainContent = data.common_content || data.content || '';
             document.getElementById('input-prompt').value = mainContent;
             // v4.0 uses [[image:tag]] tokens for images, not assets array
-            renderAssetList([], 'prompt-assets', () => {});
+            // Show hint text for formatting options
+            document.getElementById('prompt-assets').innerHTML = '<span style="font-size:0.65rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic* &lt;u&gt;underline&lt;/u&gt;</span>';
 
             // Stimulus Section - v4.0 doesn't have separate stimulus
             // For COMPOSITE, common_content serves as stimulus
@@ -2643,11 +2649,20 @@
             }
 
             // FIB options_pool as word bank
-            if(isFibType && data.options_pool && data.options_pool.length > 0) {
-                document.getElementById('word-bank-section').style.display = 'block';
-                document.getElementById('word-bank-label').textContent = 'WORD BANK (options_pool)';
-                document.getElementById('word-bank-hint').textContent = 'Words available for fill-in-the-blank questions';
-                renderWordBank(data.options_pool);
+            if(isFibType) {
+                if(data.options_pool && data.options_pool.length > 0) {
+                    document.getElementById('word-bank-section').style.display = 'block';
+                    document.getElementById('add-word-bank-btn').style.display = 'none';
+                    document.getElementById('word-bank-label').textContent = 'WORD BANK (options_pool)';
+                    document.getElementById('word-bank-hint').textContent = 'Words available for fill-in-the-blank questions';
+                    renderWordBank(data.options_pool);
+                } else {
+                    // Show "Add Word Bank" button for FIB without options_pool
+                    document.getElementById('word-bank-section').style.display = 'none';
+                    document.getElementById('add-word-bank-btn').style.display = 'block';
+                }
+            } else {
+                document.getElementById('add-word-bank-btn').style.display = 'none';
             }
             
             // COMPOSITE: Check for shared options_pool across FIB sub-questions
@@ -3561,7 +3576,50 @@
             updateJsonView();
             renderPreview(q, activeIndex);
         }
-
+        
+        // v4.0: Delete entire options_pool (word bank)
+        function deleteWordBank() {
+            const q = activeData[activeIndex];
+            if (!q.data) return;
+            
+            // For FIB type - delete options_pool
+            if (q.type === 'FIB') {
+                delete q.data.options_pool;
+            }
+            // For COMPOSITE type - delete from all FIB sub-questions
+            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
+                q.data.sub_questions.forEach(sq => {
+                    if (sq.type === 'FIB' && sq.data) {
+                        delete sq.data.options_pool;
+                    }
+                });
+            }
+            
+            // Hide the word bank section and show add button
+            document.getElementById('word-bank-section').style.display = 'none';
+            document.getElementById('word-bank-list').innerHTML = '';
+            document.getElementById('add-word-bank-btn').style.display = (q.type === 'FIB') ? 'block' : 'none';
+            
+            updateJsonView();
+            renderPreview(q, activeIndex);
+        }
+        
+        // v4.0: Add new options_pool (word bank) for FIB type
+        function addWordBank() {
+            const q = activeData[activeIndex];
+            if (!q.data) q.data = {};
+            
+            if (q.type === 'FIB') {
+                q.data.options_pool = [''];
+                document.getElementById('word-bank-section').style.display = 'block';
+                document.getElementById('add-word-bank-btn').style.display = 'none';
+                renderWordBank(q.data.options_pool);
+            }
+            
+            updateJsonView();
+            renderPreview(q, activeIndex);
+        }
+        
         // =====================================================
         // GROUPS MANAGEMENT (for sorting/classification)
         // =====================================================
@@ -4420,11 +4478,23 @@
             if(!q.data.sub_questions) q.data.sub_questions = [];
             const newIdx = q.data.sub_questions.length;
             const newSubId = `Q${q.id || activeIndex + 1}-${String.fromCharCode(97 + newIdx)}`; // Q1-a, Q1-b, etc.
-            q.data.sub_questions.push({
+            
+            // Check if there's a shared options_pool among existing FIB sub-questions
+            const existingFibWithPool = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
+            const sharedOptionsPool = existingFibWithPool ? [...existingFibWithPool.data.options_pool] : null;
+            
+            const newSubQuestion = {
                 id: newSubId,
                 type: 'SUBJECTIVE',
                 data: { content: '' }
-            });
+            };
+            
+            // If there's a shared options_pool, add it to new sub-question (will apply if changed to FIB)
+            if (sharedOptionsPool) {
+                newSubQuestion.data.options_pool = sharedOptionsPool;
+            }
+            
+            q.data.sub_questions.push(newSubQuestion);
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -4446,9 +4516,10 @@
             const q = activeData[activeIndex];
             if (!q.data?.sub_questions?.[idx]) return;
             q.data.sub_questions[idx].type = type;
+            if(!q.data.sub_questions[idx].data) q.data.sub_questions[idx].data = {};
+            
             // Add/remove options based on type
             if(type === 'MCQ') {
-                if(!q.data.sub_questions[idx].data) q.data.sub_questions[idx].data = {};
                 if(!q.data.sub_questions[idx].data.options) {
                     q.data.sub_questions[idx].data.options = [
                         { id: 'a', text: 'Option A' },
@@ -4456,6 +4527,17 @@
                     ];
                 }
             }
+            
+            // For FIB type, inherit shared options_pool if exists
+            if(type === 'FIB') {
+                const existingFibWithPool = q.data.sub_questions.find((sq, i) => 
+                    i !== idx && sq.type === 'FIB' && sq.data?.options_pool?.length > 0
+                );
+                if (existingFibWithPool && !q.data.sub_questions[idx].data.options_pool) {
+                    q.data.sub_questions[idx].data.options_pool = [...existingFibWithPool.data.options_pool];
+                }
+            }
+            
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -4680,7 +4762,7 @@
                     // Asset container - v4.0 uses [[image:tag]] tokens, not assets array
                     const assetCont = document.createElement('div');
                     assetCont.className = 'asset-container';
-                    assetCont.innerHTML = '<span style="font-size:0.7rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic*</span>';
+                    assetCont.innerHTML = '<span style="font-size:0.65rem; color:#999;">Images: [[image:tag]] | Blanks: [[gap]] | Math: $x^2$ or $$x^2$$ | **bold** *italic* &lt;u&gt;underline&lt;/u&gt;</span>';
                     contentWrapper.appendChild(assetCont);
                     
                     card.appendChild(contentWrapper);
@@ -5501,8 +5583,8 @@
                         }).join('');
                         
                         sqTableHtml = `
-                            <div class="p-table-container" style="margin-top:8px;">
-                                <table class="p-table-grid" style="font-size:0.9em; border-collapse: collapse;">
+                            <div class="p-table-container" style="margin-top:8px; display:flex; justify-content:center; width:100%;">
+                                <table class="p-table-grid" style="font-size:0.9em; border-collapse: collapse; width:80%; margin:0 auto;">
                                     ${sqTheadHtml}
                                     <tbody>${sqTableRows}</tbody>
                                 </table>
