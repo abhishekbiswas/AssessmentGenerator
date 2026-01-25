@@ -2356,9 +2356,17 @@
         });
 
         // Collect all [[image:tag]] references from loaded questions
+        // Extracts only the image ID (without dimension parameters like |height:100|width:100)
         function collectAllImageTags() {
             const tags = new Set();
             const tagRegex = /\[\[image:([^\]]+)\]\]/g;
+            
+            // Helper to extract just the ID from a tag (remove dimension params)
+            const extractImageId = (tagContent) => {
+                // tagContent is like "id" or "id|height:100|width:100"
+                const pipeIndex = tagContent.indexOf('|');
+                return pipeIndex > 0 ? tagContent.substring(0, pipeIndex) : tagContent;
+            };
             
             if (!activeData) return tags;
             
@@ -2370,7 +2378,7 @@
                     if (text) {
                         let match;
                         while ((match = tagRegex.exec(text)) !== null) {
-                            tags.add(match[1]);
+                            tags.add(extractImageId(match[1]));
                         }
                     }
                 });
@@ -2382,7 +2390,7 @@
                         if (sqData.content) {
                             let match;
                             while ((match = tagRegex.exec(sqData.content)) !== null) {
-                                tags.add(match[1]);
+                                tags.add(extractImageId(match[1]));
                             }
                         }
                         // Check options
@@ -2391,7 +2399,7 @@
                                 if (opt.text) {
                                     let match;
                                     while ((match = tagRegex.exec(opt.text)) !== null) {
-                                        tags.add(match[1]);
+                                        tags.add(extractImageId(match[1]));
                                     }
                                 }
                             });
@@ -2405,7 +2413,7 @@
                         if (opt.text) {
                             let match;
                             while ((match = tagRegex.exec(opt.text)) !== null) {
-                                tags.add(match[1]);
+                                tags.add(extractImageId(match[1]));
                             }
                         }
                     });
@@ -2418,7 +2426,7 @@
                             if (text) {
                                 let match;
                                 while ((match = tagRegex.exec(text)) !== null) {
-                                    tags.add(match[1]);
+                                    tags.add(extractImageId(match[1]));
                                 }
                             }
                         });
