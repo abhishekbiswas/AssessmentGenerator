@@ -668,7 +668,7 @@
         .p-pairs-container { display: inline-flex; gap: 1.5rem; margin: 1rem 0; }
         .p-pairs-wrapper { width: 80%; margin: 0 auto; text-align: center; }
         .p-pairs-column { min-width: 50px; display: flex; flex-direction: column; flex: 0 0 auto; }
-        .p-pairs-header { font-weight: bold; text-align: left; margin-bottom: 0.5rem; font-size: 10pt; padding-left: 0.75rem; }
+        .p-pairs-header { font-weight: bold; text-align: center; margin-bottom: 0.5rem; font-size: 10pt; }
         .p-pairs-item { padding: 0.4rem 0.75rem; margin-bottom: 0.5rem; border: 1px solid #000; background: white; text-align: left; white-space: nowrap; }
         .p-pairs-item-id { font-weight: bold; margin-right: 0.5rem; }
         
@@ -1760,6 +1760,11 @@
                                         <option value="practice">Practice Pool</option>
                                         <option value="exam">Exam Pool</option>
                                     </select>
+                                    <select class="btn btn-sm" id="meta-subpool" onchange="updateMeta('subpool', this.value)">
+                                        <option value="na">NA</option>
+                                        <option value="written">Written</option>
+                                        <option value="oral">Oral</option>
+                                    </select>
                                     <select class="btn btn-sm" id="meta-difficulty" onchange="updateMeta('difficulty', this.value)">
                                         <option value="easy">Easy</option>
                                         <option value="medium">Medium</option>
@@ -2601,9 +2606,11 @@
                  
                  // Ensure controls enabled
                  const poolSelect = document.getElementById('meta-pool-type');
+                 const subpoolSelect = document.getElementById('meta-subpool');
                  const diffSelect = document.getElementById('meta-difficulty');
                  const pointInput = document.getElementById('meta-points');
                  poolSelect.disabled = false;
+                 subpoolSelect.disabled = false;
                  diffSelect.disabled = false;
                  pointInput.disabled = false;
             } else {
@@ -2634,6 +2641,7 @@
             document.getElementById('meta-id').innerText = q.id || `Q${activeIndex+1}`;
             document.getElementById('meta-type').value = qType;
             document.getElementById('meta-pool-type').value = (meta.pool || 'Practice').toLowerCase();
+            document.getElementById('meta-subpool').value = (meta.subpool || 'NA').toLowerCase();
             document.getElementById('meta-difficulty').value = (meta.difficulty || 'Medium').toLowerCase();
             
             // Points - readonly for composite questions (total is sum of sub-questions)
@@ -3072,6 +3080,8 @@
             
             if(field === 'pool_type') {
                 q.metadata.pool = val.charAt(0).toUpperCase() + val.slice(1); // Capitalize
+            } else if(field === 'subpool') {
+                q.metadata.subpool = val.toUpperCase() === 'NA' ? 'NA' : val.charAt(0).toUpperCase() + val.slice(1); // NA stays uppercase, others capitalize
             } else if(field === 'points') {
                 // For composite questions, points are calculated from sub-questions
                 if (q.type === 'COMPOSITE') {
@@ -5092,6 +5102,7 @@
 
         function switchTab(tab) {
             const poolSelect = document.getElementById('meta-pool-type');
+            const subpoolSelect = document.getElementById('meta-subpool');
             const diffSelect = document.getElementById('meta-difficulty');
             const pointInput = document.getElementById('meta-points');
             
@@ -5104,12 +5115,14 @@
             
             if (tab === 'preview') {
                 poolSelect.disabled = true;
+                subpoolSelect.disabled = true;
                 diffSelect.disabled = true;
                 pointInput.disabled = true;
                 document.getElementById('view-preview').classList.add('active');
                 renderPreview(activeData[activeIndex], activeIndex);
             } else {
                 poolSelect.disabled = false;
+                subpoolSelect.disabled = false;
                 diffSelect.disabled = false;
                 pointInput.disabled = false;
                 document.getElementById('view-edit').classList.add('active');

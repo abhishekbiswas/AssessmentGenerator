@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Educational Question Schema (v4.9)",
+  "title": "Educational Question Schema (v5.0)",
   "description": "Enhanced schema with type-safe styling. Added column_widths to TableStyle.",
   "type": "object",
   "required": ["id", "metadata", "type", "data", "solution"],
@@ -11,7 +11,7 @@
     },
     "metadata": {
       "type": "object",
-      "required": ["grade", "subject", "chapter", "section", "difficulty", "marks", "pool"],
+      "required": ["grade", "subject", "chapter", "section", "difficulty", "marks", "pool", "subpool"],
       "properties": {
         "grade": { "type": ["string", "integer"] },
         "subject": { "type": "string" },
@@ -19,7 +19,13 @@
         "section": { "type": "string", "description": "Section within the chapter" },
         "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
         "marks": { "type": "integer" },
-        "pool": { "type": "string", "enum": ["Practice", "Exam"] }
+        "pool": { "type": "string", "enum": ["Practice", "Exam"] },
+	      "subpool": {
+          "type": "string",
+          "enum": ["NA", "Written", "Oral"],
+          "default": "NA",
+          "description": "Sub-classification for the question pool."
+        }
       }
     },
     "type": {
@@ -56,7 +62,9 @@
       }
     },
 
+
     "_comment_styles": "--- ATOMIC STYLE BLOCKS ---",
+
 
     "BaseStyle": {
       "type": "object",
@@ -117,7 +125,9 @@
       }
     },
 
+
     "_comment_composed_styles": "--- COMPOSED STYLE DEFINITIONS ---",
+
 
     "MCQDataStyle": {
       "allOf": [
@@ -141,7 +151,9 @@
         "$ref": "#/definitions/BaseStyle"
     },
 
+
     "_comment_data_types": "--- DATA TYPE DEFINITIONS ---",
+
 
     "MCQData": {
       "type": "object",

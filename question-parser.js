@@ -177,6 +177,7 @@ function ensureDefaults(obj) {
     obj.metadata.difficulty = obj.metadata.difficulty || 'Medium';
     obj.metadata.marks = obj.metadata.marks ?? 1;
     obj.metadata.pool = obj.metadata.pool || 'Practice';
+    obj.metadata.subpool = obj.metadata.subpool || 'NA';
     
     // Ensure type
     if (!obj.type || !QUESTION_TYPES.includes(obj.type)) {
@@ -527,7 +528,8 @@ function createEmptyQuestion(type = 'SUBJECTIVE') {
             section: 'A',
             difficulty: 'Medium',
             marks: 1,
-            pool: 'Practice'
+            pool: 'Practice',
+            subpool: 'NA'
         },
         type: type,
         data: getDefaultDataForType(type),
