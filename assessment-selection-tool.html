@@ -83,7 +83,7 @@
             margin-right: 0.125rem;
         }
         .q-preview .p-q-marks {
-            font-size: 9pt;
+            font-size: 1em;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -221,6 +221,14 @@
         }
         .q-preview .p-option-text {
             flex: 1;
+            min-width: 0;
+            word-break: keep-all;
+            overflow-wrap: normal;
+        }
+        .q-preview .p-sub-content,
+        .q-preview .p-sq-option-text {
+            word-break: keep-all;
+            overflow-wrap: normal;
         }
         .q-preview .p-word-bank {
             padding: 0.5rem;

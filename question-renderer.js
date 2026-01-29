@@ -256,16 +256,13 @@ function renderMCQPreview(data, renderOptions) {
         const optText = opt.text || '';
         const optId = opt.id || String.fromCharCode(65 + k); // A, B, C, D...
         
-        // For horizontal layout, constrain each option to fit side by side
-        // Calculate max-width based on number of options (leave room for gap and option ID)
+        // For horizontal layout, give each option enough width so words don't break mid-word
         let itemStyle, textStyle;
         if (isHorizontal) {
-            // For horizontal: flex item with constrained width
-            // Each option gets roughly equal share of available width
-            const maxWidth = numOptions <= 2 ? '45%' : numOptions <= 3 ? '30%' : '22%';
-            itemStyle = `display:flex; align-items:flex-start; flex-shrink:0; max-width:${maxWidth};`;
-            // Constrain images inside option text to fit within the option
-            textStyle = 'max-width:100%; overflow:hidden;';
+            // Let each option be at least as wide as its content (so "Stomach" stays on one line); flex-wrap handles wrapping
+            itemStyle = 'display:flex; align-items:flex-start; flex-shrink:0; min-width:min-content;';
+            // Keep words intact; no overflow:hidden so whole words can wrap to next line
+            textStyle = 'word-break:keep-all; overflow-wrap:normal; overflow:visible; white-space:normal;';
         } else {
             itemStyle = 'display:flex; align-items:flex-start; margin-bottom:4px;';
             textStyle = '';

@@ -16,6 +16,9 @@
     <!-- PDF Generation (html2pdf.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- Preview fonts: Libre Baskerville used for "Bookman Old Style" (not web-safe) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
+    
     <!-- Shared Modules -->
     <script src="question-parser.js"></script>
     <script src="question-renderer.js"></script>
@@ -601,9 +604,22 @@
         
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 11pt; line-height: 1.4; color: #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Libre Baskerville", "Bookman Old Style", "Bookman", serif; font-size: 11pt; line-height: 1.4; color: #000;
             text-align: left; box-sizing: border-box; overflow: hidden;
         }
+        /* Force toolbar font on entire preview: all descendants inherit font-family from .a4-page */
+        .a4-page * { font-family: inherit !important; }
+        .preview-font-toolbar {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 99;
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; background: rgba(45,45,45,0.95); color: #eee;
+            border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 0.85rem; font-family: sans-serif;
+        }
+        .preview-font-toolbar label { display: flex; align-items: center; gap: 0.5rem; }
+        .preview-font-toolbar select { padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #555; background: #333; color: #eee; min-width: 140px; }
+        .preview-font-toolbar .size-controls { display: flex; align-items: center; gap: 0.25rem; }
+        .preview-font-toolbar .size-value { min-width: 2rem; text-align: center; font-weight: 600; }
+        .preview-font-toolbar button.size-btn { width: 28px; height: 28px; padding: 0; border: 1px solid #555; background: #444; color: #eee; border-radius: 4px; cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .preview-font-toolbar button.size-btn:hover { background: #555; }
         
         .a4-pages-container {
             display: flex;
@@ -616,6 +632,7 @@
         
         /* Print styles */
         @media print {
+            .preview-font-toolbar { display: none !important; }
             .preview-view-container {
                 padding: 0;
                 background: white;
@@ -634,11 +651,11 @@
         .p-q-num { font-weight: bold; min-width: 2rem; display: inline-block; margin-right: 0.125rem; }
         .p-section-text { display: flex; align-items: flex-start; gap: 0.0625rem; width: 100%; }
         .p-section-text > .p-q-num { flex-shrink: 0; }
-        .p-section-text > span:not(.p-q-num), .p-section-text > div { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; }
+        .p-section-text > span:not(.p-q-num), .p-section-text > div { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; word-break: keep-all; overflow-wrap: break-word; }
         
         /* Gap/blank styling - truncates at container edge */
         .p-gap { display: inline-block; border-bottom: 2px solid #000; margin: 0 4px; box-sizing: border-box; vertical-align: bottom; max-width: 100%; }
-        .p-q-marks { font-size: 10pt; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
+        .p-q-marks { font-size: 1em; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
         .p-stimulus { padding: 0.75rem 0; margin-bottom: 1rem; text-align: justify; }
         .p-word-bank { 
@@ -699,14 +716,14 @@
         /* Using text-align:left to prevent word spacing issues when gaps force line breaks */
         .p-sub-item { margin-bottom: 0.75rem; text-align: left; padding-left: 2.5rem; display: flex; align-items: flex-start; gap: 0.25rem; width: 100%; box-sizing: border-box; }
         .p-sub-label { font-weight: bold; min-width: 1rem; flex-shrink: 0; }
-        .p-sub-content { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; }
+        .p-sub-content { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; word-break: keep-all; overflow-wrap: break-word; }
         /* Option with hanging indent - content aligned with question/sub-question text */
         .p-option-item { display: flex; align-items: flex-start; gap: 0.25rem; }
         .p-option-id { min-width: 1.25rem; flex-shrink: 0; }
-        .p-option-text { flex: 1; min-width: 0; }
+        .p-option-text { flex: 1; min-width: 0; word-break: keep-all; overflow-wrap: normal; }
         .p-sq-option { display: flex; align-items: flex-start; gap: 0.5rem; }
         .p-sq-option-id { min-width: 1.5rem; flex-shrink: 0; }
-        .p-sq-option-text { flex: 1; min-width: 0; }
+        .p-sq-option-text { flex: 1; min-width: 0; word-break: keep-all; overflow-wrap: normal; }
         
         /* TABLE type styles (v4.3 - simple grid with empty cells) */
         .p-table-container { display: flex; justify-content: center; margin: 1rem 0; width: 100%; }
@@ -2002,6 +2019,18 @@
 
                             <!-- VIEW: PREVIEW -->
                             <div id="view-preview" class="preview-view-container">
+                                <!-- Preview font/size toolbar -->
+                                <div class="preview-font-toolbar" id="preview-font-toolbar">
+                                    <label>Font: <select id="preview-font-family" onchange="applyPreviewFont()">
+                                        <option value="Bookman Old Style" selected>Bookman Old Style</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                    </select></label>
+                                    <label>Size: <div class="size-controls">
+                                        <button type="button" class="size-btn" id="preview-size-decrease" onclick="changePreviewFontSize(-1)" aria-label="Decrease font size">−</button>
+                                        <span class="size-value" id="preview-size-value">11</span>
+                                        <button type="button" class="size-btn" id="preview-size-increase" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
+                                    </div></label>
+                                </div>
                                 <!-- Download PDF Button -->
                                 <button id="download-pdf-btn" onclick="downloadPDF()" style="position:fixed; top:80px; right:30px; z-index:100; padding:0.5rem 1rem; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
                                     📥 Download PDF
@@ -2039,6 +2068,11 @@
         let activeData = null; // Points to importData or libraryData
         // 4. Uploaded Images Store (maps tag names to data URLs)
         let uploadedImages = {};
+        // 5. Preview font settings (default Bookman Old Style, 11pt)
+        let previewFontFamily = 'Bookman Old Style';
+        let previewFontSize = 11;
+        const PREVIEW_FONT_SIZE_MIN = 8;
+        const PREVIEW_FONT_SIZE_MAX = 18;
         
         let activeIndex = null;
         let activeWorkflow = 'import'; // 'import' or 'library'
@@ -5168,6 +5202,42 @@
             });
         }
 
+        // Resolve preview font stack: Bookman Old Style uses Libre Baskerville (web-loaded) since Bookman isn't web-safe
+        function getPreviewFontStack(family) {
+            if (family === 'Bookman Old Style') return '"Libre Baskerville", "Bookman Old Style", "Bookman", serif';
+            return family + ', serif';
+        }
+
+        // Effective font size in pt: Times New Roman has smaller x-height, so use +1pt so it matches Bookman visually
+        function getPreviewFontSizePt(family, size) {
+            const pt = size || previewFontSize;
+            return (family === 'Times New Roman' ? Math.min(PREVIEW_FONT_SIZE_MAX, pt + 1) : pt) + 'pt';
+        }
+
+        // Apply preview font family and size to the A4 content (syncs UI with state)
+        function applyPreviewFont() {
+            const sel = document.getElementById('preview-font-family');
+            const sizeEl = document.getElementById('preview-size-value');
+            if (sel) previewFontFamily = sel.value;
+            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 11;
+            const page = document.getElementById('a4-content');
+            if (page) {
+                page.style.fontFamily = getPreviewFontStack(previewFontFamily);
+                page.style.fontSize = getPreviewFontSizePt(previewFontFamily, previewFontSize);
+            }
+        }
+
+        // Increase or decrease preview font size (delta: 1 or -1)
+        function changePreviewFontSize(delta) {
+            const sizeEl = document.getElementById('preview-size-value');
+            if (!sizeEl) return;
+            let size = parseInt(sizeEl.textContent, 10) || 11;
+            size = Math.max(PREVIEW_FONT_SIZE_MIN, Math.min(PREVIEW_FONT_SIZE_MAX, size + delta));
+            sizeEl.textContent = size;
+            previewFontSize = size;
+            applyPreviewFont();
+        }
+
         // Render question preview using shared module (v4.9 schema)
         // Uses renderPreviewToContainer from question-preview.js
         function renderPreview(q, idx) {
@@ -5185,14 +5255,21 @@
                 return;
             }
             
-            // Use shared renderPreviewToContainer from question-preview.js
+            // Use shared renderPreviewToContainer from question-preview.js (pass current font so preview uses toolbar choice)
             try {
+                const fontSel = document.getElementById('preview-font-family');
+                const sizeValEl = document.getElementById('preview-size-value');
+                const currentFont = fontSel ? fontSel.value : previewFontFamily;
+                const currentSizeNum = sizeValEl ? (parseInt(sizeValEl.textContent, 10) || previewFontSize) : previewFontSize;
+                const currentSize = getPreviewFontSizePt(currentFont, currentSizeNum);
                 renderPreviewToContainer(q, container, {
                     imageResolver: (imageId) => uploadedImages[imageId],
                     interactive: true,  // Enable resize handles for images
                     questionNumber: q.id || idx + 1,
                     showMarks: true,
-                    wrapperClass: ''  // No wrapper needed, renderQuestionHTML provides p-q-block
+                    wrapperClass: '',  // No wrapper needed, renderQuestionHTML provides p-q-block
+                    fontFamily: getPreviewFontStack(currentFont),
+                    fontSize: currentSize
                 });
                 console.log('renderPreviewToContainer completed successfully');
             } catch (e) {
@@ -5202,6 +5279,8 @@
             
             // Fix any gaps that overflow their container (post-render adjustment)
             fixGapOverflows(container);
+            // Apply current font settings to preview
+            applyPreviewFont();
         }
         
         // Fix gaps that exceed their container width (post-render adjustment)

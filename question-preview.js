@@ -37,6 +37,8 @@ const PREVIEW_DEFAULTS = {
  * @param {string} options.questionNumber - Display number/ID for the question
  * @param {boolean} options.showMarks - Show marks badge (default: false)
  * @param {boolean} options.applyContainerStyles - Apply font styles to container (default: true)
+ * @param {string} options.fontFamily - Override font (e.g. from toolbar; takes precedence over question style)
+ * @param {string} options.fontSize - Override font size (e.g. from toolbar)
  * @param {string} options.wrapperClass - CSS class for the wrapper div (default: 'q-preview')
  * @returns {string} The rendered HTML (also sets container.innerHTML)
  * 
@@ -65,15 +67,17 @@ function renderPreviewToContainer(question, container, options = {}) {
         questionNumber = question.id || '1',
         showMarks = false,
         applyContainerStyles = true,
+        fontFamily: optionsFontFamily = null,
+        fontSize: optionsFontSize = null,
         wrapperClass = 'q-preview'
     } = options;
     
     try {
-        // Apply container styles from question.data.style or use defaults
+        // Apply container styles: toolbar overrides (fontFamily, fontSize) take precedence, then question.data.style, then defaults
         if (applyContainerStyles) {
             const style = question.data?.style || {};
-            container.style.fontFamily = style.font_family || PREVIEW_DEFAULTS.fontFamily;
-            container.style.fontSize = style.font_size || PREVIEW_DEFAULTS.fontSize;
+            container.style.fontFamily = optionsFontFamily ?? style.font_family ?? PREVIEW_DEFAULTS.fontFamily;
+            container.style.fontSize = optionsFontSize ?? style.font_size ?? PREVIEW_DEFAULTS.fontSize;
             container.style.lineHeight = style.line_height || PREVIEW_DEFAULTS.lineHeight;
         }
         
