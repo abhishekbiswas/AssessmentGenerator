@@ -7,8 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Shared Question Parser Module -->
+    
+    <!-- Markdown Parser (marked.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- LaTeX Math Rendering (KaTeX) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <!-- Shared Modules -->
     <script src="question-parser.js"></script>
+    <script src="question-renderer.js"></script>
+    <script src="question-preview.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -70,7 +80,7 @@
         }
         .q-preview .p-q-num {
             font-weight: bold;
-            margin-right: 0.5rem;
+            margin-right: 0.125rem;
         }
         .q-preview .p-q-marks {
             font-size: 9pt;
@@ -88,7 +98,7 @@
         }
         /* Table styles for stimulus tables */
         .q-preview .p-table {
-            width: 100%;
+            width: 90%;
             border-collapse: collapse;
             margin: 0.5rem 0;
             font-style: normal;
@@ -109,7 +119,16 @@
         .q-preview .p-sub-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+            gap: 0.125rem;
+            column-gap: 0.5rem;
+        }
+        .q-preview .p-sub-grid .p-sub-item {
+            padding-left: 0;
+            margin-bottom: 0.125rem;
+        }
+        /* Ensure composite subs has proper indentation for grid layout */
+        .q-preview .p-composite-subs .p-sub-grid {
+            padding-left: 1rem;
         }
         .q-preview .p-sub-item {
             margin-bottom: 0.5rem;
@@ -121,7 +140,7 @@
         }
         .q-preview .p-sub-label {
             font-weight: bold;
-            margin-right: 0.5rem;
+            margin-right: 0.25rem;
             flex-shrink: 0;
         }
         .q-preview .p-asset {
@@ -138,6 +157,141 @@
             padding: 1rem;
             color: #999;
             font-family: sans-serif;
+        }
+        
+        /* Shared renderer styles (from question-renderer.js) */
+        .q-preview .p-q-block {
+            margin-bottom: 1rem;
+        }
+        .q-preview .p-q-content {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .q-preview .p-section-stack {
+            display: block;
+        }
+        .q-preview .p-section-text {
+            display: flex;
+            align-items: baseline;
+            gap: 0.125rem;
+        }
+        /* Type-specific content wrapper - indented to align with question content */
+        .q-preview .p-type-content {
+            padding-left: 2rem;
+            margin-top: 0.5rem;
+        }
+        /* Options inside type-content don't need extra padding */
+        .q-preview .p-type-content .p-options {
+            padding-left: 0;
+            margin-left: 0;
+        }
+        /* COMPOSITE sub-questions wrapper - NO extra indentation, aligns with main content */
+        .q-preview .p-composite-subs {
+            margin-top: 0.5rem;
+        }
+        .q-preview .p-options {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+        }
+        /* Sub-question options should NOT have extra padding - align with sub-question content */
+        .q-preview .p-sub-content .p-options {
+            padding-left: 0;
+            margin-left: 0;
+        }
+        /* Ensure images in option text scale properly within their container */
+        .q-preview .p-option-text img {
+            max-width: 100%;
+            height: auto;
+        }
+        .q-preview .p-option-text .p-asset img {
+            max-width: 100%;
+            height: auto;
+            max-height: 150px;
+        }
+        .q-preview .p-option-item {
+            display: flex;
+            align-items: baseline;
+            gap: 0.125rem;
+        }
+        .q-preview .p-option-id {
+            font-weight: 500;
+            flex-shrink: 0;
+            min-width: 1.25rem;
+        }
+        .q-preview .p-option-text {
+            flex: 1;
+        }
+        .q-preview .p-word-bank {
+            padding: 0.5rem;
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 4px;
+            width: 90%;
+            margin: 0.5rem auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .q-preview .p-word-bank-item {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+        .q-preview .p-pairs-wrapper {
+            margin-top: 0.5rem;
+        }
+        .q-preview .p-pairs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .q-preview .p-pairs-column {
+            padding: 0.5rem;
+        }
+        .q-preview .p-pairs-header {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .q-preview .p-pairs-item {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .q-preview .p-pairs-item-id {
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        .q-preview .p-table-container {
+            margin-top: 0.5rem;
+            overflow-x: auto;
+        }
+        .q-preview .p-table-grid {
+            width: 90%;
+            border-collapse: collapse;
+        }
+        .q-preview .p-table-grid th,
+        .q-preview .p-table-grid td {
+            border: 1px solid #d1d5db;
+            padding: 0.4rem 0.6rem;
+            text-align: left;
+        }
+        .q-preview .p-table-grid th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+        .q-preview .p-gap {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+            min-width: 60px;
+            margin: 0 4px;
             font-size: 0.7rem;
             background: #f9fafb;
         }
@@ -669,203 +823,133 @@
             }
         };
 
-        // Full Question Data Structure
+        // Full Question Data Structure (v4.9 schema)
         const questionData = {
             'q_1765218443974_459': {
-                question_id: 'q_1765218443974_459',
-                section_id: 'A',
-                type: 'composite',
-                points: 2,
-                layout: 'grid',
-                prompt: { text: 'Fill in the blanks. Choose the correct words from the brackets.' },
-                subquestions: [
-                    { sub_id: 'a', prompt: { text: 'The standard unit to measure length is ______ (metre/kilogram).' }, points: 0.5 },
-                    { sub_id: 'b', prompt: { text: 'The standard unit to measure weight is ______ (kilogram/litre).' }, points: 0.5 },
-                    { sub_id: 'c', prompt: { text: 'The standard unit to measure capacity is ______ (metre/litre).' }, points: 0.5 },
-                    { sub_id: 'd', prompt: { text: 'A ______ is used to measure the length of an object. (metre tape/beam balance)' }, points: 0.5 }
-                ]
+                id: 'q_1765218443974_459',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'A', difficulty: 'Easy', marks: 2, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Fill in the blanks. Choose the correct words from the brackets.',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'horizontal' },
+                    sub_questions: [
+                        { id: 'a', type: 'SUBJECTIVE', data: { content: 'The standard unit to measure length is [[gap]] (metre/kilogram).', style: { image_layout: 'vertical' } } },
+                        { id: 'b', type: 'SUBJECTIVE', data: { content: 'The standard unit to measure weight is [[gap]] (kilogram/litre).', style: { image_layout: 'vertical' } } },
+                        { id: 'c', type: 'SUBJECTIVE', data: { content: 'The standard unit to measure capacity is [[gap]] (metre/litre).', style: { image_layout: 'vertical' } } },
+                        { id: 'd', type: 'SUBJECTIVE', data: { content: 'A [[gap]] is used to measure the length of an object. (metre tape/beam balance)', style: { image_layout: 'vertical' } } }
+                    ]
+                },
+                solution: { text: '' }
             },
             'q_1765218443974_462': {
-                question_id: 'q_1765218443974_462',
-                section_id: 'A',
-                type: 'composite',
-                points: 4,
-                layout: 'grid',
-                prompt: { text: 'Solve the following.' },
-                subquestions: [
-                    { sub_id: 'a', points: 2, prompt: { text: 'Solve the addition problem shown below.', media: [{ uri: 'https://ecdn.teacherspayteachers.com/cdn-cgi/image/format=avif,quality=70,width=525,height=525,onerror=redirect/thumbitem/Place-Value-Chart-with-Visual-HTO-chart--8514141-1674995298/750f-8514141-1.jpg' }] } },
-                    { sub_id: 'b', points: 2, prompt: { text: 'Solve the addition problem shown below.', media: [{ uri: 'https://ecdn.teacherspayteachers.com/cdn-cgi/image/format=avif,quality=70,width=525,height=525,onerror=redirect/thumbitem/Place-Value-Chart-with-Visual-HTO-chart--8514141-1674995298/750f-8514141-1.jpg' }] } }
-                ]
+                id: 'q_1765218443974_462',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'A', difficulty: 'Medium', marks: 4, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Solve the following.',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'horizontal' },
+                    sub_questions: [
+                        { id: 'a', type: 'SUBJECTIVE', data: { content: 'Solve the addition problem shown below.\n\n[[image:hto_chart]]', style: { image_layout: 'vertical' } } },
+                        { id: 'b', type: 'SUBJECTIVE', data: { content: 'Solve the addition problem shown below.\n\n[[image:hto_chart]]', style: { image_layout: 'vertical' } } }
+                    ]
+                },
+                solution: { text: '' }
             },
             'q_1765218443974_788': {
-                question_id: 'q_1765218443974_788',
-                section_id: 'B',
-                type: 'composite',
-                points: 2,
-                layout: 'grid',
-                prompt: { text: 'Circle the better estimate of measurement for the given objects.' },
-                subquestions: [
-                    { sub_id: 'a', points: 0.5, prompt: { text: 'length of a table' }, options: [{ text: '2 cm' }, { text: '2 m' }] },
-                    { sub_id: 'b', points: 0.5, prompt: { text: 'weight of a paper' }, options: [{ text: '5 g' }, { text: '5 kg' }] },
-                    { sub_id: 'c', points: 0.5, prompt: { text: 'capacity of a bottle' }, options: [{ text: '1 mL' }, { text: '1 L' }] },
-                    { sub_id: 'd', points: 0.5, prompt: { text: 'thickness of a ruler' }, options: [{ text: '1 mm' }, { text: '1 cm' }] }
-                ]
+                id: 'q_1765218443974_788',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'B', difficulty: 'Easy', marks: 2, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Circle the better estimate of measurement for the given objects.',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'horizontal' },
+                    sub_questions: [
+                        { id: 'a', type: 'MCQ', data: { content: 'length of a table', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '2 cm' }, { id: 'B', text: '2 m' }] } },
+                        { id: 'b', type: 'MCQ', data: { content: 'weight of a paper', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '5 g' }, { id: 'B', text: '5 kg' }] } },
+                        { id: 'c', type: 'MCQ', data: { content: 'capacity of a bottle', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '1 mL' }, { id: 'B', text: '1 L' }] } },
+                        { id: 'd', type: 'MCQ', data: { content: 'thickness of a ruler', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '1 mm' }, { id: 'B', text: '1 cm' }] } }
+                    ]
+                },
+                solution: { text: '' }
             },
             'q_1765218443974_842': {
-                question_id: 'q_1765218443974_842',
-                section_id: 'B',
-                type: 'composite',
-                points: 2,
-                layout: 'grid',
-                prompt: { text: 'Tick ( ) the correct options.' },
-                subquestions: [
-                    { sub_id: 'a', points: 0.5, prompt: { text: 'Preethi has a double of 400 apples. She has ______ apples.' }, options: [{ text: '600' }, { text: '200' }, { text: '800' }] },
-                    { sub_id: 'b', points: 0.5, prompt: { text: 'Raj has 672 pens. He buys 10 more. He now has ______ pens.' }, options: [{ text: '682' }, { text: '689' }, { text: '680' }] },
-                    { sub_id: 'c', points: 0.5, prompt: { text: 'Navjot\'s puzzle box has 800 pieces. He lost 1 piece. The puzzle has now ______ pieces.' }, options: [{ text: '798' }, { text: '801' }, { text: '799' }] },
-                    { sub_id: 'd', points: 0.5, prompt: { text: 'A library has 789 books. 100 books are taken. There are ______ books in the library now.' }, options: [{ text: '682' }, { text: '689' }, { text: '700' }] }
-                ]
+                id: 'q_1765218443974_842',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'B', difficulty: 'Medium', marks: 2, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Tick the correct options.',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'horizontal' },
+                    sub_questions: [
+                        { id: 'a', type: 'MCQ', data: { content: 'Preethi has a double of 400 apples. She has [[gap]] apples.', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '600' }, { id: 'B', text: '200' }, { id: 'C', text: '800' }] } },
+                        { id: 'b', type: 'MCQ', data: { content: 'Raj has 672 pens. He buys 10 more. He now has [[gap]] pens.', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '682' }, { id: 'B', text: '689' }, { id: 'C', text: '680' }] } },
+                        { id: 'c', type: 'MCQ', data: { content: 'Navjot\'s puzzle box has 800 pieces. He lost 1 piece. The puzzle has now [[gap]] pieces.', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '798' }, { id: 'B', text: '801' }, { id: 'C', text: '799' }] } },
+                        { id: 'd', type: 'MCQ', data: { content: 'A library has 789 books. 100 books are taken. There are [[gap]] books in the library now.', style: { image_layout: 'vertical', options_layout: 'horizontal' }, options: [{ id: 'A', text: '682' }, { id: 'B', text: '689' }, { id: 'C', text: '700' }] } }
+                    ]
+                },
+                solution: { text: '' }
             },
             'q_1765218443974_826': {
-                question_id: 'q_1765218443974_826',
-                section_id: 'B',
-                type: 'composite',
-                points: 3,
-                layout: 'stack',
-                prompt: { text: 'Estimate the sum of 345 and 254 to the nearest hundreds. Find the actual sum and compare.' },
-                stimulus: { text: '345 + 254' },
-                subquestions: [
-                    { sub_id: 'a', points: 1.5, prompt: { text: 'Estimated Sum:' } },
-                    { sub_id: 'b', points: 1.5, prompt: { text: 'Actual Sum:' } }
-                ]
+                id: 'q_1765218443974_826',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'B', difficulty: 'Medium', marks: 3, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Estimate the sum of 345 and 254 to the nearest hundreds. Find the actual sum and compare.\n\n345 + 254',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'vertical' },
+                    sub_questions: [
+                        { id: 'a', type: 'SUBJECTIVE', data: { content: 'Estimated Sum:', style: { image_layout: 'vertical' } } },
+                        { id: 'b', type: 'SUBJECTIVE', data: { content: 'Actual Sum:', style: { image_layout: 'vertical' } } }
+                    ]
+                },
+                solution: { text: '' }
             },
             'q_1765218443974_562': {
-                question_id: 'q_1765218443974_562',
-                section_id: 'B',
-                type: 'short_answer',
-                points: 3,
-                layout: 'stack',
-                prompt: { text: 'Solve 867 - 526 and check your answer.' },
-                stimulus: { media: [{ uri: null, ai_generation_prompt: 'Vertical subtraction: 867 - 526' }] }
+                id: 'q_1765218443974_562',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'B', difficulty: 'Medium', marks: 3, pool: 'Practice' },
+                type: 'SUBJECTIVE',
+                data: {
+                    content: 'Solve 867 - 526 and check your answer.',
+                    style: { image_layout: 'vertical' },
+                    expected_length: 'short'
+                },
+                solution: { text: '' }
             },
             'q_1765218443975_84': {
-                question_id: 'q_1765218443975_84',
-                section_id: 'C',
-                type: 'composite',
-                points: 4,
-                layout: 'stack',
-                prompt: { text: 'Solve the given story sums.' },
-                subquestions: [
-                    { sub_id: 'a', points: 2, prompt: { text: 'Aastha buys a 15 cm long ribbon for making a bow. She uses 8 cm from it. What is the length of the ribbon left with her?', media: [{ uri: null, ai_generation_prompt: 'Ribbon illustration' }] } },
-                    { sub_id: 'b', points: 2, prompt: { text: 'Shaqib has 10 litres of petrol in his car. He fills 15 litres more at the petrol pump. How much petrol is in the car now?', media: [{ uri: null, ai_generation_prompt: 'Car at petrol pump' }] } }
-                ]
+                id: 'q_1765218443975_84',
+                metadata: { grade: 3, subject: 'Mathematics', chapter: 1, section: 'C', difficulty: 'Hard', marks: 4, pool: 'Practice' },
+                type: 'COMPOSITE',
+                data: {
+                    common_content: 'Solve the given story sums.',
+                    style: { image_layout: 'vertical', sub_questions_layout: 'vertical' },
+                    sub_questions: [
+                        { id: 'a', type: 'SUBJECTIVE', data: { content: 'Aastha buys a 15 cm long ribbon for making a bow. She uses 8 cm from it. What is the length of the ribbon left with her?', style: { image_layout: 'vertical' } } },
+                        { id: 'b', type: 'SUBJECTIVE', data: { content: 'Shaqib has 10 litres of petrol in his car. He fills 15 litres more at the petrol pump. How much petrol is in the car now?', style: { image_layout: 'vertical' } } }
+                    ]
+                },
+                solution: { text: '' }
             }
         };
 
-        // Helper Functions for A4 Preview Rendering
-        function getBlankStyle(text, options) {
-            if (!text || !text.includes('__')) return '';
-            let optionsToMeasure = options || [];
-            if (!optionsToMeasure || optionsToMeasure.length === 0) {
-                const match = text.match(/\(([^)]+)\)/);
-                if (match && match[1].includes('/')) {
-                    optionsToMeasure = match[1].split('/');
-                }
-            }
-            let width = '60px';
-            if (optionsToMeasure && optionsToMeasure.length > 0) {
-                let longest = 0;
-                optionsToMeasure.forEach(opt => {
-                    const txt = typeof opt === 'string' ? opt : (opt.text || '');
-                    if (txt.length > longest) longest = txt.length;
-                });
-                const calcWidth = Math.max(60, (longest * 8 * 1.2));
-                width = `${Math.round(calcWidth)}px`;
-            }
-            return width;
-        }
+        // NOTE: Helper functions are now in shared modules:
+        // - question-renderer.js: formatRichText, renderQuestionHTML, type-specific renderers
+        // - question-preview.js: renderPreviewToContainer, renderPreviewHTML
 
-        function formatForPrint(text, options) {
-            if (!text) return '';
-            if (text.includes('__')) {
-                const w = getBlankStyle(text, options);
-                return text.replace(/_{2,}/g, `<span class="blank-line" style="min-width:${w};">&nbsp;</span>`);
-            }
-            return text;
-        }
-
+        // Render question preview using shared module (v4.9 schema)
         function renderQuestionPreview(q, container, layoutOverride = null) {
             if (!q) return;
 
-            // Use layout override if provided, otherwise use stored preference, otherwise use question's default layout
-            const layout = layoutOverride || appState.questionLayouts[q.question_id] || q.layout || 'grid';
-
-            // 1. Stimulus Logic
-            let stimHtml = '';
-            if (q.stimulus) {
-                let assetsHtml = '';
-                if (q.stimulus.media || q.stimulus.assets) {
-                    const media = q.stimulus.media || q.stimulus.assets || [];
-                    assetsHtml = media.map(m =>
-                        `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
-                    ).join('');
-                }
-                // Render tables if present (use shared helper from question-parser.js)
-                const tablesHtml = renderStimulusTables(q.stimulus.tables || []);
-                
-                const stimContent = (q.stimulus.text || '') + assetsHtml + tablesHtml;
-                if (stimContent) {
-                    stimHtml = `<div class="p-stimulus">${stimContent}</div>`;
-                }
-            }
-
-            // 2. Prompt Asset Logic
-            let promptAssets = '';
-            const pMedia = (q.prompt && q.prompt.media) ? q.prompt.media : [];
-            if (pMedia.length > 0) {
-                promptAssets = pMedia.map(m =>
-                    `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
-                ).join('');
-            }
-
-            // 3. Main Text Logic
-            const pText = (q.prompt && q.prompt.text) ? q.prompt.text : (q.prompt || '');
-
-            // 4. Sub-questions Layout Logic
-            let subHtml = '';
-            if (q.subquestions) {
-                const isGrid = layout === 'grid';
-                const subs = q.subquestions.map((sq, i) => {
-                    const label = sq.sub_id || String.fromCharCode(97 + i);
-                    let sqAssets = '';
-                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
-                    if (sqMedia.length > 0) {
-                        sqAssets = sqMedia.map(m =>
-                            `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`
-                        ).join('');
-                    }
-                    let optHtml = '';
-                    if (sq.options) {
-                        optHtml = sq.options.map((o, k) => {
-                            const txt = typeof o === 'string' ? o : o.text;
-                            return `<span style="margin-right:0.75rem; font-size:8pt;">(${k + 1}) ${txt}</span>`;
-                        }).join('');
-                    }
-                    let sqMarks = '';
-                    if (sq.points) {
-                        sqMarks = `<span style="float:right; font-weight:bold; font-size:8pt;">(${sq.points} marks)</span>`;
-                    }
-                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
-                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:8pt;">${optHtml}</div>` : ''}</div></div>`;
-                }).join('');
-                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
-            }
-
-            const marksText = `(${q.points} ${q.points == 1 ? 'mark' : 'marks'})`;
-            container.innerHTML = `<div class="q-preview"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">1.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+            // Use shared renderPreviewToContainer from question-preview.js
+            renderPreviewToContainer(q, container, {
+                imageResolver: (imageId) => null,  // No local image store in selection tool
+                interactive: false,
+                questionNumber: '1',
+                showMarks: true
+            });
         }
 
         function toggleQuestionLayout(qId) {
-            const currentLayout = appState.questionLayouts[qId] || questionData[qId]?.layout || 'grid';
+            // v4.9: Get layout from style.sub_questions_layout (for COMPOSITE) or default to 'vertical'
+            const qData = questionData[qId];
+            const defaultLayout = qData?.data?.style?.sub_questions_layout === 'horizontal' ? 'grid' : 'stack';
+            const currentLayout = appState.questionLayouts[qId] || defaultLayout;
             const newLayout = currentLayout === 'grid' ? 'stack' : 'grid';
             appState.questionLayouts[qId] = newLayout;
             
@@ -1228,12 +1312,13 @@
                 questionSection = cardSection || 'A'; // Default to 'A' if no section attribute found
             }
 
-            // Initialize sub-question marks from questionData
+            // Initialize sub-question marks from questionData (v4.9 schema)
             const subQuestionMarks = {};
-            if (questionData[id] && questionData[id].subquestions) {
-                questionData[id].subquestions.forEach((sq, idx) => {
-                    const subId = sq.sub_id || String.fromCharCode(97 + idx);
-                    subQuestionMarks[subId] = sq.points || 0;
+            const qData = questionData[id];
+            if (qData && qData.type === 'COMPOSITE' && qData.data?.sub_questions) {
+                qData.data.sub_questions.forEach((sq, idx) => {
+                    const subId = sq.id || String.fromCharCode(97 + idx);
+                    subQuestionMarks[subId] = 0; // Initial marks (will be distributed from main marks)
                 });
             }
 
@@ -1305,19 +1390,20 @@
             // If check passes, update state
             q.marks = newMarks;
             
-            // Distribute marks equally among sub-questions if they exist
-            if (questionData[id] && questionData[id].subquestions && questionData[id].subquestions.length > 0) {
+            // Distribute marks equally among sub-questions if they exist (v4.9 schema)
+            const qData = questionData[id];
+            if (qData && qData.type === 'COMPOSITE' && qData.data?.sub_questions?.length > 0) {
                 // Initialize subQuestionMarks if it doesn't exist
                 if (!q.subQuestionMarks) {
                     q.subQuestionMarks = {};
                 }
                 
-                const subQuestionCount = questionData[id].subquestions.length;
+                const subQuestionCount = qData.data.sub_questions.length;
                 const marksPerSubQuestion = newMarks / subQuestionCount;
                 
                 // Distribute marks equally among all sub-questions
-                questionData[id].subquestions.forEach((sq, idx) => {
-                    const subId = sq.sub_id || String.fromCharCode(97 + idx);
+                qData.data.sub_questions.forEach((sq, idx) => {
+                    const subId = sq.id || String.fromCharCode(97 + idx);
                     q.subQuestionMarks[subId] = marksPerSubQuestion;
                 });
             }
@@ -1387,67 +1473,46 @@
             els.sectionMarks.innerText = sectionTotal;
         }
 
-        // Render a question in A4 format (for right panel preview)
+        // Render a question in A4 format (for right panel preview) - v4.9 schema
         function renderA4Question(q, questionIndex, sectionLabel) {
             if (!q || !questionData[q.id]) return '';
 
             const qData = questionData[q.id];
-            const layout = appState.questionLayouts[q.id] || qData.layout || 'grid';
-
-            // 1. Stimulus Logic
-            let stimHtml = '';
-            if (qData.stimulus) {
-                let assetsHtml = '';
-                if (qData.stimulus.media || qData.stimulus.assets) {
-                    const media = qData.stimulus.media || qData.stimulus.assets || [];
-                    assetsHtml = media.map(m =>
-                        `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
-                    ).join('');
-                }
-                // Render tables if present (use shared helper from question-parser.js)
-                const tablesHtml = renderStimulusTables(qData.stimulus.tables || []);
+            const data = qData.data || {};
+            const qType = qData.type || 'SUBJECTIVE';
+            
+            // Use shared formatRichText for rendering
+            const renderOptions = {
+                imageResolver: (imageId) => null,  // No local image store in selection tool
+                interactive: false
+            };
+            
+            // Main content - for COMPOSITE it's common_content, others use content
+            const mainContent = data.common_content || data.content || '';
+            
+            // Type-specific content rendering using shared module
+            let typeHtml = '';
+            
+            if (qType === 'MCQ' && data.options) {
+                typeHtml = renderMCQPreview(data, renderOptions);
+            } else if (qType === 'FIB' && data.options_pool) {
+                typeHtml = renderFIBPreview(data);
+            } else if (qType === 'MATCH' && data.pairs) {
+                typeHtml = renderMatchPreview(data, renderOptions);
+            } else if (qType === 'TABLE' && data.table) {
+                typeHtml = renderTablePreview(data, renderOptions);
+            } else if (qType === 'COMPOSITE' && data.sub_questions) {
+                // For COMPOSITE, render sub-questions with editable marks
+                const subLayout = data.style?.sub_questions_layout || 'vertical';
+                const isGrid = subLayout === 'horizontal';
                 
-                const stimContent = (qData.stimulus.text || '') + assetsHtml + tablesHtml;
-                if (stimContent) {
-                    stimHtml = `<div class="p-stimulus">${stimContent}</div>`;
-                }
-            }
-
-            // 2. Prompt Asset Logic
-            let promptAssets = '';
-            const pMedia = (qData.prompt && qData.prompt.media) ? qData.prompt.media : [];
-            if (pMedia.length > 0) {
-                promptAssets = pMedia.map(m =>
-                    `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE: ${m.ai_generation_prompt || 'Asset'}]</div>`}</div>`
-                ).join('');
-            }
-
-            // 3. Main Text Logic
-            const pText = (qData.prompt && qData.prompt.text) ? qData.prompt.text : (qData.prompt || '');
-
-            // 4. Sub-questions Layout Logic
-            let subHtml = '';
-            if (qData.subquestions) {
-                const isGrid = layout === 'grid';
-                const subs = qData.subquestions.map((sq, i) => {
-                    const label = sq.sub_id || String.fromCharCode(97 + i);
-                    let sqAssets = '';
-                    const sqMedia = (sq.prompt && sq.prompt.media) ? sq.prompt.media : [];
-                    if (sqMedia.length > 0) {
-                        sqAssets = sqMedia.map(m =>
-                            `<div class="p-asset">${m.uri ? `<img src="${m.uri}" alt="${m.alt || ''}">` : `<div class="p-asset-placeholder">[IMAGE]</div>`}</div>`
-                        ).join('');
-                    }
-                    let optHtml = '';
-                    if (sq.options) {
-                        optHtml = sq.options.map((o, k) => {
-                            const txt = typeof o === 'string' ? o : o.text;
-                            return `<span style="margin-right:1rem;">(${k + 1}) ${txt}</span>`;
-                        }).join('');
-                    }
+                const subs = data.sub_questions.map((sq, i) => {
+                    const label = sq.id || String.fromCharCode(97 + i);
+                    const sqData = sq.data || {};
+                    const sqContent = sqData.content || '';
                     
-                    // Get current sub-question marks from appState or use default
-                    const currentSubMarks = q.subQuestionMarks?.[label] !== undefined ? q.subQuestionMarks[label] : (sq.points || 0);
+                    // Get current sub-question marks from appState or use default (marks distributed from main)
+                    const currentSubMarks = q.subQuestionMarks?.[label] !== undefined ? q.subQuestionMarks[label] : 0;
                     
                     // Make sub-question marks editable
                     const sqMarks = `<span style="float:right; font-weight:bold; font-size:10pt; display:inline-flex; align-items:center; gap:2px;">(<input type="number" 
@@ -1459,10 +1524,20 @@
                                style="width:30px; padding:2px 4px; font-size:9pt; text-align:center; border:1px solid #ccc; border-radius:3px;"
                                class="sub-question-marks-input"><span>marks)</span></span>`;
                     
-                    const sqText = (sq.prompt && sq.prompt.text) ? sq.prompt.text : (sq.prompt || '');
-                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatForPrint(sqText, sq.options)}${sqMarks}${sqAssets}${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}</div></div>`;
+                    // Sub-question type-specific content
+                    let sqTypeHtml = '';
+                    if (sq.type === 'MCQ' && sqData.options) {
+                        sqTypeHtml = renderMCQPreview(sqData, renderOptions);
+                    } else if (sq.type === 'FIB' && sqData.options_pool) {
+                        sqTypeHtml = renderFIBPreview(sqData);
+                    } else if (sq.type === 'TABLE' && sqData.table) {
+                        sqTypeHtml = renderTablePreview(sqData, renderOptions);
+                    }
+                    
+                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span><div style="width:100%">${formatRichText(sqContent, renderOptions)}${sqMarks}${sqTypeHtml}</div></div>`;
                 }).join('');
-                subHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
+                
+                typeHtml = isGrid ? `<div class="p-sub-grid">${subs}</div>` : `<div>${subs}</div>`;
             }
 
             // Make main question marks editable (always visible, not just on hover)
@@ -1474,7 +1549,8 @@
                                        style="width:30px; padding:2px 4px; font-size:9pt; text-align:center; border:1px solid #ccc; border-radius:3px; font-weight:bold;"
                                        class="main-question-marks-input">`;
             const marksText = `(${marksInput} ${q.marks == 1 ? 'mark' : 'marks'})`;
-            return `<div class="p-q-block"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">${questionIndex}.</span> ${formatForPrint(pText)}</div><div class="p-q-marks">${marksText}</div></div>${promptAssets}${stimHtml}${subHtml}</div>`;
+            
+            return `<div class="p-q-block"><div class="p-q-header"><div class="p-q-content"><span class="p-q-num">${questionIndex}.</span> ${formatRichText(mainContent, renderOptions)}</div><div class="p-q-marks">${marksText}</div></div>${typeHtml}</div>`;
         }
 
         function renderSelectedQuestions() {

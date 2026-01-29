@@ -15,6 +15,11 @@
     
     <!-- PDF Generation (html2pdf.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Shared Modules -->
+    <script src="question-parser.js"></script>
+    <script src="question-renderer.js"></script>
+    <script src="question-preview.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -626,8 +631,8 @@
         .p-q-header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; margin-bottom: 0.5rem; }
         .p-q-content { flex: 1; }
         /* Question number and content with hanging indent */
-        .p-q-num { font-weight: bold; min-width: 2rem; display: inline-block; margin-right: 0.5rem; }
-        .p-section-text { display: flex; align-items: flex-start; gap: 0.25rem; width: 100%; }
+        .p-q-num { font-weight: bold; min-width: 2rem; display: inline-block; margin-right: 0.125rem; }
+        .p-section-text { display: flex; align-items: flex-start; gap: 0.0625rem; width: 100%; }
         .p-section-text > .p-q-num { flex-shrink: 0; }
         .p-section-text > span:not(.p-q-num), .p-section-text > div { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; }
         
@@ -648,7 +653,7 @@
             flex-wrap: wrap; 
             justify-content: center; 
             gap: 1.5rem 2rem;
-            width: 80%;
+            width: 90%;
         }
         .p-word-bank-item { white-space: nowrap; }
         
@@ -681,20 +686,23 @@
         .p-item-chip { padding: 0.25rem 0.75rem; border: 1px solid #000; background: white; }
         
         /* Table styles for stimulus tables */
-        .p-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-style: normal; font-size: 10pt; }
+        .p-table { width: 90%; border-collapse: collapse; margin: 0.75rem 0; font-style: normal; font-size: 10pt; }
         .p-table th, .p-table td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; }
         .p-table th { background: #f3f4f6; font-weight: 600; }
         .p-table tbody tr:nth-child(even) { background: #fafafa; }
         
-        .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .p-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; column-gap: 1rem; }
+        .p-sub-grid .p-sub-item { padding-left: 0; margin-bottom: 0.25rem; }
+        /* Ensure composite subs has proper indentation for grid layout */
+        .p-composite-subs .p-sub-grid { padding-left: 2.5rem; }
         /* Sub-question with hanging indent - content aligned with question text */
         /* Using text-align:left to prevent word spacing issues when gaps force line breaks */
-        .p-sub-item { margin-bottom: 0.75rem; text-align: left; padding-left: 2.5rem; display: flex; align-items: flex-start; gap: 0.5rem; width: 100%; box-sizing: border-box; }
-        .p-sub-label { font-weight: bold; min-width: 1.25rem; flex-shrink: 0; }
+        .p-sub-item { margin-bottom: 0.75rem; text-align: left; padding-left: 2.5rem; display: flex; align-items: flex-start; gap: 0.25rem; width: 100%; box-sizing: border-box; }
+        .p-sub-label { font-weight: bold; min-width: 1rem; flex-shrink: 0; }
         .p-sub-content { flex: 1; min-width: 0; overflow: hidden; word-wrap: break-word; }
         /* Option with hanging indent - content aligned with question/sub-question text */
-        .p-option-item { display: flex; align-items: flex-start; gap: 0.5rem; }
-        .p-option-id { min-width: 1.75rem; flex-shrink: 0; }
+        .p-option-item { display: flex; align-items: flex-start; gap: 0.25rem; }
+        .p-option-id { min-width: 1.25rem; flex-shrink: 0; }
         .p-option-text { flex: 1; min-width: 0; }
         .p-sq-option { display: flex; align-items: flex-start; gap: 0.5rem; }
         .p-sq-option-id { min-width: 1.5rem; flex-shrink: 0; }
@@ -702,7 +710,7 @@
         
         /* TABLE type styles (v4.3 - simple grid with empty cells) */
         .p-table-container { display: flex; justify-content: center; margin: 1rem 0; width: 100%; }
-        .p-table-grid { border-collapse: collapse; width: 80%; }
+        .p-table-grid { border-collapse: collapse; width: 90%; }
         .p-table-grid th, .p-table-grid td { border: 1px solid #d1d5db; padding: 0.5rem; text-align: center; vertical-align: middle; min-width: 40px; height: 36px; }
         .p-table-grid th { background: #f3f4f6; font-weight: 600; font-size: 0.9em; }
         .p-table-grid td { background: white; }
@@ -819,8 +827,18 @@
         .p-section-stack .p-section-text { text-align: left; width: 100%; }
         .p-section-stack .p-section-media { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
         
-        /* Options grid layout in preview - indented to align with question text */
-        .p-options { margin-top: 0.5rem; padding-left: 2.5rem; }
+        /* Type-specific content wrapper - indented to align with question content (not question number) */
+        .p-type-content { padding-left: 2.5rem; margin-top: 0.5rem; }
+        /* Options inside type-content don't need extra padding */
+        .p-type-content .p-options { padding-left: 0; margin-left: 0; }
+        /* COMPOSITE sub-questions wrapper - NO extra indentation, aligns with main content */
+        .p-composite-subs { margin-top: 0.5rem; }
+        /* Sub-question options should NOT have extra padding - align with sub-question content */
+        .p-sub-content .p-options { padding-left: 0; margin-left: 0; }
+        /* Ensure images in option text scale properly within their container */
+        .p-option-text img { max-width: 100%; height: auto; }
+        .p-option-text .p-asset img { max-width: 100%; height: auto; max-height: 150px; }
+        .p-option-text .p-asset-resizable img { max-width: 100%; height: auto; }
         .p-options-stack .p-option-item { display: block; margin-bottom: 0.25rem; }
         .p-options-grid .p-option-item { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
         .p-options-grid .p-option-media { max-width: 100px; }
@@ -2004,8 +2022,6 @@
 
     <!-- SHARED PARSING MODULE -->
     <script src="question-parser.js"></script>
-    <!-- LAYOUT GENERATION MODULE -->
-    <script src="layout-parser.js"></script>
 
     <!-- SCRIPT -->
     <script>
@@ -2304,7 +2320,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const content = e.target.result;
-                const newQuestions = parseMixedJson(content);
+                const newQuestions = parseJson(content);
                 
                 if (newQuestions.length > 0) {
                     importData = newQuestions;
@@ -2546,8 +2562,15 @@
 
         // --- SHARED: SELECT QUESTION ---
         function selectQuestion(idx) {
+            console.log(`selectQuestion called with idx=${idx}`);
             activeIndex = idx;
             const q = activeData[idx]; // Use activeData reference
+            console.log(`Selected question:`, q?.id || 'undefined', q?.type || 'undefined');
+            
+            if (!q) {
+                console.error(`No question found at index ${idx}`);
+                return;
+            }
             
             renderList(); // Refresh highlighting
 
@@ -2558,15 +2581,21 @@
             document.getElementById('editor-wrapper').style.display = 'block';
             
             // Populate Fields
-            populateEditor(q);
+            try {
+                populateEditor(q);
+            } catch (e) {
+                console.error('Error in populateEditor:', e);
+            }
             
-            // 2. Force Active Tab
+            // Always render preview (even if not visible) to keep it up-to-date
+            console.log(`Rendering preview for question ${q.id || idx}`);
+            renderPreview(q, idx);
+            
+            // Handle tab visibility based on current active tab
             const isEditActive = document.getElementById('tab-edit').classList.contains('active');
+            console.log(`isEditActive=${isEditActive}`);
             if (isEditActive) {
-                 // Force Edit View
-                 document.getElementById('tab-edit').classList.add('active');
-                 document.getElementById('tab-preview').classList.remove('active');
-                 
+                 // Keep Edit View visible
                  document.getElementById('view-edit').classList.add('active');
                  document.getElementById('view-preview').classList.remove('active');
                  
@@ -2578,10 +2607,9 @@
                  diffSelect.disabled = false;
                  pointInput.disabled = false;
             } else {
-                 // Default to Preview View
+                 // Show Preview View
                  document.getElementById('view-preview').classList.add('active');
                  document.getElementById('view-edit').classList.remove('active');
-                 renderPreview(q, idx);
             }
         }
 
@@ -2648,10 +2676,10 @@
             if(isMcqType && options && options.length > 0) {
                 optionsSection.style.display = 'block';
                 document.getElementById('options-section-label').textContent = 'OPTIONS (MCQ)';
-                    renderMainOptions(options);
+                renderMainOptions(options);
                 // Set options layout toggle state (default to horizontal)
                 updateOptionsLayoutButtons(data.style?.options_layout || 'horizontal');
-                } else {
+            } else {
                 optionsSection.style.display = 'none';
             }
 
@@ -2732,13 +2760,9 @@
          * Returns the part after the last hyphen, or the full ID if no hyphen
          * e.g., "Q1-a" → "a", "Q1-sub-b" → "b", "abc" → "abc"
          */
-        function getIdDisplayLabel(id) {
-            if (!id) return '';
-            const parts = id.split('-');
-            return parts[parts.length - 1];
-        }
+        // NOTE: getIdDisplayLabel removed - v4.9 uses simple IDs directly
 
-        // --- DATA HELPERS (Adapted for v4.0 schema) ---
+        // --- DATA HELPERS (Adapted for v4.9 schema) ---
         function updatePrompt(val) {
             const q = activeData[activeIndex];
             if (!q.data) q.data = {};
@@ -2770,28 +2794,7 @@
         let resizeContainer = null;
         let resizeImageTag = ''; // Store the original tag being resized
         
-        // Parse image tag to extract id and dimensions
-        // Format: [[image:id]] or [[image:id|height:H|width:W]]
-        // The tag passed here is the content inside [[ ]], e.g., "image:id|height:50|width:75"
-        function parseImageTag(tag) {
-            // Remove 'image:' prefix if present
-            let cleanTag = tag;
-            if (tag.startsWith('image:')) {
-                cleanTag = tag.substring(6);
-            }
-            const parts = cleanTag.split('|');
-            const result = { id: parts[0], width: null, height: null };
-            
-            for (let i = 1; i < parts.length; i++) {
-                const part = parts[i].trim();
-                if (part.startsWith('width:')) {
-                    result.width = parseInt(part.substring(6));
-                } else if (part.startsWith('height:')) {
-                    result.height = parseInt(part.substring(7));
-                }
-            }
-            return result;
-        }
+        // NOTE: parseImageTag is now in shared question-renderer.js module
         
         // Build image tag with dimensions
         // Format: [[image:id|height:H|width:W]]
@@ -3325,11 +3328,6 @@
             const q = activeData[activeIndex];
             if (q) {
                 document.getElementById('json-ro-textarea').value = JSON.stringify(q, null, 2);
-                // Also update layout JSON if that view is active
-                const layoutView = document.getElementById('sub-view-layout');
-                if (layoutView && layoutView.style.display !== 'none') {
-                    updateLayoutJsonView();
-                }
             }
         }
 
@@ -3363,11 +3361,10 @@
             container.innerHTML = '';
             
             options.forEach((opt, idx) => {
-                // Support both opt_id (new schema) and id (legacy schema)
-                // Display only the part after the last hyphen for cleaner display
-                const rawId = opt.opt_id || opt.id || `${String.fromCharCode(97 + idx)}`;
-                const optId = getIdDisplayLabel(rawId);
-                const optText = getTextValue(opt);
+                // v4.9 uses simple IDs directly
+                const optId = opt.id || String.fromCharCode(97 + idx);
+                // v4.9 schema: options are objects with { id, text } or just strings
+                const optText = (typeof opt === 'object') ? (opt.text || '') : (opt || '');
                 const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
                 const item = document.createElement('div');
@@ -3440,6 +3437,12 @@
             const q = activeData[activeIndex];
             if (q.data?.options) {
                 q.data.options.splice(idx, 1);
+                // Re-index all option IDs to maintain continuous numbering (a, b, c, d...)
+                q.data.options.forEach((opt, i) => {
+                    if (typeof opt === 'object') {
+                        opt.id = String.fromCharCode(97 + i); // 97 = 'a'
+                    }
+                });
                 renderMainOptions(q.data.options);
             }
             updateJsonView();
@@ -4535,7 +4538,7 @@
             if (!q.data) q.data = {};
             if(!q.data.sub_questions) q.data.sub_questions = [];
             const newIdx = q.data.sub_questions.length;
-            const newSubId = `Q${q.id || activeIndex + 1}-${String.fromCharCode(97 + newIdx)}`; // Q1-a, Q1-b, etc.
+            const newSubId = String.fromCharCode(97 + newIdx); // Simple letter: a, b, c, d...
             
             // Check if there's a shared options_pool among existing FIB sub-questions
             const existingFibWithPool = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
@@ -4561,9 +4564,9 @@
             const q = activeData[activeIndex];
             if (!q.data?.sub_questions) return;
             q.data.sub_questions.splice(idx, 1);
-            // Re-index sub ids
+            // Re-index sub ids to maintain continuous lettering (a, b, c, d...)
             q.data.sub_questions.forEach((sq, i) => {
-                sq.id = `Q${q.id || activeIndex + 1}-${String.fromCharCode(97 + i)}`;
+                sq.id = String.fromCharCode(97 + i); // 97 = 'a'
             });
             renderSubQuestions(q);
             recalculateTotalMarks();
@@ -4616,6 +4619,12 @@
             const q = activeData[activeIndex];
             if (q.data?.sub_questions?.[sqIdx]?.data?.options) {
                 q.data.sub_questions[sqIdx].data.options.splice(optIdx, 1);
+                // Re-index option IDs to maintain continuous numbering (i, ii, iii... or a, b, c...)
+                q.data.sub_questions[sqIdx].data.options.forEach((opt, i) => {
+                    if (typeof opt === 'object') {
+                        opt.id = String.fromCharCode(97 + i); // 97 = 'a'
+                    }
+                });
             }
             renderSubQuestions(q);
             updateJsonView();
@@ -4670,7 +4679,7 @@
         }
         
         // --- PARSING HELPERS ---
-        // NOTE: Core parsing functions (parseMixedJson, normalizeToNewSchema, etc.) 
+        // NOTE: Core parsing functions (parseJson, validateAndNormalize, etc.) 
         // are now in question-parser.js for shared use across tools
 
         function updateLayoutButtons(mode) {
@@ -4717,7 +4726,7 @@
                     
                     const badge = document.createElement('div');
                     badge.className = 'sub-id-badge';
-                    badge.innerText = sq.id ? getIdDisplayLabel(sq.id) : String.fromCharCode(97 + sqIdx);
+                    badge.innerText = sq.id || String.fromCharCode(97 + sqIdx);
                     
                     // Type selector - v4.0 types
                     const typeSelect = document.createElement('select');
@@ -5133,555 +5142,52 @@
             }
         }
         
-        function updateLayoutJsonView() {
-            const q = activeData[activeIndex];
-            if (!q) return;
-            
-            // Use shared generateLayoutJson function
-            const layoutData = generateLayoutJson(q);
-            
-            const textarea = document.getElementById('layout-json-textarea');
-            if (textarea) {
-                textarea.value = JSON.stringify(layoutData, null, 2);
-            }
-        }
+        // NOTE: All rendering functions are now in shared modules:
+        // - question-renderer.js: formatRichText, renderQuestionHTML, type-specific renderers
+        // - question-preview.js: renderPreviewToContainer, renderPreviewHTML, applyPreviewStyles
         
-        function getBlankStyle(text, options) {
-            if (!text || !text.includes('__')) return '';
-            let optionsToMeasure = options || [];
-            if (!optionsToMeasure || optionsToMeasure.length === 0) {
-                const match = text.match(/\(([^)]+)\)/); 
-                if (match && match[1].includes('/')) { optionsToMeasure = match[1].split('/'); }
-            }
-            let width = '80px'; 
-            if (optionsToMeasure && optionsToMeasure.length > 0) {
-                let longest = 0;
-                optionsToMeasure.forEach(opt => {
-                    const txt = typeof opt === 'string' ? opt : (opt.text || '');
-                    if (txt.length > longest) longest = txt.length;
-                });
-                const calcWidth = Math.max(80, (longest * 10 * 1.2)); 
-                width = `${Math.round(calcWidth)}px`;
-            }
-            return width; 
-        }
-        // Helper function to render LaTeX math using KaTeX
-        // Supports $...$ for inline and $$...$$ for display math
-        function renderLatexMath(text) {
-            if (!text || typeof katex === 'undefined') return text;
-            
-            // Render display math first ($$...$$)
-            text = text.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
-                try {
-                    return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    console.warn('KaTeX display error:', e);
-                    return match;
-                }
-            });
-            
-            // Render inline math ($...$) - be careful not to match $$
-            text = text.replace(/\$([^$]+)\$/g, (match, math) => {
-                try {
-                    return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
-                } catch (e) {
-                    console.warn('KaTeX inline error:', e);
-                    return match;
-                }
-            });
-            
-            return text;
-        }
-        
-        // Helper function to render Markdown using marked.js
-        function renderMarkdown(text) {
-            if (!text || typeof marked === 'undefined') return text;
-            
-            try {
-                // Configure marked for inline rendering (no wrapping <p> tags for simple text)
-                marked.setOptions({
-                    breaks: true,  // Convert \n to <br>
-                    gfm: true      // GitHub Flavored Markdown
-                });
-                
-                // Use parseInline for text that shouldn't be wrapped in <p>
-                return marked.parseInline(text);
-            } catch (e) {
-                console.warn('Marked error:', e);
-                return text;
-            }
-        }
-        
-        // v4.8: formatForPrint handles image tags with embedded dimensions [[image:id|height:H|width:W]]
-        // Also supports Markdown and LaTeX math ($...$ and $$...$$)
-        // Custom tags [[image:...]] and [[gap...]] are protected from Markdown/LaTeX processing
-        // Images are wrapped in resizable containers for drag-to-resize in preview
+        // formatForPrint - wrapper that uses shared formatRichText with authoring tool's image resolver
+        // Enables interactive resize handles for images
         function formatForPrint(text, options) {
-            if(!text) return '';
-            let result = text;
-            
-            // Step 1: Handle legacy __ blanks FIRST (before any placeholders)
-            // This must happen before we create placeholders to avoid conflicts
-            if(result.includes('__') && !result.includes('[[')) {
-                const w = getBlankStyle(text, options);
-                result = result.replace(/_{2,}/g, `<span style="display:inline-block; border-bottom:1px solid #000; min-width:${w}; margin:0 4px;">&nbsp;</span>`);
-            }
-            
-            // Step 2: Protect custom tokens with Unicode placeholders (won't be affected by Markdown/LaTeX)
-            // Using Unicode private-use characters as delimiters: \uE000 and \uE001
-            const imagePlaceholders = [];
-            const gapPlaceholders = [];
-            
-            // Handle image tokens [[image:id]] or [[image:id|height:H|width:W]]
-            result = result.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
-                const parsed = parseImageTag(tagContent);
-                const imageId = parsed.id;
-                
-                let replacement;
-                if (uploadedImages[imageId]) {
-                    let imgStyle = '';
-                    if (parsed.width) imgStyle += `width:${parsed.width}px;`;
-                    if (parsed.height) imgStyle += `height:${parsed.height}px;`;
-                    if (!parsed.width && !parsed.height) imgStyle = 'max-width:100%; max-height:200px;';
-                    
-                    const tooltipText = (parsed.width && parsed.height) 
-                        ? `${parsed.width} × ${parsed.height}` 
-                        : 'Drag to resize';
-                    
-                    replacement = `<div class="p-asset-resizable" data-tag="${tagContent}">
-                        <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
-                        <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
-                        <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
-                        <div class="resize-handle resize-handle-s" onmousedown="initImageResize(event, 's', this.parentElement)"></div>
-                        <div class="size-tooltip">${tooltipText}</div>
-                        <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
-                    </div>`;
-                } else {
-                    replacement = `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
-                }
-                
-                const placeholder = `\uE000IMG${imagePlaceholders.length}\uE001`;
-                imagePlaceholders.push(replacement);
-                return placeholder;
+            return formatRichText(text, {
+                imageResolver: (imageId) => uploadedImages[imageId],
+                interactive: true
             });
-            
-            // Handle [[gap]] or [[gap|width:<integer>]] placeholders for FIB
-            // If width specified, use it but cap at available width to prevent overflow
-            result = result.replace(/\[\[gap(?:\|width:(\d+))?\]\]/g, (match, widthParam) => {
-                const width = widthParam ? `${widthParam}px` : '60px';
-                // Use CSS class for truncation, inline style for specific width
-                const replacement = `<span class="p-gap" style="width:${width};">&nbsp;</span>`;
-                const placeholder = `\uE000GAP${gapPlaceholders.length}\uE001`;
-                gapPlaceholders.push(replacement);
-                return placeholder;
-            });
-            
-            // Step 3: Render LaTeX math (before Markdown to preserve math formatting)
-            result = renderLatexMath(result);
-            
-            // Step 4: Render Markdown
-            result = renderMarkdown(result);
-            
-            // Step 5: Restore placeholders (custom tags are now safely rendered)
-            imagePlaceholders.forEach((html, i) => {
-                result = result.replace(`\uE000IMG${i}\uE001`, html);
-            });
-            gapPlaceholders.forEach((html, i) => {
-                result = result.replace(`\uE000GAP${i}\uE001`, html);
-            });
-            
-            return result;
         }
 
+        // Render question preview using shared module (v4.9 schema)
+        // Uses renderPreviewToContainer from question-preview.js
         function renderPreview(q, idx) {
+            console.log(`renderPreview called for ${q?.id || 'undefined'} at index ${idx}`);
             const container = document.getElementById('a4-content');
-            const data = q.data || {};
-            const meta = q.metadata || {};
-            const solution = q.solution || {};
-            const qType = q.type || 'SUBJECTIVE';
             
-            // Get layout configuration and apply theme to A4 container
-            const layoutConfig = getLayoutConfig(q);
-            const theme = layoutConfig.theme;
-            container.style.fontFamily = theme.font_family;
-            container.style.fontSize = theme.base_font_size;
-            container.style.lineHeight = theme.line_height;
-            
-            // Helper to render custom tokens and rich text (Markdown + LaTeX)
-            // Handles [[image:id]], [[gap]], and supports $...$ / $$...$$ math and **bold** *italic*
-            // Custom tokens are protected from Markdown/LaTeX processing using Unicode placeholders
-            const renderImageTokens = (text) => {
-                if (!text) return '';
-                let result = text;
-                
-                // Step 1: Protect custom tokens with Unicode placeholders (\uE000...\uE001)
-                const imagePlaceholders = [];
-                const gapPlaceholders = [];
-                
-                // Handle [[image:id]] or [[image:id|height:H|width:W]]
-                result = result.replace(/\[\[image:([^\]]+)\]\]/g, (match, tagContent) => {
-                    const parsed = parseImageTag(tagContent);
-                    const imageId = parsed.id;
-                    
-                    let replacement;
-                    if (uploadedImages[imageId]) {
-                        let imgStyle = '';
-                        if (parsed.width) imgStyle += `width:${parsed.width}px;`;
-                        if (parsed.height) imgStyle += `height:${parsed.height}px;`;
-                        if (!parsed.width && !parsed.height) imgStyle = 'max-width:100%; max-height:150px;';
-                        
-                        const tooltipText = (parsed.width && parsed.height) 
-                            ? `${parsed.width} × ${parsed.height}` 
-                            : 'Drag to resize';
-                        
-                        replacement = `<div class="p-asset-resizable" data-tag="${tagContent}">
-                            <img src="${uploadedImages[imageId]}" alt="${imageId}" style="${imgStyle}">
-                            <div class="resize-handle resize-handle-se" onmousedown="initImageResize(event, 'se', this.parentElement)"></div>
-                            <div class="resize-handle resize-handle-e" onmousedown="initImageResize(event, 'e', this.parentElement)"></div>
-                            <div class="resize-handle resize-handle-s" onmousedown="initImageResize(event, 's', this.parentElement)"></div>
-                            <div class="size-tooltip">${tooltipText}</div>
-                            <button class="reset-size-btn" onclick="resetImageSize(event, '${imageId}')" title="Reset to default size">×</button>
-                        </div>`;
-                    } else {
-                        replacement = `<div class="p-asset-placeholder">📷 Image: ${imageId}</div>`;
-                    }
-                    
-                    const placeholder = `\uE000RIMG${imagePlaceholders.length}\uE001`;
-                    imagePlaceholders.push(replacement);
-                    return placeholder;
-                });
-                
-                // Handle [[gap]] or [[gap|width:<integer>]]
-                // If width specified, use it but cap at available width to prevent overflow
-                result = result.replace(/\[\[gap(?:\|width:(\d+))?\]\]/g, (match, widthParam) => {
-                    const width = widthParam ? `${widthParam}px` : '60px';
-                    // Use CSS class for truncation, inline style for specific width
-                    const replacement = `<span class="p-gap" style="width:${width};">&nbsp;</span>`;
-                    const placeholder = `\uE000RGAP${gapPlaceholders.length}\uE001`;
-                    gapPlaceholders.push(replacement);
-                    return placeholder;
-                });
-                
-                // Step 2: Render LaTeX math
-                result = renderLatexMath(result);
-                
-                // Step 3: Render Markdown
-                result = renderMarkdown(result);
-                
-                // Step 4: Restore placeholders
-                imagePlaceholders.forEach((html, i) => {
-                    result = result.replace(`\uE000RIMG${i}\uE001`, html);
-                });
-                gapPlaceholders.forEach((html, i) => {
-                    result = result.replace(`\uE000RGAP${i}\uE001`, html);
-                });
-                
-                return result;
-            };
-            
-            // Main content - for COMPOSITE it's common_content, others use content
-            const mainContent = data.common_content || data.content || '';
-            let promptHtml = `<div class="p-section-stack">
-                    <div class="p-section-text"><span class="p-q-num">${q.id || idx + 1}.</span><div>${formatForPrint(mainContent)}</div></div>
-                </div>`;
-            
-            // Stimulus section - not used in v4.0, content is inline
-            let stimHtml = '';
-            
-            // Word bank for FIB type - render below content
-            let wordBankHtml = '';
-            if (qType === 'FIB' && data.options_pool && data.options_pool.length > 0) {
-                const wordItems = data.options_pool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
-                wordBankHtml = `<div class="p-word-bank">${wordItems}</div>`;
+            if (!container) {
+                console.error('Container #a4-content not found');
+                return;
             }
             
-            // Pairs for MATCH type
-            if (qType === 'MATCH' && data.pairs && data.pairs.length > 0) {
-                const leftItems = data.pairs.map((p, i) => 
-                    `<div class="p-pairs-item"><span class="p-pairs-item-id">${i + 1}.</span>${renderImageTokens(p.left)}</div>`
-                    ).join('');
-                const rightItems = data.pairs.map((p, i) => 
-                    `<div class="p-pairs-item"><span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>${renderImageTokens(p.right)}</div>`
-                    ).join('');
-                stimHtml += `
-                        <div class="p-pairs-wrapper">
-                            <div class="p-pairs-container">
-                                <div class="p-pairs-column">
-                                    <div class="p-pairs-header">Column A</div>
-                                    ${leftItems}
-                                </div>
-                                <div class="p-pairs-column">
-                                    <div class="p-pairs-header">Column B</div>
-                                    ${rightItems}
-                                </div>
-                            </div>
-                        </div>`;
-                }
-                
-            // Options section for MCQ type
-            let optionsHtml = '';
-            if(qType === 'MCQ' && data.options && data.options.length > 0) {
-                // Check for options_layout setting (default to horizontal)
-                const optLayout = data.style?.options_layout || 'horizontal';
-                const isOptHorizontal = optLayout === 'horizontal';
-                const optItems = data.options.map((opt, k) => {
-                    const optText = opt.text || '';
-                    // Get option ID - use getIdDisplayLabel for consistent extraction
-                    const rawOptId = opt.opt_id || opt.id || String.fromCharCode(65 + k); // Default to A, B, C, D...
-                    const optId = getIdDisplayLabel(rawOptId);
-                    return `<div class="p-option-item" style="${isOptHorizontal ? '' : 'margin-bottom:4px;'}"><span class="p-option-id">(${optId})</span><div class="p-option-text">${renderImageTokens(optText)}</div></div>`;
-                    }).join('');
-                // Wrap in flex container with appropriate direction
-                optionsHtml = `<div class="p-options" style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
+            if (!q) {
+                console.error('No question provided to renderPreview');
+                container.innerHTML = '<div style="color:red;">No question data</div>';
+                return;
             }
             
-            // TABLE type rendering (v4.6 - uses data.table with header and rows)
-            let tableHtml = '';
-            if(qType === 'TABLE' && data.table && data.table.rows) {
-                const tableStyle = data.style || {};
-                // v4.6: table_grid_lines controls grid line visibility
-                const gridLines = tableStyle.table_grid_lines || 'all';
-                // v4.6: hide_header is boolean
-                const hideHeader = tableStyle.hide_header === true;
-                // v4.9: column_widths for custom column sizing
-                const columnWidths = tableStyle.column_widths || [];
-                
-                const tableData = data.table;
-                const header = tableData.header || [];
-                const rows = tableData.rows || [];
-                const numRows = rows.length;
-                const numCols = Math.max(header.length, rows[0]?.length || 0);
-                
-                // Helper to get cell border style based on grid lines setting and position
-                function getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
-                    const borderColor = '#d1d5db';
-                    switch(gridLines) {
-                        case 'none':
-                            // No internal borders, but keep outer edges
-                            return `border: none; ${isFirstCol ? `border-left: 1px solid ${borderColor};` : ''} ${isLastCol ? `border-right: 1px solid ${borderColor};` : ''} ${isFirstRow ? `border-top: 1px solid ${borderColor};` : ''} ${isLastRow ? `border-bottom: 1px solid ${borderColor};` : ''}`;
-                        case 'horizontal':
-                            // Horizontal lines only + left/right outer edges
-                            return `border-top: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; border-left: ${isFirstCol ? `1px solid ${borderColor}` : 'none'}; border-right: ${isLastCol ? `1px solid ${borderColor}` : 'none'};`;
-                        case 'vertical':
-                            // Vertical lines only + top/bottom outer edges
-                            return `border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor}; border-top: ${isFirstRow ? `1px solid ${borderColor}` : 'none'}; border-bottom: ${isLastRow ? `1px solid ${borderColor}` : 'none'};`;
-                        case 'all':
-                        default:
-                            return '';
-                    }
-                }
-                
-                // v4.9: Build colgroup for column widths
-                let colgroupHtml = '';
-                if (columnWidths.length > 0) {
-                    const colItems = [];
-                    for (let c = 0; c < numCols; c++) {
-                        const colWidth = columnWidths[c] || '';
-                        colItems.push(`<col ${colWidth ? `style="width:${colWidth}"` : ''}>`);
-                    }
-                    colgroupHtml = `<colgroup>${colItems.join('')}</colgroup>`;
-                }
-                
-                // Build table header row (only if header exists and not hidden)
-                let theadHtml = '';
-                if (header.length > 0 && !hideHeader) {
-                    let headerCellsHtml = header.map((cell, colIdx) => {
-                        const isFirstCol = colIdx === 0;
-                        const isLastCol = colIdx === numCols - 1;
-                        const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, true, false);
-                        return `<th style="${cellStyle}">${renderImageTokens(cell || '')}</th>`;
-                    }).join('');
-                    theadHtml = `<thead><tr>${headerCellsHtml}</tr></thead>`;
-                }
-                
-                // Build table rows
-                const tableRows = rows.map((row, rowIdx) => {
-                    const isFirstRow = (header.length === 0 || hideHeader) && rowIdx === 0;
-                    const isLastRow = rowIdx === numRows - 1;
-                    
-                    const rowCells = (row || []).map((cell, colIdx) => {
-                        const isFirstCol = colIdx === 0;
-                        const isLastCol = colIdx === (row.length - 1);
-                        const cellStyle = getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
-                        return `<td style="${cellStyle}">${renderImageTokens(cell || '')}</td>`;
-                    }).join('');
-                    
-                    return `<tr>${rowCells}</tr>`;
-                }).join('');
-                
-                // Table style - use border-collapse: collapse
-                const tableBorderStyle = 'border-collapse: collapse;';
-                
-                tableHtml = `
-                    <div class="p-table-container">
-                        <table class="p-table-grid" style="${tableBorderStyle}">
-                            ${colgroupHtml}
-                            ${theadHtml}
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+            // Use shared renderPreviewToContainer from question-preview.js
+            try {
+                renderPreviewToContainer(q, container, {
+                    imageResolver: (imageId) => uploadedImages[imageId],
+                    interactive: true,  // Enable resize handles for images
+                    questionNumber: q.id || idx + 1,
+                    showMarks: true,
+                    wrapperClass: ''  // No wrapper needed, renderQuestionHTML provides p-q-block
+                });
+                console.log('renderPreviewToContainer completed successfully');
+            } catch (e) {
+                console.error('Error in renderPreviewToContainer:', e);
+                container.innerHTML = `<div style="color:red;">Error: ${e.message}</div>`;
             }
             
-            // Sub-questions section for COMPOSITE type
-            let subHtml = '';
-            let sharedWordBankHtml = '';
-            if(qType === 'COMPOSITE' && data.sub_questions && data.sub_questions.length > 0) {
-                // Check if all FIB sub-questions share the same options_pool
-                const fibSubQuestions = data.sub_questions.filter(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
-                let hasSharedOptionsPool = false;
-                let sharedOptionsPool = [];
-                
-                if (fibSubQuestions.length > 1) {
-                    // Check if all FIB sub-questions have the same options_pool
-                    const firstPool = JSON.stringify(fibSubQuestions[0].data.options_pool.slice().sort());
-                    hasSharedOptionsPool = fibSubQuestions.every(sq => 
-                        JSON.stringify(sq.data.options_pool.slice().sort()) === firstPool
-                    );
-                    if (hasSharedOptionsPool) {
-                        sharedOptionsPool = fibSubQuestions[0].data.options_pool;
-                    }
-                }
-                
-                // Render shared word bank once below all sub-questions if applicable
-                if (hasSharedOptionsPool && sharedOptionsPool.length > 0) {
-                    const wordItems = sharedOptionsPool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
-                    sharedWordBankHtml = `<div class="p-word-bank">${wordItems}</div>`;
-                }
-                
-                // Use style.sub_questions_layout, default to vertical
-                const sectionSubLayout = data.style?.sub_questions_layout || 'vertical';
-                const subs = data.sub_questions.map((sq, i) => {
-                    const label = sq.id ? getIdDisplayLabel(sq.id) : String.fromCharCode(97 + i);
-                    const sqData = sq.data || {};
-                    const sqContent = sqData.content || '';
-                    
-                    // Sub-question options for MCQ
-                    let optHtml = '';
-                    if(sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
-                        // v4.1: style is always inside data object
-                        const optLayout = sqData.style?.options_layout || 'horizontal';
-                        const isOptHorizontal = optLayout === 'horizontal';
-                        const optItems = sqData.options.map((o, k) => {
-                            const txt = o.text || '';
-                            // Get option ID - use getIdDisplayLabel for consistent extraction
-                            const rawOptId = o.opt_id || o.id || String.fromCharCode(97 + k);
-                            const optId = getIdDisplayLabel(rawOptId);
-                            // Use div for proper block-level content support (images)
-                            return `<div class="p-sq-option" style="${isOptHorizontal ? '' : 'margin-bottom:4px;'}">
-                                <span class="p-sq-option-id">(${optId})</span>
-                                <div class="p-sq-option-text">${renderImageTokens(txt)}</div>
-                        </div>`;
-                        }).join('');
-                        // Wrap in flex container with appropriate direction
-                        optHtml = `<div style="display:flex; ${isOptHorizontal ? 'flex-wrap:wrap; gap:1rem;' : 'flex-direction:column;'}">${optItems}</div>`;
-                    }
-                    
-                    // FIB options_pool as word bank - only show if NOT using shared pool
-                    let sqWordBank = '';
-                    if (sq.type === 'FIB' && sqData.options_pool && sqData.options_pool.length > 0 && !hasSharedOptionsPool) {
-                        const sqWordItems = sqData.options_pool.map(word => `<span class="p-word-bank-item">${word}</span>`).join('');
-                        sqWordBank = `<div class="p-word-bank" style="margin-top:8px; font-size:9pt;">${sqWordItems}</div>`;
-                    }
-                    
-                    // TABLE type for sub-questions (v4.6 - uses data.table with header and rows)
-                    let sqTableHtml = '';
-                    if (sq.type === 'TABLE' && sqData.table && sqData.table.rows) {
-                        const sqTableStyle = sqData.style || {};
-                        const sqGridLines = sqTableStyle.table_grid_lines || 'all';
-                        const sqHideHeader = sqTableStyle.hide_header === true;
-                        
-                        const sqTableData = sqData.table;
-                        const sqHeader = sqTableData.header || [];
-                        const sqRows = sqTableData.rows || [];
-                        const sqNumRows = sqRows.length;
-                        const sqNumCols = Math.max(sqHeader.length, sqRows[0]?.length || 0);
-                        
-                        // Helper to get cell border style based on grid lines setting and position
-                        function getSqCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLastRow) {
-                            const borderColor = '#d1d5db';
-                            switch(gridLines) {
-                                case 'none':
-                                    return `border: none; ${isFirstCol ? `border-left: 1px solid ${borderColor};` : ''} ${isLastCol ? `border-right: 1px solid ${borderColor};` : ''} ${isFirstRow ? `border-top: 1px solid ${borderColor};` : ''} ${isLastRow ? `border-bottom: 1px solid ${borderColor};` : ''}`;
-                                case 'horizontal':
-                                    return `border-top: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor}; border-left: ${isFirstCol ? `1px solid ${borderColor}` : 'none'}; border-right: ${isLastCol ? `1px solid ${borderColor}` : 'none'};`;
-                                case 'vertical':
-                                    return `border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor}; border-top: ${isFirstRow ? `1px solid ${borderColor}` : 'none'}; border-bottom: ${isLastRow ? `1px solid ${borderColor}` : 'none'};`;
-                                case 'all':
-                                default: return '';
-                            }
-                        }
-                        
-                        // Build header row (only if header exists and not hidden)
-                        let sqTheadHtml = '';
-                        if (sqHeader.length > 0 && !sqHideHeader) {
-                            let sqHeaderCellsHtml = sqHeader.map((cell, colIdx) => {
-                                const isFirstCol = colIdx === 0;
-                                const isLastCol = colIdx === sqNumCols - 1;
-                                const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, true, false);
-                                return `<th style="font-size:0.85em; padding:4px; ${cellStyle}">${renderImageTokens(cell || '')}</th>`;
-                        }).join('');
-                            sqTheadHtml = `<thead><tr>${sqHeaderCellsHtml}</tr></thead>`;
-                        }
-                        
-                        const sqTableRows = sqRows.map((row, rowIdx) => {
-                            const isFirstRow = (sqHeader.length === 0 || sqHideHeader) && rowIdx === 0;
-                            const isLastRow = rowIdx === sqNumRows - 1;
-                            
-                            const sqRowCells = (row || []).map((cell, colIdx) => {
-                                const isFirstCol = colIdx === 0;
-                                const isLastCol = colIdx === (row.length - 1);
-                                const cellStyle = getSqCellBorderStyle(sqGridLines, isFirstCol, isLastCol, isFirstRow, isLastRow);
-                                return `<td style="padding:4px; ${cellStyle}">${renderImageTokens(cell || '')}</td>`;
-                            }).join('');
-                            
-                            return `<tr>${sqRowCells}</tr>`;
-                        }).join('');
-                        
-                        sqTableHtml = `
-                            <div class="p-table-container" style="margin-top:8px; display:flex; justify-content:center; width:100%;">
-                                <table class="p-table-grid" style="font-size:0.9em; border-collapse: collapse; width:80%; margin:0 auto;">
-                                    ${sqTheadHtml}
-                                    <tbody>${sqTableRows}</tbody>
-                                </table>
-                            </div>
-                        `;
-                    }
-                    
-                    // Content layout for individual sub-questions
-                    const contentHtml = `
-                            <div class="p-sub-content">
-                                <div>${formatForPrint(sqContent) || '<em style="color:#999;">No text</em>'}</div>
-                                ${optHtml ? `<div style="margin-top:4px; font-size:10pt;">${optHtml}</div>` : ''}
-                                ${sqTableHtml}
-                                ${sqWordBank}
-                            </div>`;
-                    
-                    return `<div class="p-sub-item"><span class="p-sub-label">${label}.</span>${contentHtml}</div>`;
-                }).join('');
-                
-                // Apply layout based on mode: vertical (stack) or horizontal (2 cols)
-                subHtml = sectionSubLayout === 'horizontal' 
-                    ? `<div class="p-sub-grid">${subs}</div>` 
-                    : `<div>${subs}</div>`;
-            }
-            
-            const points = meta.marks || '1';
-            const marksText = `[${points}]`;
-            
-            // Render content first to check if it needs multiple pages
-            // For COMPOSITE: sharedWordBankHtml renders below content but above sub-questions
-            container.innerHTML = `<div class="p-q-block">
-                <div class="p-q-header">
-                    <div class="p-q-content">${promptHtml}</div>
-                    <div class="p-q-marks">${marksText}</div>
-                </div>
-                ${stimHtml}${optionsHtml}${tableHtml}${wordBankHtml}${sharedWordBankHtml}${subHtml}
-            </div>`;
-            
-            // Fix any gaps that overflow their container
+            // Fix any gaps that overflow their container (post-render adjustment)
             fixGapOverflows(container);
         }
         

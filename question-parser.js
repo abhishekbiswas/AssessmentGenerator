@@ -1,29 +1,21 @@
 /**
- * Question Parser Module (Schema v4.6)
- * Shared parsing and normalization logic for assessment questions
+ * Question Parser Module (Schema v4.9)
+ * Shared parsing and validation logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
  * This module provides functions to:
  * - Parse JSONL/JSON content into question objects
- * - Normalize questions from old schemas to v4.6 schema
+ * - Validate and normalize v4.9 schema questions
  * - Extract and resolve image tokens [[image:tag]] in RichText
  * - Utility helpers for working with question data
  * 
- * Schema v4.6 Key Features:
- * - Images embedded as [[image:tag]] tokens in RichText strings
+ * Schema v4.9 Key Features:
+ * - Images embedded as [[image:tag]] or [[image:tag|height:H|width:W]] tokens in RichText
  * - Polymorphic 'data' field based on question 'type'
  * - Types: MCQ, FIB, MATCH, SUBJECTIVE, TABLE, COMPOSITE
  * - TABLE type: { content, style, table: { header?, rows } }
- *   - table.header: optional array of RichText for column headers
- *   - table.rows: required 2D array of RichText cells
- * - Type-safe 'style' object (mandatory) with composed mix-ins:
- *   - MCQ/FIB: BaseStyle + OptionsStyle (image_layout, options_layout)
- *   - COMPOSITE: BaseStyle + CompositeStyle (image_layout, sub_questions_layout)
- *   - TABLE: BaseStyle + TableStyle (image_layout, table_grid_lines, hide_header)
- *   - SUBJECTIVE/MATCH: BaseStyle only (image_layout)
- * - sub_questions_layout values: 'vertical', 'horizontal', 'matrix'
- * - table_grid_lines values: 'all', 'none', 'horizontal', 'vertical'
- * - hide_header: boolean (true hides the header row)
+ * - Type-safe 'style' object (mandatory) with composed mix-ins
+ * - column_widths support for TABLE type
  */
 
 // =====================================================
@@ -40,8 +32,7 @@ const TABLE_GRID_VALUES = ['all', 'none', 'horizontal', 'vertical'];
 // Regex for image tokens in RichText - format: [[image:id]] or [[image:id|height:H|width:W]]
 const IMAGE_TOKEN_REGEX = /\[\[image:([^\]]+)\]\]/g;
 
-// Default style configs for v4.8 (type-specific)
-// Note: image dimensions are now embedded in image tags: [[image:id|height:H|width:W]]
+// Default style configs (type-specific)
 const BASE_STYLE = {
     image_layout: 'vertical'
 };
@@ -56,19 +47,10 @@ const COMPOSITE_STYLE = {
     sub_questions_layout: 'vertical'
 };
 
-// v4.9: Table-specific style (hide_header is boolean, column_widths is optional array)
 const TABLE_STYLE = {
     image_layout: 'vertical',
     table_grid_lines: 'all',
     hide_header: false
-    // column_widths: [] - optional, not set by default
-};
-
-// Legacy: Combined default for backwards compatibility
-const DEFAULT_STYLE = {
-    image_layout: 'vertical',
-    options_layout: 'vertical',
-    sub_questions_layout: 'vertical'
 };
 
 // =====================================================
@@ -77,11 +59,12 @@ const DEFAULT_STYLE = {
 
 /**
  * Parse mixed JSON/JSONL content into an array of question objects
- * Handles BOM, JSON arrays, multiple JSON objects, and normalizes to v4.0 schema
+ * Handles BOM, JSON arrays, multiple JSON objects
  * @param {string} content - Raw JSON/JSONL content
- * @returns {Array} Array of normalized question objects
+ * @returns {Array} Array of validated question objects
+ * @throws {Error} If content contains non-v4.9 schema questions
  */
-function parseMixedJson(content) {
+function parseJson(content) {
     const results = [];
     
     // Remove BOM if present
@@ -97,8 +80,8 @@ function parseMixedJson(content) {
             if (Array.isArray(parsed)) {
                 parsed.forEach(obj => {
                     if (obj && typeof obj === 'object') {
-                        const normalized = normalizeToV40Schema(obj);
-                        results.push(normalized);
+                        const validated = validateAndNormalize(obj);
+                        results.push(validated);
                     }
                 });
                 return results;
@@ -112,8 +95,8 @@ function parseMixedJson(content) {
     if (content.startsWith('{') && !content.includes('\n{')) {
         try {
             const obj = JSON.parse(content);
-            const normalized = normalizeToV40Schema(obj);
-            results.push(normalized);
+            const validated = validateAndNormalize(obj);
+            results.push(validated);
             return results;
         } catch (e) {
             console.log('Not a single JSON object, trying JSONL parsing...');
@@ -139,8 +122,8 @@ function parseMixedJson(content) {
                 if (braceCount === 0) {
                     try {
                         const obj = JSON.parse(buffer.trim());
-                        const normalized = normalizeToV40Schema(obj);
-                        results.push(normalized);
+                        const validated = validateAndNormalize(obj);
+                        results.push(validated);
                         buffer = ""; 
                     } catch (e) {
                         console.error('Parse error:', e);
@@ -154,438 +137,35 @@ function parseMixedJson(content) {
 }
 
 // =====================================================
-// SCHEMA NORMALIZATION (v4.0)
+// SCHEMA VALIDATION (v4.9 Only)
 // =====================================================
 
 /**
- * Normalize incoming data to v4.0 schema structure
- * Handles old schemas and ensures v4.0 compliance
+ * Validate and normalize a question object to v4.9 schema
+ * Only accepts v4.9 format - throws error for old schemas
  * @param {Object} obj - Raw question object
- * @returns {Object} Normalized question object in v4.0 format
+ * @returns {Object} Validated question object with defaults applied
+ * @throws {Error} If object is not in v4.9 format
  */
-function normalizeToV40Schema(obj) {
-    // If already in v4.0/v3.6 format (has 'data' object and valid 'type')
-    if (obj.data && QUESTION_TYPES.includes(obj.type)) {
-        return ensureV40Defaults(obj);
-    }
-    
-    // If in old nested schema (has 'taxonomy' and 'content')
-    if (obj.taxonomy && obj.content) {
-        return convertFromOldNestedSchema(obj);
-    }
-    
-    // If in very old flat schema
-    return convertFromFlatSchema(obj);
-}
-
-/**
- * @deprecated Use normalizeToV40Schema instead
- */
-function normalizeToV36Schema(obj) {
-    console.warn('normalizeToV36Schema is deprecated, use normalizeToV40Schema');
-    return normalizeToV40Schema(obj);
-}
-
-/**
- * Convert from old nested schema (v2) to v4.0
- * @param {Object} obj - Question in old nested format
- * @returns {Object} Question in v4.0 format
- */
-function convertFromOldNestedSchema(obj) {
-    const oldType = obj.taxonomy?.type || 'short_answer';
-    const newType = mapOldTypeToNew(oldType);
-    
-    return {
-        id: obj.question_id || obj.id || generateId(),
-        metadata: {
-            grade: obj.taxonomy?.grade_id || 'grade_3',
-            subject: capitalizeFirst(obj.taxonomy?.subject_id || 'mathematics'),
-            chapter: obj.taxonomy?.unit_id || obj.taxonomy?.chapter_id || 1,
-            section: obj.taxonomy?.section_id || 'A',
-            difficulty: capitalizeFirst(obj.taxonomy?.difficulty || 'medium'),
-            marks: parseInt(obj.grading?.points) || 1,
-            pool: capitalizeFirst(obj.taxonomy?.pool || 'practice')
-        },
-        type: newType,
-        data: convertContentToData(obj.content, newType, oldType),
-        solution: {
-            text: obj.grading?.explanation || ''
+function validateAndNormalize(obj) {
+    // Check for v4.9 format: must have 'data' object and valid 'type'
+    if (!obj.data || !QUESTION_TYPES.includes(obj.type)) {
+        // Check if it's an old schema format
+        if (obj.taxonomy || obj.content || obj.stimulus || obj.prompt) {
+            throw new Error('Old schema format detected. Please convert to v4.9 schema format.');
         }
-    };
+        throw new Error('Invalid question format. Expected v4.9 schema with "type" and "data" fields.');
+    }
+    
+    return ensureDefaults(obj);
 }
 
 /**
- * Convert from very old flat schema to v4.0
- * @param {Object} obj - Question in flat format
- * @returns {Object} Question in v4.0 format
- */
-function convertFromFlatSchema(obj) {
-    const oldType = obj.type || 'short_answer';
-    const newType = mapOldTypeToNew(oldType);
-    
-    // Build content from flat structure
-    const content = {
-        prompt: obj.prompt,
-        stimulus: obj.stimulus,
-        options: obj.options,
-        subquestions: obj.subquestions
-    };
-    
-    return {
-        id: obj.question_id || obj.id || generateId(),
-        metadata: {
-            grade: obj.grade_id || obj.grade || 'grade_3',
-            subject: capitalizeFirst(obj.subject_id || obj.subject || 'mathematics'),
-            chapter: obj.unit_id || obj.chapter_id || obj.chapter || 1,
-            section: obj.section_id || obj.section || 'A',
-            difficulty: capitalizeFirst(obj.difficulty || 'medium'),
-            marks: parseInt(obj.points) || parseInt(obj.grading?.points) || 1,
-            pool: capitalizeFirst(obj.pool || obj.pool_type || 'practice')
-        },
-        type: newType,
-        data: convertContentToData(content, newType, oldType),
-        solution: {
-            text: obj.grading?.explanation || obj.explanation || ''
-        }
-    };
-}
-
-/**
- * Map old question types to new v4.0 types
- * @param {string} oldType - Old type string
- * @returns {string} New v4.0 type
- */
-function mapOldTypeToNew(oldType) {
-    const typeMap = {
-        'mcq': 'MCQ',
-        'multiple_choice': 'MCQ',
-        'short_answer': 'SUBJECTIVE',
-        'long_answer': 'SUBJECTIVE',
-        'fill_blank': 'FIB',
-        'fill_in_blank': 'FIB',
-        'fib': 'FIB',
-        'match_columns': 'MATCH',
-        'matching': 'MATCH',
-        'match': 'MATCH',
-        'composite': 'COMPOSITE',
-        'sequencing': 'MCQ',  // Treat as MCQ with special handling
-        'sorting': 'MCQ',     // Treat as MCQ with special handling
-        'labelling': 'SUBJECTIVE'
-    };
-    
-    const normalized = oldType.toLowerCase();
-    return typeMap[normalized] || 'SUBJECTIVE';
-}
-
-/**
- * Convert old content structure to v4.2 data structure
- * @param {Object} content - Old content object
- * @param {string} newType - New v4.2 type
- * @param {string} oldType - Original old type
- * @returns {Object} Data object for v4.2 schema
- */
-function convertContentToData(content, newType, oldType) {
-    if (!content) content = {};
-    
-    // Build the main content RichText from prompt and stimulus
-    const mainContent = buildRichTextContent(content.prompt, content.stimulus);
-    
-    switch (newType) {
-        case 'MCQ':
-            return buildMCQData(mainContent, content.options, oldType);
-        
-        case 'FIB':
-            return buildFIBData(mainContent, content.stimulus);
-        
-        case 'MATCH':
-            return buildMatchData(mainContent, content.stimulus);
-        
-        case 'SUBJECTIVE':
-            return buildSubjectiveData(mainContent, oldType);
-        
-        case 'TABLE':
-            return buildTableData(mainContent, content);
-        
-        case 'COMPOSITE':
-            return buildCompositeData(content);
-        
-        default:
-            return { content: mainContent };
-    }
-}
-
-/**
- * Build RichText content from prompt and stimulus
- * Converts old assets to [[image:tag]] tokens
- * @param {Object|string} prompt - Prompt data
- * @param {Object} stimulus - Stimulus data
- * @returns {string} RichText content
- */
-function buildRichTextContent(prompt, stimulus) {
-    let parts = [];
-    
-    // Add stimulus text first if present
-    if (stimulus) {
-        const stimulusText = getTextValue(stimulus);
-        if (stimulusText) parts.push(stimulusText);
-        
-        // Convert stimulus assets to tokens
-        const stimulusAssets = stimulus.assets || stimulus.media || [];
-        stimulusAssets.forEach(asset => {
-            const token = assetToToken(asset);
-            if (token) parts.push(token);
-        });
-    }
-    
-    // Add prompt text
-    const promptText = getTextValue(prompt);
-    if (promptText) parts.push(promptText);
-    
-    // Convert prompt assets to tokens
-    if (prompt && typeof prompt === 'object') {
-        const promptAssets = prompt.assets || prompt.media || [];
-        promptAssets.forEach(asset => {
-            const token = assetToToken(asset);
-            if (token) parts.push(token);
-        });
-    }
-    
-    return parts.join('\n\n');
-}
-
-/**
- * Convert asset object to [[image:tag]] token
- * @param {Object} asset - Asset object
- * @returns {string|null} Token string or null
- */
-function assetToToken(asset) {
-    if (!asset) return null;
-    
-    // Try to get tag from various fields
-    const tag = asset.asset_id || asset.filename?.replace(/\.[^.]+$/, '') || asset.tag || asset.id;
-    if (!tag || tag === '#') return null;
-    
-    return `[[image:${tag}]]`;
-}
-
-/**
- * Build MCQ data structure (v4.1 - uses MCQ_STYLE)
- */
-function buildMCQData(content, options, oldType) {
-    const data = {
-        content: content,
-        style: { ...MCQ_STYLE },
-        options: (options || []).map((opt, idx) => ({
-            id: opt.id || opt.opt_id || String.fromCharCode(97 + idx),
-            text: buildOptionText(opt)
-        }))
-    };
-    
-    // Handle multi-select
-    if (oldType === 'multiple_selection' || oldType === 'multi_select') {
-        data.allow_multiple = true;
-    }
-    
-    return data;
-}
-
-/**
- * Build option text with embedded image tokens
- */
-function buildOptionText(opt) {
-    if (typeof opt === 'string') return opt;
-    
-    let text = opt.text || '';
-    
-    // Convert option assets to tokens
-    const assets = opt.assets || opt.media || [];
-    assets.forEach(asset => {
-        const token = assetToToken(asset);
-        if (token) text = token + ' ' + text;
-    });
-    
-    // Handle single asset field
-    if (opt.asset) {
-        const token = assetToToken(opt.asset);
-        if (token) text = token + ' ' + text;
-    }
-    
-    return text.trim();
-}
-
-/**
- * Build FIB (Fill in Blank) data structure (v4.1 - uses MCQ_STYLE)
- */
-function buildFIBData(content, stimulus) {
-    const data = {
-        content: content,
-        style: { ...MCQ_STYLE }
-    };
-    
-    // Extract word bank if present
-    if (stimulus?.word_bank) {
-        data.options_pool = stimulus.word_bank.map(item => 
-            typeof item === 'string' ? item : item.text
-        );
-    }
-    
-    return data;
-}
-
-/**
- * Build Match data structure (v4.1 - uses BASE_STYLE)
- */
-function buildMatchData(content, stimulus) {
-    const data = {
-        content: content,
-        style: { ...BASE_STYLE },
-        pairs: []
-    };
-    
-    // Convert from old pairs format
-    if (stimulus?.pairs) {
-        const leftCol = stimulus.pairs.left_column || [];
-        const rightCol = stimulus.pairs.right_column || [];
-        
-        const maxLen = Math.max(leftCol.length, rightCol.length);
-        for (let i = 0; i < maxLen; i++) {
-            data.pairs.push({
-                left: leftCol[i]?.text || '',
-                right: rightCol[i]?.text || ''
-            });
-        }
-    }
-    
-    return data;
-}
-
-/**
- * Build Subjective data structure (v4.2 - uses BASE_STYLE)
- */
-function buildSubjectiveData(content, oldType) {
-    const data = {
-        content: content,
-        style: { ...BASE_STYLE }
-    };
-    
-    // Determine expected length from old type
-    if (oldType === 'long_answer') {
-        data.expected_length = 'long';
-    } else {
-        data.expected_length = 'short';
-    }
-    
-    return data;
-}
-
-/**
- * Build Table data structure (v4.6)
- * For structured 2D grid interactions like Tick Columns or HTO math
- * New structure: { content, style, table: { header?, rows } }
- * - table.header: optional array of RichText for column headers
- * - table.rows: required 2D array of RichText cells
- */
-function buildTableData(content, oldContent) {
-    const data = {
-        content: content,
-        style: { ...TABLE_STYLE },
-        table: {
-            rows: [['', ''], ['', '']] // Default 2x2 empty grid
-        }
-    };
-    
-    // Try to extract table data from old content if present
-    if (oldContent?.table) {
-        // Already in v4.6 format
-        if (oldContent.table.rows && Array.isArray(oldContent.table.rows)) {
-            data.table.rows = oldContent.table.rows;
-        }
-        if (oldContent.table.header && Array.isArray(oldContent.table.header)) {
-            data.table.header = oldContent.table.header;
-        }
-    } else if (oldContent?.rows && oldContent?.columns) {
-        // Convert from old v4.5 format (rows/columns as arrays of objects)
-        const numRows = oldContent.rows.length || 2;
-        const numCols = oldContent.columns.length || 2;
-        
-        // Extract column headers
-        data.table.header = oldContent.columns.map(col => 
-            typeof col === 'string' ? col : (col.text || '')
-        );
-        
-        // Create empty rows grid with row labels in first column
-        data.table.rows = oldContent.rows.map(row => {
-            const rowLabel = typeof row === 'string' ? row : (row.text || '');
-            const cells = [rowLabel];
-            for (let i = 1; i < numCols; i++) {
-                cells.push('');
-            }
-            return cells;
-        });
-    }
-    
-    // Preserve existing style settings if present
-    if (oldContent?.style?.table_grid_lines) {
-        data.style.table_grid_lines = oldContent.style.table_grid_lines;
-    }
-    if (oldContent?.style?.hide_header !== undefined) {
-        // Convert old string values to boolean if needed
-        if (typeof oldContent.style.hide_header === 'boolean') {
-            data.style.hide_header = oldContent.style.hide_header;
-        } else {
-            // Old format used 'none', 'row', 'column', 'both'
-            data.style.hide_header = oldContent.style.hide_header !== 'none';
-        }
-    }
-    // v4.9: Preserve column_widths if present
-    if (oldContent?.style?.column_widths && Array.isArray(oldContent.style.column_widths)) {
-        data.style.column_widths = oldContent.style.column_widths;
-    }
-    
-    return data;
-}
-
-/**
- * Build Composite data structure (v4.2 - uses COMPOSITE_STYLE)
- */
-function buildCompositeData(content) {
-    // Build common content from stimulus
-    let commonContent = '';
-    if (content.stimulus) {
-        commonContent = buildRichTextContent(null, content.stimulus);
-    }
-    if (content.prompt) {
-        const promptText = getTextValue(content.prompt);
-        if (promptText) commonContent += '\n\n' + promptText;
-    }
-    
-    // Convert sub-questions
-    const subQuestions = (content.subquestions || content.sub_questions || []).map(sq => {
-        const subType = mapOldTypeToNew(sq.type || 'short_answer');
-    return {
-            id: sq.sub_id || sq.id || 'a',
-            type: subType,
-            data: convertContentToData({
-                prompt: sq.prompt,
-                stimulus: sq.stimulus,
-                options: sq.options
-            }, subType, sq.type)
-        };
-    });
-    
-    return {
-        common_content: commonContent,
-        style: { ...COMPOSITE_STYLE },
-        sub_questions: subQuestions
-    };
-}
-
-/**
- * Ensure all required v4.0 fields have defaults
+ * Ensure all required v4.9 fields have defaults
  * @param {Object} obj - Question object
  * @returns {Object} Question object with all defaults applied
  */
-function ensureV40Defaults(obj) {
+function ensureDefaults(obj) {
     if (!obj.id) obj.id = generateId();
     
     // Ensure metadata
@@ -608,15 +188,14 @@ function ensureV40Defaults(obj) {
         obj.data = getDefaultDataForType(obj.type);
     }
     
-    // Ensure style object exists in data (mandatory in v4.1)
+    // Ensure style object exists in data (mandatory)
     if (!obj.data.style) {
         obj.data.style = getStyleForType(obj.type);
     } else {
-        // Normalize old style values (stack→vertical, grid→horizontal)
         obj.data.style = normalizeStyleValues(obj.data.style, obj.type);
     }
     
-    // Ensure sub-questions also have style (v4.1)
+    // Ensure sub-questions also have style
     if (obj.data.sub_questions && Array.isArray(obj.data.sub_questions)) {
         obj.data.sub_questions.forEach(sq => {
             if (sq.data && !sq.data.style) {
@@ -631,7 +210,7 @@ function ensureV40Defaults(obj) {
         });
     }
     
-    // Normalize TABLE type data (v4.6)
+    // Normalize TABLE type data
     if (obj.type === 'TABLE' && obj.data) {
         obj.data = normalizeTableData(obj.data);
     }
@@ -644,8 +223,8 @@ function ensureV40Defaults(obj) {
 }
 
 /**
- * Normalize table data to v4.6 format
- * Handles various legacy formats and converts to standard { table: { header?, rows } }
+ * Normalize table data structure
+ * Ensures proper { table: { header?, rows } } format
  * @param {Object} data - Table question data
  * @returns {Object} Normalized data with proper table structure
  */
@@ -655,68 +234,6 @@ function normalizeTableData(data) {
     // Already has proper table structure with 2D rows array
     if (data.table?.rows && Array.isArray(data.table.rows) && 
         data.table.rows.length > 0 && Array.isArray(data.table.rows[0])) {
-        // Normalize header if it's array of objects
-        if (data.table.header && data.table.header.length > 0 && typeof data.table.header[0] === 'object') {
-            data.table.header = data.table.header.map(h => h.text || h.id || '');
-        }
-        return data;
-    }
-    
-    // Handle table with rows as array of objects [{id, text}, ...]
-    if (data.table?.rows && Array.isArray(data.table.rows) && 
-        data.table.rows.length > 0 && typeof data.table.rows[0] === 'object' && !Array.isArray(data.table.rows[0])) {
-        
-        const oldRows = data.table.rows;
-        const oldHeader = data.table.header || [];
-        
-        // Extract column headers
-        let header = [];
-        if (oldHeader.length > 0) {
-            header = oldHeader.map(h => typeof h === 'object' ? (h.text || h.id || '') : h);
-        }
-        
-        // Build 2D rows array: each row becomes [rowLabel, empty, empty, ...]
-        const numCols = Math.max(header.length, 1);
-        const newRows = oldRows.map(row => {
-            const rowLabel = typeof row === 'object' ? (row.text || row.id || '') : row;
-            const cells = [rowLabel];
-            for (let i = 1; i < numCols; i++) {
-                cells.push('');
-            }
-            return cells;
-        });
-        
-        data.table = {
-            rows: newRows
-        };
-        if (header.length > 0) {
-            data.table.header = header;
-        }
-        
-        return data;
-    }
-    
-    // Handle old format with rows/columns at root level (v4.5 and earlier)
-    if (data.rows && data.columns) {
-        const header = data.columns.map(col => 
-            typeof col === 'object' ? (col.text || col.id || '') : col
-        );
-        
-        const numCols = data.columns.length || 1;
-        const rows = data.rows.map(row => {
-            const rowLabel = typeof row === 'object' ? (row.text || row.id || '') : row;
-            const cells = [rowLabel];
-            for (let i = 1; i < numCols; i++) {
-                cells.push('');
-            }
-            return cells;
-        });
-        
-        // Move to table structure
-        data.table = { header, rows };
-        delete data.rows;
-        delete data.columns;
-        
         return data;
     }
     
@@ -732,31 +249,15 @@ function normalizeTableData(data) {
 }
 
 /**
- * Normalize style values from old schema (stack/grid) to v4.5 (vertical/horizontal)
+ * Normalize style values
  * @param {Object} style - Style object
- * @param {string} type - Question type (to apply type-specific defaults)
+ * @param {string} type - Question type
  * @returns {Object} Normalized style object
  */
 function normalizeStyleValues(style, type) {
     const normalized = { ...style };
     
-    // Map old values to new
-    const valueMap = {
-        'stack': 'vertical',
-        'grid': 'horizontal'
-    };
-    
-    if (normalized.image_layout && valueMap[normalized.image_layout]) {
-        normalized.image_layout = valueMap[normalized.image_layout];
-    }
-    if (normalized.options_layout && valueMap[normalized.options_layout]) {
-        normalized.options_layout = valueMap[normalized.options_layout];
-    }
-    if (normalized.sub_questions_layout && valueMap[normalized.sub_questions_layout]) {
-        normalized.sub_questions_layout = valueMap[normalized.sub_questions_layout];
-    }
-    
-    // Ensure defaults based on type (v4.5 type-specific styles)
+    // Ensure defaults based on type
     normalized.image_layout = normalized.image_layout || 'vertical';
     
     // Only add options_layout for MCQ/FIB types
@@ -769,20 +270,16 @@ function normalizeStyleValues(style, type) {
         normalized.sub_questions_layout = normalized.sub_questions_layout || 'vertical';
     }
     
-    // v4.6: Add table_grid_lines and hide_header for TABLE type
+    // Table-specific style normalization
     if (type === 'TABLE') {
         normalized.table_grid_lines = normalized.table_grid_lines || 'all';
-        // Validate table_grid_lines value
         if (!TABLE_GRID_VALUES.includes(normalized.table_grid_lines)) {
             normalized.table_grid_lines = 'all';
         }
-        // v4.6: hide_header is boolean (convert old string values)
-        if (typeof normalized.hide_header === 'string') {
-            normalized.hide_header = normalized.hide_header !== 'none';
-        } else if (normalized.hide_header === undefined) {
+        if (normalized.hide_header === undefined) {
             normalized.hide_header = false;
         }
-        // v4.9: column_widths - preserve if valid array
+        // column_widths - preserve if valid array
         if (normalized.column_widths && !Array.isArray(normalized.column_widths)) {
             delete normalized.column_widths;
         }
@@ -792,15 +289,7 @@ function normalizeStyleValues(style, type) {
 }
 
 /**
- * @deprecated Use ensureV40Defaults instead
- */
-function ensureV36Defaults(obj) {
-    console.warn('ensureV36Defaults is deprecated, use ensureV40Defaults');
-    return ensureV40Defaults(obj);
-}
-
-/**
- * Get the appropriate style object for a question type (v4.5)
+ * Get the appropriate style object for a question type
  * @param {string} type - Question type
  * @returns {Object} Style object with type-appropriate fields
  */
@@ -821,7 +310,9 @@ function getStyleForType(type) {
 }
 
 /**
- * Get default data structure for a question type (v4.6 - includes mandatory type-specific style)
+ * Get default data structure for a question type
+ * @param {string} type - Question type
+ * @returns {Object} Default data object
  */
 function getDefaultDataForType(type) {
     switch (type) {
@@ -834,15 +325,12 @@ function getDefaultDataForType(type) {
         case 'SUBJECTIVE':
             return { content: '', style: getStyleForType('SUBJECTIVE'), expected_length: 'short' };
         case 'TABLE':
-    return {
+            return {
                 content: '', 
                 style: getStyleForType('TABLE'), 
                 table: {
                     header: ['Column 1', 'Column 2'],
-                    rows: [
-                        ['Row 1', ''],
-                        ['Row 2', '']
-                    ]
+                    rows: [['Row 1', ''], ['Row 2', '']]
                 }
             };
         case 'COMPOSITE':
@@ -932,8 +420,6 @@ function traverseAllRichText(question, transformer) {
     const data = question.data;
     if (!data) return;
     
-    const type = question.type;
-    
     // Main content (MCQ, FIB, MATCH, SUBJECTIVE, TABLE)
     if (data.content !== undefined) {
         data.content = transformer(data.content, 'data.content');
@@ -953,7 +439,7 @@ function traverseAllRichText(question, transformer) {
         });
     }
     
-    // FIB options_pool (usually plain text, but check anyway)
+    // FIB options_pool
     if (data.options_pool && Array.isArray(data.options_pool)) {
         data.options_pool = data.options_pool.map((item, i) => 
             transformer(item, `data.options_pool[${i}]`)
@@ -972,7 +458,7 @@ function traverseAllRichText(question, transformer) {
         });
     }
     
-    // TABLE structure (v4.6): table.header and table.rows (2D array)
+    // TABLE structure: table.header and table.rows (2D array)
     if (data.table) {
         if (data.table.header && Array.isArray(data.table.header)) {
             data.table.header = data.table.header.map((cell, i) => 
@@ -989,22 +475,6 @@ function traverseAllRichText(question, transformer) {
                 return row;
             });
         }
-    }
-    
-    // Legacy TABLE rows and columns (for backwards compatibility)
-    if (data.rows && Array.isArray(data.rows) && !data.table) {
-        data.rows.forEach((row, i) => {
-            if (row.text !== undefined) {
-                row.text = transformer(row.text, `data.rows[${i}].text`);
-            }
-        });
-    }
-    if (data.columns && Array.isArray(data.columns) && !data.table) {
-        data.columns.forEach((col, i) => {
-            if (col.text !== undefined) {
-                col.text = transformer(col.text, `data.columns[${i}].text`);
-            }
-        });
     }
     
     // Composite sub-questions (recursive)
@@ -1033,29 +503,6 @@ function generateId() {
 }
 
 /**
- * Capitalize first letter of a string
- * @param {string} str - Input string
- * @returns {string} Capitalized string
- */
-function capitalizeFirst(str) {
-    if (!str) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-/**
- * Safely extract text from various data structures
- * @param {string|Object} data - Data that may contain text
- * @returns {string} Extracted text value
- */
-function getTextValue(data) {
-    if (!data) return '';
-    if (typeof data === 'string') return data;
-    if (typeof data === 'object' && data.text !== undefined) return data.text || '';
-    if (typeof data === 'object' && data.value !== undefined) return data.value || '';
-    return '';
-}
-
-/**
  * Check if a question has any image tokens
  * @param {Object} q - Question object
  * @returns {boolean} True if question has image tokens
@@ -1066,7 +513,7 @@ function hasImages(q) {
 }
 
 /**
- * Create a new empty question with v4.0 defaults
+ * Create a new empty question with v4.9 defaults
  * @param {string} type - Question type (default: 'SUBJECTIVE')
  * @returns {Object} New question object with all required fields
  */
@@ -1107,7 +554,7 @@ function prepareForExport(q) {
 }
 
 /**
- * Validate a question against v4.6 schema
+ * Validate a question against v4.9 schema
  * @param {Object} q - Question object
  * @returns {Object} { valid: boolean, errors: string[] }
  */
@@ -1121,9 +568,9 @@ function validateQuestion(q) {
     if (!q.data) errors.push('Missing data');
     if (!q.solution) errors.push('Missing solution');
     
-    // v4.6: style is mandatory in data
+    // style is mandatory in data
     if (q.data && !q.data.style) {
-        errors.push('Missing data.style (mandatory in v4.6)');
+        errors.push('Missing data.style (mandatory in v4.9)');
     }
     
     // Type-specific validation
@@ -1144,11 +591,11 @@ function validateQuestion(q) {
         errors.push('COMPOSITE requires at least one sub-question');
     }
     
-    // v4.6: Validate sub-questions have style
+    // Validate sub-questions have style
     if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
         q.data.sub_questions.forEach((sq, i) => {
             if (!sq.data?.style) {
-                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.6)`);
+                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.9)`);
             }
         });
     }
@@ -1175,24 +622,3 @@ function getTypeDisplayName(type) {
     };
     return names[type] || type;
 }
-
-// =====================================================
-// LEGACY COMPATIBILITY
-// =====================================================
-
-/**
- * @deprecated Use normalizeToV40Schema instead
- */
-function normalizeToNewSchema(obj) {
-    console.warn('normalizeToNewSchema is deprecated, use normalizeToV40Schema');
-    return normalizeToV40Schema(obj);
-}
-
-/**
- * @deprecated Use hasImages instead
- */
-function hasMedia(q) {
-    console.warn('hasMedia is deprecated, use hasImages');
-    return hasImages(q);
-}
-
