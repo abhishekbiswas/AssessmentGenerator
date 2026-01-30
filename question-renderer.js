@@ -256,13 +256,13 @@ function renderMCQPreview(data, renderOptions) {
         const optText = opt.text || '';
         const optId = opt.id || String.fromCharCode(65 + k); // A, B, C, D...
         
-        // For horizontal layout, give each option enough width so words don't break mid-word
+        // For horizontal layout, allow options to flex and images to scale
         let itemStyle, textStyle;
         if (isHorizontal) {
-            // Let each option be at least as wide as its content (so "Stomach" stays on one line); flex-wrap handles wrapping
-            itemStyle = 'display:flex; align-items:flex-start; flex-shrink:0; min-width:min-content;';
-            // Keep words intact; no overflow:hidden so whole words can wrap to next line
-            textStyle = 'word-break:keep-all; overflow-wrap:normal; overflow:visible; white-space:normal;';
+            // Allow flex items to shrink so images can scale; CSS class handles max-width
+            itemStyle = 'display:flex; align-items:flex-start;';
+            // Keep words intact but allow content to scale
+            textStyle = 'word-break:keep-all; overflow-wrap:normal; white-space:normal;';
         } else {
             itemStyle = 'display:flex; align-items:flex-start; margin-bottom:4px;';
             textStyle = '';
@@ -281,7 +281,10 @@ function renderMCQPreview(data, renderOptions) {
         ? 'display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start; margin:0; padding:0;'
         : 'display:flex; flex-direction:column; margin:0; padding:0;';
     
-    return `<div class="p-options" style="${containerStyle}">${optItems}</div>`;
+    // Add p-options-horizontal class for horizontal layout to enable image scaling CSS
+    const containerClass = isHorizontal ? 'p-options p-options-horizontal' : 'p-options';
+    
+    return `<div class="${containerClass}" style="${containerStyle}">${optItems}</div>`;
 }
 
 /**

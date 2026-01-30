@@ -225,6 +225,48 @@
             word-break: keep-all;
             overflow-wrap: normal;
         }
+        /* Horizontal MCQ options with images - 2 per row, taking full available width */
+        .q-preview .p-options-horizontal {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.75rem 1rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .q-preview .p-options-horizontal .p-option-item {
+            flex: 0 0 calc(50% - 0.5rem); /* 2 items per row with gap consideration */
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        .q-preview .p-options-horizontal .p-option-text {
+            min-width: 0;
+            width: 100%;
+        }
+        .q-preview .p-options-horizontal .p-option-text img {
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+        .q-preview .p-options-horizontal .p-option-text .p-asset {
+            margin: 0.25rem 0;
+            width: 100%;
+        }
+        .q-preview .p-options-horizontal .p-option-text .p-asset img {
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+        .q-preview .p-options-horizontal .p-option-text .p-asset-resizable {
+            width: 100%;
+        }
+        .q-preview .p-options-horizontal .p-option-text .p-asset-resizable img {
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
         .q-preview .p-sub-content,
         .q-preview .p-sq-option-text {
             word-break: keep-all;

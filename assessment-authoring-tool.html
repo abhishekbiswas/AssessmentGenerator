@@ -860,6 +860,49 @@
         .p-options-grid .p-option-item { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
         .p-options-grid .p-option-media { max-width: 100px; }
         .p-options-grid .p-option-media img { max-width: 80px; max-height: 60px; }
+        
+        /* Horizontal MCQ options with images - 2 per row, taking full available width */
+        .p-options-horizontal { 
+            display: flex !important; 
+            flex-wrap: wrap !important; 
+            gap: 0.75rem 1rem !important; 
+            margin: 0 !important; 
+            padding: 0 !important;
+        }
+        .p-options-horizontal .p-option-item { 
+            flex: 0 0 calc(50% - 0.5rem); /* 2 items per row with gap consideration */
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        .p-options-horizontal .p-option-text { 
+            min-width: 0; 
+            width: 100%;
+        }
+        .p-options-horizontal .p-option-text img { 
+            max-width: 100%; 
+            width: 100%;
+            height: auto; 
+            object-fit: contain;
+        }
+        .p-options-horizontal .p-option-text .p-asset { 
+            margin: 0.25rem 0; 
+            width: 100%;
+        }
+        .p-options-horizontal .p-option-text .p-asset img { 
+            max-width: 100%; 
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+        .p-options-horizontal .p-option-text .p-asset-resizable { 
+            width: 100%; 
+        }
+        .p-options-horizontal .p-option-text .p-asset-resizable img { 
+            max-width: 100%; 
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
 
         /* FORM CONTROLS */
         .content-section { margin-bottom: 2rem; }
