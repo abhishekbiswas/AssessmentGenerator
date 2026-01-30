@@ -265,6 +265,20 @@
             max-width: 100%;
             width: 100%;
             height: auto;
+        }
+        
+        /* Horizontal MCQ options with text only - flexible flow, more options per row if space permits */
+        .q-preview .p-options-horizontal-text {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.25rem 1.5rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .q-preview .p-options-horizontal-text .p-option-item {
+            flex: 0 0 auto; /* Natural width based on content */
+            min-width: 0;
+            box-sizing: border-box;
             object-fit: contain;
         }
         .q-preview .p-sub-content,
@@ -873,7 +887,7 @@
             }
         };
 
-        // Full Question Data Structure (v4.9 schema)
+        // Full Question Data Structure (v5.1 schema)
         const questionData = {
             'q_1765218443974_459': {
                 id: 'q_1765218443974_459',
@@ -982,7 +996,7 @@
         // - question-renderer.js: formatRichText, renderQuestionHTML, type-specific renderers
         // - question-preview.js: renderPreviewToContainer, renderPreviewHTML
 
-        // Render question preview using shared module (v4.9 schema)
+        // Render question preview using shared module (v5.1 schema)
         function renderQuestionPreview(q, container, layoutOverride = null) {
             if (!q) return;
 
@@ -996,7 +1010,7 @@
         }
 
         function toggleQuestionLayout(qId) {
-            // v4.9: Get layout from style.sub_questions_layout (for COMPOSITE) or default to 'vertical'
+            // v5.1: Get layout from style.sub_questions_layout (for COMPOSITE) or default to 'vertical'
             const qData = questionData[qId];
             const defaultLayout = qData?.data?.style?.sub_questions_layout === 'horizontal' ? 'grid' : 'stack';
             const currentLayout = appState.questionLayouts[qId] || defaultLayout;
@@ -1362,7 +1376,7 @@
                 questionSection = cardSection || 'A'; // Default to 'A' if no section attribute found
             }
 
-            // Initialize sub-question marks from questionData (v4.9 schema)
+            // Initialize sub-question marks from questionData (v5.1 schema)
             const subQuestionMarks = {};
             const qData = questionData[id];
             if (qData && qData.type === 'COMPOSITE' && qData.data?.sub_questions) {
@@ -1440,7 +1454,7 @@
             // If check passes, update state
             q.marks = newMarks;
             
-            // Distribute marks equally among sub-questions if they exist (v4.9 schema)
+            // Distribute marks equally among sub-questions if they exist (v5.1 schema)
             const qData = questionData[id];
             if (qData && qData.type === 'COMPOSITE' && qData.data?.sub_questions?.length > 0) {
                 // Initialize subQuestionMarks if it doesn't exist
@@ -1523,7 +1537,7 @@
             els.sectionMarks.innerText = sectionTotal;
         }
 
-        // Render a question in A4 format (for right panel preview) - v4.9 schema
+        // Render a question in A4 format (for right panel preview) - v5.1 schema
         function renderA4Question(q, questionIndex, sectionLabel) {
             if (!q || !questionData[q.id]) return '';
 
@@ -1545,8 +1559,6 @@
             
             if (qType === 'MCQ' && data.options) {
                 typeHtml = renderMCQPreview(data, renderOptions);
-            } else if (qType === 'FIB' && data.options_pool) {
-                typeHtml = renderFIBPreview(data);
             } else if (qType === 'MATCH' && data.pairs) {
                 typeHtml = renderMatchPreview(data, renderOptions);
             } else if (qType === 'TABLE' && data.table) {
@@ -1574,12 +1586,10 @@
                                style="width:30px; padding:2px 4px; font-size:9pt; text-align:center; border:1px solid #ccc; border-radius:3px;"
                                class="sub-question-marks-input"><span>marks)</span></span>`;
                     
-                    // Sub-question type-specific content
+                    // Sub-question type-specific content (v5.1: FIB sub-questions no longer have options_pool)
                     let sqTypeHtml = '';
                     if (sq.type === 'MCQ' && sqData.options) {
                         sqTypeHtml = renderMCQPreview(sqData, renderOptions);
-                    } else if (sq.type === 'FIB' && sqData.options_pool) {
-                        sqTypeHtml = renderFIBPreview(sqData);
                     } else if (sq.type === 'TABLE' && sqData.table) {
                         sqTypeHtml = renderTablePreview(sqData, renderOptions);
                     }

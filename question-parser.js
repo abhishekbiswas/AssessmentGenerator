@@ -1,15 +1,15 @@
 /**
- * Question Parser Module (Schema v4.9)
+ * Question Parser Module (Schema v5.1)
  * Shared parsing and validation logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
  * This module provides functions to:
  * - Parse JSONL/JSON content into question objects
- * - Validate and normalize v4.9 schema questions
+ * - Validate and normalize v5.1 schema questions
  * - Extract and resolve image tokens [[image:tag]] in RichText
  * - Utility helpers for working with question data
  * 
- * Schema v4.9 Key Features:
+ * Schema v5.1 Key Features:
  * - Images embedded as [[image:tag]] or [[image:tag|height:H|width:W]] tokens in RichText
  * - Polymorphic 'data' field based on question 'type'
  * - Types: MCQ, FIB, MATCH, SUBJECTIVE, TABLE, COMPOSITE
@@ -62,7 +62,7 @@ const TABLE_STYLE = {
  * Handles BOM, JSON arrays, multiple JSON objects
  * @param {string} content - Raw JSON/JSONL content
  * @returns {Array} Array of validated question objects
- * @throws {Error} If content contains non-v4.9 schema questions
+ * @throws {Error} If content contains non-v5.1 schema questions
  */
 function parseJson(content) {
     const results = [];
@@ -137,31 +137,31 @@ function parseJson(content) {
 }
 
 // =====================================================
-// SCHEMA VALIDATION (v4.9 Only)
+// SCHEMA VALIDATION (v5.1 Only)
 // =====================================================
 
 /**
- * Validate and normalize a question object to v4.9 schema
- * Only accepts v4.9 format - throws error for old schemas
+ * Validate and normalize a question object to v5.1 schema
+ * Only accepts v5.1 format - throws error for old schemas
  * @param {Object} obj - Raw question object
  * @returns {Object} Validated question object with defaults applied
- * @throws {Error} If object is not in v4.9 format
+ * @throws {Error} If object is not in v5.1 format
  */
 function validateAndNormalize(obj) {
-    // Check for v4.9 format: must have 'data' object and valid 'type'
+    // Check for v5.1 format: must have 'data' object and valid 'type'
     if (!obj.data || !QUESTION_TYPES.includes(obj.type)) {
         // Check if it's an old schema format
         if (obj.taxonomy || obj.content || obj.stimulus || obj.prompt) {
-            throw new Error('Old schema format detected. Please convert to v4.9 schema format.');
+            throw new Error('Old schema format detected. Please convert to v5.1 schema format.');
         }
-        throw new Error('Invalid question format. Expected v4.9 schema with "type" and "data" fields.');
+        throw new Error('Invalid question format. Expected v5.1 schema with "type" and "data" fields.');
     }
     
     return ensureDefaults(obj);
 }
 
 /**
- * Ensure all required v4.9 fields have defaults
+ * Ensure all required v5.1 fields have defaults
  * @param {Object} obj - Question object
  * @returns {Object} Question object with all defaults applied
  */
@@ -440,7 +440,7 @@ function traverseAllRichText(question, transformer) {
         });
     }
     
-    // FIB options_pool
+    // COMPOSITE options_pool (word bank for FIB sub-questions)
     if (data.options_pool && Array.isArray(data.options_pool)) {
         data.options_pool = data.options_pool.map((item, i) => 
             transformer(item, `data.options_pool[${i}]`)
@@ -514,7 +514,7 @@ function hasImages(q) {
 }
 
 /**
- * Create a new empty question with v4.9 defaults
+ * Create a new empty question with v5.1 defaults
  * @param {string} type - Question type (default: 'SUBJECTIVE')
  * @returns {Object} New question object with all required fields
  */
@@ -556,7 +556,7 @@ function prepareForExport(q) {
 }
 
 /**
- * Validate a question against v4.9 schema
+ * Validate a question against v5.1 schema
  * @param {Object} q - Question object
  * @returns {Object} { valid: boolean, errors: string[] }
  */
@@ -572,7 +572,7 @@ function validateQuestion(q) {
     
     // style is mandatory in data
     if (q.data && !q.data.style) {
-        errors.push('Missing data.style (mandatory in v4.9)');
+        errors.push('Missing data.style (mandatory in v5.1)');
     }
     
     // Type-specific validation
@@ -597,7 +597,7 @@ function validateQuestion(q) {
     if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
         q.data.sub_questions.forEach((sq, i) => {
             if (!sq.data?.style) {
-                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v4.9)`);
+                errors.push(`Sub-question ${i + 1} missing data.style (mandatory in v5.1)`);
             }
         });
     }

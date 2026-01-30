@@ -1,5 +1,5 @@
 /**
- * Question Renderer Module (Schema v4.9)
+ * Question Renderer Module (Schema v5.1)
  * Shared UX rendering logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
@@ -252,6 +252,11 @@ function renderMCQPreview(data, renderOptions) {
     const isHorizontal = optLayout === 'horizontal';
     const numOptions = data.options.length;
     
+    // Check if any option contains images (affects horizontal layout behavior)
+    const hasImages = data.options.some(opt => 
+        opt.text && (opt.text.includes('[[image:') || opt.text.includes('!['))
+    );
+    
     const optItems = data.options.map((opt, k) => {
         const optText = opt.text || '';
         const optId = opt.id || String.fromCharCode(65 + k); // A, B, C, D...
@@ -259,10 +264,15 @@ function renderMCQPreview(data, renderOptions) {
         // For horizontal layout, allow options to flex and images to scale
         let itemStyle, textStyle;
         if (isHorizontal) {
-            // Allow flex items to shrink so images can scale; CSS class handles max-width
-            itemStyle = 'display:flex; align-items:flex-start;';
-            // Keep words intact but allow content to scale
-            textStyle = 'word-break:keep-all; overflow-wrap:normal; white-space:normal;';
+            if (hasImages) {
+                // Options with images: use fixed 50% width for 2-column layout
+                itemStyle = 'display:flex; align-items:flex-start;';
+                textStyle = 'word-break:keep-all; overflow-wrap:normal; white-space:normal;';
+            } else {
+                // Text-only options: use auto width, allow natural flow
+                itemStyle = 'display:flex; align-items:flex-start; white-space:nowrap;';
+                textStyle = 'word-break:keep-all; overflow-wrap:normal;';
+            }
         } else {
             itemStyle = 'display:flex; align-items:flex-start; margin-bottom:4px;';
             textStyle = '';
@@ -277,25 +287,34 @@ function renderMCQPreview(data, renderOptions) {
     // For horizontal: flex-wrap ensures items wrap, gap provides spacing
     // For vertical: flex-direction:column stacks items
     // margin:0 and padding:0 ensure options align with parent content (no extra indentation)
-    const containerStyle = isHorizontal 
-        ? 'display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start; margin:0; padding:0;'
-        : 'display:flex; flex-direction:column; margin:0; padding:0;';
-    
-    // Add p-options-horizontal class for horizontal layout to enable image scaling CSS
-    const containerClass = isHorizontal ? 'p-options p-options-horizontal' : 'p-options';
+    let containerStyle, containerClass;
+    if (isHorizontal) {
+        if (hasImages) {
+            // Options with images: 2-column fixed layout
+            containerStyle = 'display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start; margin:0; padding:0;';
+            containerClass = 'p-options p-options-horizontal';
+        } else {
+            // Text-only options: flexible flow layout, more options per row if space permits
+            containerStyle = 'display:flex; flex-wrap:wrap; gap:0.5rem 1.5rem; align-items:flex-start; margin:0; padding:0;';
+            containerClass = 'p-options p-options-horizontal-text';
+        }
+    } else {
+        containerStyle = 'display:flex; flex-direction:column; margin:0; padding:0;';
+        containerClass = 'p-options';
+    }
     
     return `<div class="${containerClass}" style="${containerStyle}">${optItems}</div>`;
 }
 
 /**
- * Render FIB word bank
- * @param {Object} data - FIB data object
+ * Render word bank (options pool)
+ * @param {Array} optionsPool - Array of word strings
  * @returns {string} HTML string
  */
-function renderFIBPreview(data) {
-    if (!data.options_pool || data.options_pool.length === 0) return '';
+function renderWordBankPreview(optionsPool) {
+    if (!optionsPool || optionsPool.length === 0) return '';
     
-    const wordItems = data.options_pool.map(word => 
+    const wordItems = optionsPool.map(word => 
         `<span class="p-word-bank-item">${word}</span>`
     ).join('');
     
@@ -411,28 +430,15 @@ function renderTablePreview(data, renderOptions) {
 }
 
 /**
- * Get shared options pool from COMPOSITE FIB sub-questions (if they all share the same pool)
+ * Get options pool from COMPOSITE data (v5.1: options_pool is at CompositeData level)
  * @param {Object} data - COMPOSITE data object
- * @returns {Array|null} Shared options pool or null if not shared
+ * @returns {Array|null} Options pool array or null if not present
  */
-function getSharedOptionsPool(data) {
-    if (!data.sub_questions || data.sub_questions.length === 0) return null;
-    
-    const fibSubQuestions = data.sub_questions.filter(sq => 
-        sq.type === 'FIB' && sq.data?.options_pool?.length > 0
-    );
-    
-    if (fibSubQuestions.length > 1) {
-        const firstPool = JSON.stringify(fibSubQuestions[0].data.options_pool.slice().sort());
-        const allSame = fibSubQuestions.every(sq => 
-            JSON.stringify(sq.data.options_pool.slice().sort()) === firstPool
-        );
-        if (allSame) {
-            return fibSubQuestions[0].data.options_pool;
-        }
+function getOptionsPool(data) {
+    if (!data.options_pool || !Array.isArray(data.options_pool) || data.options_pool.length === 0) {
+        return null;
     }
-    
-    return null;
+    return data.options_pool;
 }
 
 /**
@@ -443,10 +449,6 @@ function getSharedOptionsPool(data) {
  */
 function renderCompositePreview(data, renderOptions) {
     if (!data.sub_questions || data.sub_questions.length === 0) return '';
-    
-    // Check if all FIB sub-questions share the same options_pool
-    const sharedOptionsPool = getSharedOptionsPool(data);
-    const hasSharedOptionsPool = sharedOptionsPool !== null;
     
     const subLayout = data.style?.sub_questions_layout || 'vertical';
     
@@ -459,12 +461,6 @@ function renderCompositePreview(data, renderOptions) {
         let optHtml = '';
         if (sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
             optHtml = renderMCQPreview(sqData, renderOptions);
-        }
-        
-        // FIB options_pool as word bank - only show if NOT using shared pool
-        let sqWordBank = '';
-        if (sq.type === 'FIB' && sqData.options_pool && sqData.options_pool.length > 0 && !hasSharedOptionsPool) {
-            sqWordBank = renderFIBPreview(sqData);
         }
         
         // TABLE type for sub-questions
@@ -481,9 +477,8 @@ function renderCompositePreview(data, renderOptions) {
         
         // Structure: label is separate, content is in a flex container
         // Options should align with content text, not the label
-        // Use margin-left:0 and padding-left:0 to ensure options align with content
         // Check if content has tags (image, gap, etc.) or if there's type-specific content
-        const hasTagsOrContent = sqContent.includes('[[') || optHtml || sqTableHtml || sqMatchHtml || sqWordBank;
+        const hasTagsOrContent = sqContent.includes('[[') || optHtml || sqTableHtml || sqMatchHtml;
         const renderedContent = formatRichText(sqContent, renderOptions);
         const contentDisplay = renderedContent || (hasTagsOrContent ? '' : '<em style="color:#999;">No text</em>');
         
@@ -493,7 +488,6 @@ function renderCompositePreview(data, renderOptions) {
                 ${optHtml ? `<div style="margin-top:8px; margin-left:0; padding-left:0;">${optHtml}</div>` : ''}
                 ${sqTableHtml}
                 ${sqMatchHtml}
-                ${sqWordBank}
             </div>`;
         
         // Use flex layout for sub-item to ensure proper alignment
@@ -509,7 +503,7 @@ function renderCompositePreview(data, renderOptions) {
         ? `<div class="p-composite-subs"><div class="p-sub-grid">${subs}</div></div>` 
         : `<div class="p-composite-subs">${subs}</div>`;
     
-    // Note: Shared word bank is now rendered in renderQuestionHTML, not here
+    // Note: Word bank (options_pool) is rendered in renderQuestionHTML at COMPOSITE level
     return subHtml;
 }
 
@@ -519,7 +513,7 @@ function renderCompositePreview(data, renderOptions) {
 
 /**
  * Render complete question HTML preview
- * @param {Object} question - Question object (v4.9 schema)
+ * @param {Object} question - Question object (v5.1 schema)
  * @param {Object} options - Rendering options
  * @param {Function} options.imageResolver - Function(imageId) => URL or null
  * @param {string|number} options.questionNumber - Display number for the question
@@ -561,15 +555,12 @@ function renderQuestionHTML(question, options = {}) {
         </div>`;
     }
     
-    // For COMPOSITE: Check for shared options pool and render it after main content
-    let sharedWordBankHtml = '';
+    // For COMPOSITE: Check for options_pool (word bank) and render it after main content
+    let wordBankHtml = '';
     if (qType === 'COMPOSITE') {
-        const sharedPool = getSharedOptionsPool(data);
-        if (sharedPool && sharedPool.length > 0) {
-            const wordItems = sharedPool.map(word => 
-                `<span class="p-word-bank-item">${word}</span>`
-            ).join('');
-            sharedWordBankHtml = `<div class="p-word-bank-wrapper" style="padding-left:2.5rem; margin:8px 0;"><div style="display:flex; justify-content:center;"><div class="p-word-bank" style="width:90%;">${wordItems}</div></div></div>`;
+        const optionsPool = getOptionsPool(data);
+        if (optionsPool && optionsPool.length > 0) {
+            wordBankHtml = `<div class="p-word-bank-wrapper" style="padding-left:2.5rem; margin:8px 0;">${renderWordBankPreview(optionsPool)}</div>`;
         }
     }
     
@@ -582,7 +573,7 @@ function renderQuestionHTML(question, options = {}) {
                 typeHtml = renderMCQPreview(data, renderOptions);
                 break;
             case 'FIB':
-                typeHtml = renderFIBPreview(data);
+                // FIB has no additional content in v5.1 (options_pool moved to COMPOSITE level)
                 break;
             case 'MATCH':
                 typeHtml = renderMatchPreview(data, renderOptions);
@@ -621,10 +612,10 @@ function renderQuestionHTML(question, options = {}) {
         }
     }
     
-    // For COMPOSITE: sharedWordBankHtml appears after main content but before sub-questions
+    // For COMPOSITE: wordBankHtml (options_pool) appears after main content but before sub-questions
     return `<div class="p-q-block">
         <div class="p-q-header">
-            <div class="p-q-content">${promptHtml}${sharedWordBankHtml}</div>
+            <div class="p-q-content">${promptHtml}${wordBankHtml}</div>
             ${marksText ? `<div class="p-q-marks">${marksText}</div>` : ''}
         </div>
         ${typeContentHtml}

@@ -1,5 +1,5 @@
 /**
- * Question Preview Module (Schema v4.9)
+ * Question Preview Module (Schema v5.1)
  * Shared preview rendering logic for assessment questions
  * Used by: assessment-authoring-tool.html, assessment-selection-tool.html
  * 
@@ -29,7 +29,7 @@ const PREVIEW_DEFAULTS = {
 /**
  * Render a question preview into a container element
  * 
- * @param {Object} question - Question object in v4.9 format
+ * @param {Object} question - Question object in v5.1 format
  * @param {HTMLElement} container - DOM element to render into
  * @param {Object} options - Rendering options
  * @param {Function} options.imageResolver - Function(imageId) => URL or null
@@ -108,7 +108,7 @@ function renderPreviewToContainer(question, container, options = {}) {
  * Render a question to HTML string without a container
  * Useful when you need the HTML but not container styling
  * 
- * @param {Object} question - Question object in v4.9 format
+ * @param {Object} question - Question object in v5.1 format
  * @param {Object} options - Same options as renderPreviewToContainer (except applyContainerStyles)
  * @returns {string} The rendered HTML
  */

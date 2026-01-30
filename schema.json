@@ -1,274 +1,267 @@
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Educational Question Schema (v5.0)",
-  "description": "Enhanced schema with type-safe styling. Added column_widths to TableStyle.",
-  "type": "object",
-  "required": ["id", "metadata", "type", "data", "solution"],
-  "properties": {
-    "id": {
-      "type": "string",
-      "description": "Unique identifier (e.g., 'Q1')"
-    },
-    "metadata": {
-      "type": "object",
-      "required": ["grade", "subject", "chapter", "section", "difficulty", "marks", "pool", "subpool"],
-      "properties": {
-        "grade": { "type": ["string", "integer"] },
-        "subject": { "type": "string" },
-        "chapter": { "type": ["string", "integer"], "description": "Chapter number or Unit number" },
-        "section": { "type": "string", "description": "Section within the chapter" },
-        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
-        "marks": { "type": "integer" },
-        "pool": { "type": "string", "enum": ["Practice", "Exam"] },
-	      "subpool": {
-          "type": "string",
-          "enum": ["NA", "Written", "Oral"],
-          "default": "NA",
-          "description": "Sub-classification for the question pool."
+{ 
+  "$schema": "http://json-schema.org/draft-07/schema#", 
+  "title": "Educational Question Schema (v5.1)", 
+  "description": "Enhanced schema with type-safe styling. Added column_widths to TableStyle. Moved options_pool from FIBData to CompositeData.", 
+  "type": "object", 
+  "required": ["id", "metadata", "type", "data", "solution"], 
+  "properties": { 
+    "id": { 
+      "type": "string", 
+      "description": "Unique identifier (e.g., 'Q1')" 
+    }, 
+    "metadata": { 
+      "type": "object", 
+      "required": ["grade", "subject", "chapter", "section", "difficulty", "marks", "pool", "subpool"], 
+      "properties": { 
+        "grade": { "type": ["string", "integer"] }, 
+        "subject": { "type": "string" }, 
+        "chapter": { "type": ["string", "integer"], "description": "Chapter number or Unit number" }, 
+        "section": { "type": "string", "description": "Section within the chapter" }, 
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] }, 
+        "marks": { "type": "integer" }, 
+        "pool": { "type": "string", "enum": ["Practice", "Exam"] },	 "subpool": {
+         "type": "string",
+         "enum": ["NA", "Written", "Oral"],
+         "default": "NA",
+         "description": "Sub-classification for the question pool." 
         }
-      }
-    },
-    "type": {
-      "type": "string",
-      "enum": ["MCQ", "FIB", "MATCH", "SUBJECTIVE", "TABLE", "COMPOSITE"],
-      "description": "Determines the structure of the 'data' object."
-    },
-    "data": {
-      "description": "Polymorphic payload.",
-      "oneOf": [
-        { "$ref": "#/definitions/MCQData" },
-        { "$ref": "#/definitions/FIBData" },
-        { "$ref": "#/definitions/MatchData" },
-        { "$ref": "#/definitions/SubjectiveData" },
-        { "$ref": "#/definitions/TableData" },
-        { "$ref": "#/definitions/CompositeData" }
-      ]
-    },
-    "solution": {
-      "$ref": "#/definitions/SolutionText",
-      "description": "The human-readable explanation string."
-    }
-  },
-  "definitions": {
-    "RichText": {
-      "type": "string",
-      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[image:id|height:50|width:75]])."
-    },
-    "SolutionText": {
-      "type": "object",
-      "required": ["text"],
-      "properties": {
-        "text": { "$ref": "#/definitions/RichText" }
-      }
-    },
+      } 
+    }, 
+    "type": { 
+      "type": "string", 
+      "enum": ["MCQ", "FIB", "MATCH", "SUBJECTIVE", "TABLE", "COMPOSITE"], 
+      "description": "Determines the structure of the 'data' object." 
+    }, 
+    "data": { 
+      "description": "Polymorphic payload.", 
+      "oneOf": [ 
+        { "$ref": "#/definitions/MCQData" }, 
+        { "$ref": "#/definitions/FIBData" }, 
+        { "$ref": "#/definitions/MatchData" }, 
+        { "$ref": "#/definitions/SubjectiveData" }, 
+        { "$ref": "#/definitions/TableData" }, 
+        { "$ref": "#/definitions/CompositeData" } 
+      ] 
+    }, 
+    "solution": { 
+      "$ref": "#/definitions/SolutionText", 
+      "description": "The human-readable explanation string." 
+    } 
+  }, 
+  "definitions": { 
+    "RichText": { 
+      "type": "string", 
+      "description": "Mixed-Content String. Supports Markdown, LaTeX Math ($$), and Images ([[image:id|height:50|width:75]])." 
+    }, 
+    "SolutionText": { 
+      "type": "object", 
+      "required": ["text"], 
+      "properties": { 
+        "text": { "$ref": "#/definitions/RichText" } 
+      } 
+    }, 
 
+    "_comment_styles": "--- ATOMIC STYLE BLOCKS ---", 
 
-    "_comment_styles": "--- ATOMIC STYLE BLOCKS ---",
+    "BaseStyle": { 
+      "type": "object", 
+      "description": "Styles applicable to ALL question types (primarily RichText layout).", 
+      "properties": { 
+        "image_layout": { 
+          "type": "string", 
+          "enum": ["vertical", "horizontal"], 
+          "default": "vertical", 
+          "description": "Controls tokens in RichText. 'horizontal' renders adjacent images in 2 columns." 
+        } 
+      } 
+    }, 
+    "OptionsStyle": { 
+      "type": "object", 
+      "description": "Styles for types with lists of options (MCQ, FIB).", 
+      "properties": { 
+        "options_layout": { 
+          "type": "string", 
+          "enum": ["vertical", "horizontal"], 
+          "default": "vertical", 
+          "description": "For MCQ/FIB Options. 'horizontal' renders options in a 2-column grid." 
+        } 
+      } 
+    }, 
+    "CompositeStyle": { 
+      "type": "object", 
+      "description": "Styles for the parent container of sub-questions.", 
+      "properties": { 
+        "sub_questions_layout": { 
+          "type": "string", 
+          "enum": ["vertical", "horizontal", "matrix"], 
+          "default": "vertical", 
+          "description": "For Composite sub-questions." 
+        } 
+      } 
+    }, 
+    "TableStyle": { 
+      "type": "object", 
+      "description": "Styles specific to TableData.", 
+      "properties": { 
+        "table_grid_lines": { 
+          "type": "string", 
+          "enum": ["all", "none", "horizontal", "vertical"], 
+          "default": "all", 
+          "description": "Controls visibility of internal grid lines in TABLE type. 'none' hides them." 
+        }, 
+        "hide_header": { 
+          "type": "boolean", 
+          "default": "false", 
+          "description": "Controls visibility of row or column headers." 
+        }, 
+        "column_widths": { 
+            "type": "array", 
+            "items": { "type": "string" }, 
+            "description": "Optional width values for each column (e.g. ['20%', '80%'])." 
+        } 
+      } 
+    }, 
 
+    "_comment_composed_styles": "--- COMPOSED STYLE DEFINITIONS ---", 
 
-    "BaseStyle": {
-      "type": "object",
-      "description": "Styles applicable to ALL question types (primarily RichText layout).",
-      "properties": {
-        "image_layout": {
-          "type": "string",
-          "enum": ["vertical", "horizontal"],
-          "default": "vertical",
-          "description": "Controls tokens in RichText. 'horizontal' renders adjacent images in 2 columns."
-        }
-      }
-    },
-    "OptionsStyle": {
-      "type": "object",
-      "description": "Styles for types with lists of options (MCQ, FIB).",
-      "properties": {
-        "options_layout": {
-          "type": "string",
-          "enum": ["vertical", "horizontal"],
-          "default": "vertical",
-          "description": "For MCQ/FIB Options. 'horizontal' renders options in a 2-column grid."
-        }
-      }
-    },
-    "CompositeStyle": {
-      "type": "object",
-      "description": "Styles for the parent container of sub-questions.",
-      "properties": {
-        "sub_questions_layout": {
-          "type": "string",
-          "enum": ["vertical", "horizontal", "matrix"],
-          "default": "vertical",
-          "description": "For Composite sub-questions."
-        }
-      }
-    },
-    "TableStyle": {
-      "type": "object",
-      "description": "Styles specific to TableData.",
-      "properties": {
-        "table_grid_lines": {
-          "type": "string",
-          "enum": ["all", "none", "horizontal", "vertical"],
-          "default": "all",
-          "description": "Controls visibility of internal grid lines in TABLE type. 'none' hides them."
+    "MCQDataStyle": { 
+      "allOf": [ 
+        { "$ref": "#/definitions/BaseStyle" }, 
+        { "$ref": "#/definitions/OptionsStyle" } 
+      ] 
+    }, 
+    "CompositeDataStyle": { 
+      "allOf": [ 
+        { "$ref": "#/definitions/BaseStyle" }, 
+        { "$ref": "#/definitions/CompositeStyle" } 
+      ] 
+    }, 
+    "TableDataStyle": { 
+      "allOf": [ 
+        { "$ref": "#/definitions/BaseStyle" }, 
+        { "$ref": "#/definitions/TableStyle" } 
+      ] 
+    }, 
+    "SubjectiveDataStyle": { 
+        "$ref": "#/definitions/BaseStyle" 
+    }, 
+
+    "_comment_data_types": "--- DATA TYPE DEFINITIONS ---", 
+
+    "MCQData": { 
+      "type": "object", 
+      "required": ["content", "options", "style"], 
+      "properties": { 
+        "content": { "$ref": "#/definitions/RichText" }, 
+        "style": { "$ref": "#/definitions/MCQDataStyle" }, 
+        "allow_multiple": { "type": "boolean", "default": false }, 
+        "options": { 
+          "type": "array", 
+          "items": { 
+            "type": "object", 
+            "required": ["id", "text"], 
+            "properties": { 
+              "id": { "type": "string" }, 
+              "text": { "$ref": "#/definitions/RichText" } 
+            } 
+          } 
+        } 
+      } 
+    }, 
+    "FIBData": { 
+      "type": "object", 
+      "required": ["content", "style"], 
+      "properties": { 
+        "content": { "type": "string" }, 
+        "style": { "$ref": "#/definitions/MCQDataStyle" }
+      } 
+    }, 
+    "MatchData": { 
+      "type": "object", 
+      "required": ["content", "pairs", "style"], 
+      "properties": { 
+        "content": { "$ref": "#/definitions/RichText" }, 
+        "style": { "$ref": "#/definitions/SubjectiveDataStyle" }, 
+        "pairs": { 
+          "type": "array", 
+          "items": { 
+            "type": "object", 
+            "required": ["left", "right"], 
+            "properties": { 
+              "left": { "$ref": "#/definitions/RichText" }, 
+              "right": { "$ref": "#/definitions/RichText" } 
+            } 
+          } 
+        } 
+      } 
+    }, 
+    "SubjectiveData": { 
+      "type": "object", 
+      "required": ["content", "style"], 
+      "properties": { 
+        "content": { "$ref": "#/definitions/RichText" }, 
+        "style": { "$ref": "#/definitions/SubjectiveDataStyle" }, 
+        "expected_length": { "type": "string", "enum": ["short", "long"] }, 
+        "allow_media_upload": { "type": "boolean", "default": false } 
+      } 
+    }, 
+    "TableData": { 
+      "type": "object", 
+      "description": "A structured 2D grid for interactions like Tick Columns or HTO math.", 
+      "required": ["content", "table", "style"], 
+      "properties": { 
+        "content": { "$ref": "#/definitions/RichText" }, 
+        "style": { "$ref": "#/definitions/TableDataStyle" }, 
+        "table": { 
+          "type": "object", 
+          "required": ["rows"], 
+          "properties": { 
+            "header": { 
+              "type": "array", 
+              "items": { "$ref": "#/definitions/RichText" } 
+            }, 
+            "rows": { 
+              "type": "array", 
+              "items": { 
+                "type": "array", 
+                "items": { "$ref": "#/definitions/RichText" } 
+              } 
+            } 
+          } 
+        } 
+      } 
+    }, 
+    "CompositeData": { 
+      "type": "object", 
+      "required": ["common_content", "sub_questions", "style"], 
+      "properties": { 
+        "common_content": { "$ref": "#/definitions/RichText" }, 
+        "style": { "$ref": "#/definitions/CompositeDataStyle" }, 
+        "options_pool": { 
+          "type": "array", 
+          "items": { "type": "string" } 
         },
-        "hide_header": {
-          "type": "boolean",
-          "default": "false",
-          "description": "Controls visibility of row or column headers."
-        },
-        "column_widths": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Optional width values for each column (e.g. ['20%', '80%'])."
-        }
-      }
-    },
-
-
-    "_comment_composed_styles": "--- COMPOSED STYLE DEFINITIONS ---",
-
-
-    "MCQDataStyle": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseStyle" },
-        { "$ref": "#/definitions/OptionsStyle" }
-      ]
-    },
-    "CompositeDataStyle": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseStyle" },
-        { "$ref": "#/definitions/CompositeStyle" }
-      ]
-    },
-    "TableDataStyle": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseStyle" },
-        { "$ref": "#/definitions/TableStyle" }
-      ]
-    },
-    "SubjectiveDataStyle": {
-        "$ref": "#/definitions/BaseStyle"
-    },
-
-
-    "_comment_data_types": "--- DATA TYPE DEFINITIONS ---",
-
-
-    "MCQData": {
-      "type": "object",
-      "required": ["content", "options", "style"],
-      "properties": {
-        "content": { "$ref": "#/definitions/RichText" },
-        "style": { "$ref": "#/definitions/MCQDataStyle" },
-        "allow_multiple": { "type": "boolean", "default": false },
-        "options": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["id", "text"],
-            "properties": {
-              "id": { "type": "string" },
-              "text": { "$ref": "#/definitions/RichText" }
-            }
-          }
-        }
-      }
-    },
-    "FIBData": {
-      "type": "object",
-      "required": ["content", "style"],
-      "properties": {
-        "content": { "type": "string" },
-        "style": { "$ref": "#/definitions/MCQDataStyle" },
-        "options_pool": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
-      }
-    },
-    "MatchData": {
-      "type": "object",
-      "required": ["content", "pairs", "style"],
-      "properties": {
-        "content": { "$ref": "#/definitions/RichText" },
-        "style": { "$ref": "#/definitions/SubjectiveDataStyle" },
-        "pairs": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["left", "right"],
-            "properties": {
-              "left": { "$ref": "#/definitions/RichText" },
-              "right": { "$ref": "#/definitions/RichText" }
-            }
-          }
-        }
-      }
-    },
-    "SubjectiveData": {
-      "type": "object",
-      "required": ["content", "style"],
-      "properties": {
-        "content": { "$ref": "#/definitions/RichText" },
-        "style": { "$ref": "#/definitions/SubjectiveDataStyle" },
-        "expected_length": { "type": "string", "enum": ["short", "long"] },
-        "allow_media_upload": { "type": "boolean", "default": false }
-      }
-    },
-    "TableData": {
-      "type": "object",
-      "description": "A structured 2D grid for interactions like Tick Columns or HTO math.",
-      "required": ["content", "table", "style"],
-      "properties": {
-        "content": { "$ref": "#/definitions/RichText" },
-        "style": { "$ref": "#/definitions/TableDataStyle" },
-        "table": {
-          "type": "object",
-          "required": ["rows"],
-          "properties": {
-            "header": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/RichText" }
-            },
-            "rows": {
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": { "$ref": "#/definitions/RichText" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "CompositeData": {
-      "type": "object",
-      "required": ["common_content", "sub_questions", "style"],
-      "properties": {
-        "common_content": { "$ref": "#/definitions/RichText" },
-        "style": { "$ref": "#/definitions/CompositeDataStyle" },
-        "sub_questions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["id", "type", "data"],
-            "properties": {
-              "id": { "type": "string" },
-              "type": { "type": "string", "enum": ["MCQ", "FIB", "MATCH", "SUBJECTIVE", "TABLE"] },
-              "data": {
-                "oneOf": [
-                  { "$ref": "#/definitions/MCQData" },
-                  { "$ref": "#/definitions/FIBData" },
-                  { "$ref": "#/definitions/MatchData" },
-                  { "$ref": "#/definitions/SubjectiveData" },
-                  { "$ref": "#/definitions/TableData" }
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+        "sub_questions": { 
+          "type": "array", 
+          "items": { 
+            "type": "object", 
+            "required": ["id", "type", "data"], 
+            "properties": { 
+              "id": { "type": "string" }, 
+              "type": { "type": "string", "enum": ["MCQ", "FIB", "MATCH", "SUBJECTIVE", "TABLE"] }, 
+              "data": { 
+                "oneOf": [ 
+                  { "$ref": "#/definitions/MCQData" }, 
+                  { "$ref": "#/definitions/FIBData" }, 
+                  { "$ref": "#/definitions/MatchData" }, 
+                  { "$ref": "#/definitions/SubjectiveData" }, 
+                  { "$ref": "#/definitions/TableData" } 
+                ] 
+              } 
+            } 
+          } 
+        } 
+      } 
+    } 
+  } 
 }

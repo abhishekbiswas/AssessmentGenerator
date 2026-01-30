@@ -901,6 +901,20 @@
             max-width: 100%; 
             width: 100%;
             height: auto;
+        }
+        
+        /* Horizontal MCQ options with text only - flexible flow, more options per row if space permits */
+        .p-options-horizontal-text {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.25rem 1.5rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .p-options-horizontal-text .p-option-item {
+            flex: 0 0 auto; /* Natural width based on content */
+            min-width: 0;
+            box-sizing: border-box;
             object-fit: contain;
         }
 
@@ -1425,7 +1439,7 @@
             background: #fecaca;
         }
         
-        /* Column resize handles (v4.9) */
+        /* Column resize handles (v5.1) */
         .table-grid-editor .col-resize-handle {
             position: absolute;
             right: -3px;
@@ -1961,10 +1975,10 @@
                                         <div id="options-list"></div>
                                     </div>
 
-                                    <!-- Add Word Bank Button (shown for FIB without options_pool) -->
+                                    <!-- Add Word Bank Button (shown for COMPOSITE without options_pool) -->
                                     <button id="add-word-bank-btn" class="btn btn-sm" onclick="addWordBank()" style="display:none; margin-top:0.5rem; font-size:0.75rem; background:#fffbeb; border-color:#fcd34d; color:#92400e;">+ Add Word Bank (options_pool)</button>
 
-                                    <!-- Word Bank Section (options_pool for FIB / shared for COMPOSITE) -->
+                                    <!-- Word Bank Section (options_pool for COMPOSITE type only in v5.1) -->
                                     <div id="word-bank-section" class="content-section" style="display:none; background:#fffbeb; padding:1rem; border-radius:6px; border:1px solid #fcd34d;">
                                         <div class="section-header">
                                             <label class="section-label" id="word-bank-label" style="color:#92400e;">WORD BANK (options_pool)</label>
@@ -2768,33 +2782,22 @@
                 optionsSection.style.display = 'none';
             }
 
-            // FIB options_pool as word bank
-            if(isFibType) {
+            // v5.1: options_pool (word bank) is only for COMPOSITE type
+            if(isCompositeType) {
                 if(data.options_pool && data.options_pool.length > 0) {
                     document.getElementById('word-bank-section').style.display = 'block';
                     document.getElementById('add-word-bank-btn').style.display = 'none';
                     document.getElementById('word-bank-label').textContent = 'WORD BANK (options_pool)';
-                    document.getElementById('word-bank-hint').textContent = 'Words available for fill-in-the-blank questions';
+                    document.getElementById('word-bank-hint').textContent = 'Words available for fill-in-the-blank sub-questions';
                     renderWordBank(data.options_pool);
                 } else {
-                    // Show "Add Word Bank" button for FIB without options_pool
+                    // Show "Add Word Bank" button for COMPOSITE without options_pool
                     document.getElementById('word-bank-section').style.display = 'none';
                     document.getElementById('add-word-bank-btn').style.display = 'block';
                 }
             } else {
                 document.getElementById('add-word-bank-btn').style.display = 'none';
-            }
-            
-            // COMPOSITE: Check for shared options_pool across FIB sub-questions
-            if(isCompositeType && data.sub_questions) {
-                const fibSubs = data.sub_questions.filter(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
-                if (fibSubs.length > 0) {
-                    // Show word bank section for shared editing
-                    document.getElementById('word-bank-section').style.display = 'block';
-                    document.getElementById('word-bank-label').textContent = 'SHARED WORD BANK (options_pool)';
-                    document.getElementById('word-bank-hint').textContent = 'Editing here updates all FIB sub-questions';
-                    renderWordBank(fibSubs[0].data.options_pool);
-                }
+                document.getElementById('word-bank-section').style.display = 'none';
             }
             
             // MATCH pairs (v4.0 schema: data.pairs array with {left, right} objects)
@@ -2845,9 +2848,9 @@
          * Returns the part after the last hyphen, or the full ID if no hyphen
          * e.g., "Q1-a" → "a", "Q1-sub-b" → "b", "abc" → "abc"
          */
-        // NOTE: getIdDisplayLabel removed - v4.9 uses simple IDs directly
+        // NOTE: getIdDisplayLabel removed - v5.1 uses simple IDs directly
 
-        // --- DATA HELPERS (Adapted for v4.9 schema) ---
+        // --- DATA HELPERS (Adapted for v5.1 schema) ---
         function updatePrompt(val) {
             const q = activeData[activeIndex];
             if (!q.data) q.data = {};
@@ -3448,9 +3451,9 @@
             container.innerHTML = '';
             
             options.forEach((opt, idx) => {
-                // v4.9 uses simple IDs directly
+                // v5.1 uses simple IDs directly
                 const optId = opt.id || String.fromCharCode(97 + idx);
-                // v4.9 schema: options are objects with { id, text } or just strings
+                // v5.1 schema: options are objects with { id, text } or just strings
                 const optText = (typeof opt === 'object') ? (opt.text || '') : (opt || '');
                 const optAssets = (typeof opt === 'object' && opt.assets) ? opt.assets : [];
                 
@@ -3541,47 +3544,31 @@
         }
 
         // =====================================================
-        // WORD BANK MANAGEMENT (v4.0 uses options_pool for FIB)
+        // WORD BANK MANAGEMENT (v5.1: options_pool is on COMPOSITE data only)
         // =====================================================
         
         function toggleWordBank() {
             const q = activeData[activeIndex];
-            // v4.0 FIB uses data.options_pool, COMPOSITE uses shared pool across FIB sub-questions
-            if (q.type !== 'FIB' && q.type !== 'COMPOSITE') return;
+            // v5.1: options_pool is only on COMPOSITE type
+            if (q.type !== 'COMPOSITE') return;
             
             const section = document.getElementById('word-bank-section');
             if(section.style.display === 'none') {
                 section.style.display = 'block';
                 if (!q.data) q.data = {};
                 
-                if (q.type === 'FIB') {
-                    if(!q.data.options_pool) q.data.options_pool = [];
-                    if(q.data.options_pool.length === 0) {
-                        addWordBankItem();
-                    }
-                } else if (q.type === 'COMPOSITE' && q.data.sub_questions) {
-                    // Initialize options_pool for all FIB sub-questions
-                    const fibSubs = q.data.sub_questions.filter(sq => sq.type === 'FIB');
-                    if (fibSubs.length > 0) {
-                        fibSubs.forEach(sq => {
-                            if (!sq.data) sq.data = {};
-                            if (!sq.data.options_pool) sq.data.options_pool = [];
-                        });
-                        // If all empty, add one item
-                        if (fibSubs[0].data.options_pool.length === 0) {
-                            addWordBankItem();
-                        } else {
-                            renderWordBank(fibSubs[0].data.options_pool);
-                        }
-                    }
+                if(!q.data.options_pool) q.data.options_pool = [];
+                if(q.data.options_pool.length === 0) {
+                    addWordBankItem();
+                } else {
+                    renderWordBank(q.data.options_pool);
                 }
             } else {
                 section.style.display = 'none';
             }
         }
 
-        // v4.0: Render options_pool (word bank) for FIB type
-        // For COMPOSITE with shared pool, renders the shared editor
+        // v5.1: Render options_pool (word bank) for COMPOSITE type
         function renderWordBank(optionsPool) {
             const container = document.getElementById('word-bank-list');
             container.innerHTML = '';
@@ -3598,29 +3585,15 @@
             });
         }
 
-        // v4.0: Add word to options_pool
+        // v5.1: Add word to options_pool (COMPOSITE only)
         function addWordBankItem() {
             const q = activeData[activeIndex];
             if (!q.data) q.data = {};
             
-            // For FIB type
-            if (q.type === 'FIB') {
+            if (q.type === 'COMPOSITE') {
                 if (!q.data.options_pool) q.data.options_pool = [];
                 q.data.options_pool.push('');
                 renderWordBank(q.data.options_pool);
-            }
-            // For COMPOSITE type - add to all FIB sub-questions
-            else if (q.type === 'COMPOSITE' && q.data.sub_questions) {
-                q.data.sub_questions.forEach(sq => {
-                    if (sq.type === 'FIB') {
-                        if (!sq.data) sq.data = {};
-                        if (!sq.data.options_pool) sq.data.options_pool = [];
-                        sq.data.options_pool.push('');
-                    }
-                });
-                // Render the shared pool (use first FIB sub-question's pool)
-                const firstFib = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool);
-                if (firstFib) renderWordBank(firstFib.data.options_pool);
             }
             
             document.getElementById('word-bank-section').style.display = 'block';
@@ -3628,85 +3601,55 @@
             renderPreview(q, activeIndex);
         }
 
-        // v4.0: Update word in options_pool
+        // v5.1: Update word in options_pool (COMPOSITE only)
         function updateWordBankItem(idx, value) {
             const q = activeData[activeIndex];
             
-            // For FIB type
-            if (q.type === 'FIB' && q.data?.options_pool) {
+            if (q.type === 'COMPOSITE' && q.data?.options_pool) {
                 q.data.options_pool[idx] = value;
-            }
-            // For COMPOSITE type - update all FIB sub-questions' options_pool
-            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
-                q.data.sub_questions.forEach(sq => {
-                    if (sq.type === 'FIB' && sq.data?.options_pool) {
-                        sq.data.options_pool[idx] = value;
-                    }
-                });
             }
             
             updateJsonView();
             renderPreview(q, activeIndex);
         }
 
-        // v4.0: Delete word from options_pool
+        // v5.1: Delete word from options_pool (COMPOSITE only)
         function deleteWordBankItem(idx) {
             const q = activeData[activeIndex];
             
-            // For FIB type
-            if (q.type === 'FIB' && q.data?.options_pool) {
+            if (q.type === 'COMPOSITE' && q.data?.options_pool) {
                 q.data.options_pool.splice(idx, 1);
                 renderWordBank(q.data.options_pool);
-            }
-            // For COMPOSITE type - delete from all FIB sub-questions
-            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
-                q.data.sub_questions.forEach(sq => {
-                    if (sq.type === 'FIB' && sq.data?.options_pool) {
-                        sq.data.options_pool.splice(idx, 1);
-                    }
-                });
-                // Render the shared pool (use first FIB sub-question's pool)
-                const firstFib = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool);
-                if (firstFib) renderWordBank(firstFib.data.options_pool);
             }
             
             updateJsonView();
             renderPreview(q, activeIndex);
         }
         
-        // v4.0: Delete entire options_pool (word bank)
+        // v5.1: Delete entire options_pool (word bank) from COMPOSITE
         function deleteWordBank() {
             const q = activeData[activeIndex];
             if (!q.data) return;
             
-            // For FIB type - delete options_pool
-            if (q.type === 'FIB') {
+            if (q.type === 'COMPOSITE') {
                 delete q.data.options_pool;
             }
-            // For COMPOSITE type - delete from all FIB sub-questions
-            else if (q.type === 'COMPOSITE' && q.data?.sub_questions) {
-                q.data.sub_questions.forEach(sq => {
-                    if (sq.type === 'FIB' && sq.data) {
-                        delete sq.data.options_pool;
-                    }
-                });
-            }
             
-            // Hide the word bank section and show add button
+            // Hide the word bank section and show add button for COMPOSITE
             document.getElementById('word-bank-section').style.display = 'none';
             document.getElementById('word-bank-list').innerHTML = '';
-            document.getElementById('add-word-bank-btn').style.display = (q.type === 'FIB') ? 'block' : 'none';
+            document.getElementById('add-word-bank-btn').style.display = (q.type === 'COMPOSITE') ? 'block' : 'none';
             
             updateJsonView();
             renderPreview(q, activeIndex);
         }
         
-        // v4.0: Add new options_pool (word bank) for FIB type
+        // v5.1: Add new options_pool (word bank) for COMPOSITE type
         function addWordBank() {
             const q = activeData[activeIndex];
             if (!q.data) q.data = {};
             
-            if (q.type === 'FIB') {
+            if (q.type === 'COMPOSITE') {
                 q.data.options_pool = [''];
                 document.getElementById('word-bank-section').style.display = 'block';
                 document.getElementById('add-word-bank-btn').style.display = 'none';
@@ -3875,7 +3818,7 @@
             const rows = table.rows || [];
             const numCols = Math.max(header.length, rows.length > 0 ? rows[0].length : 2);
             
-            // v4.9: Get column widths from style
+            // v5.1: Get column widths from style
             const style = data.style || {};
             const columnWidths = style.column_widths || [];
             
@@ -3999,7 +3942,7 @@
                 row.push('');
             });
             
-            // v4.9: Recalculate column widths to distribute evenly
+            // v5.1: Recalculate column widths to distribute evenly
             const numCols = q.data.table.header.length;
             if (q.data.style?.column_widths && q.data.style.column_widths.length > 0) {
                 // Redistribute existing widths proportionally
@@ -4025,7 +3968,7 @@
                 q.data.table.rows.forEach(row => {
                     if (row.length > 0) row.pop();
                 });
-                // v4.9: Recalculate column widths after removing a column
+                // v5.1: Recalculate column widths after removing a column
                 if (q.data.style?.column_widths && q.data.style.column_widths.length > 0) {
                     q.data.style.column_widths.pop();
                     // Redistribute remaining widths to total 100%
@@ -4051,7 +3994,7 @@
             }
         }
         
-        // v4.9: Column resize functionality (percentage-based)
+        // v5.1: Column resize functionality (percentage-based)
         let isColResizing = false;
         let colResizeStartX = 0;
         let colResizeColIndex = -1;
@@ -4627,20 +4570,11 @@
             const newIdx = q.data.sub_questions.length;
             const newSubId = String.fromCharCode(97 + newIdx); // Simple letter: a, b, c, d...
             
-            // Check if there's a shared options_pool among existing FIB sub-questions
-            const existingFibWithPool = q.data.sub_questions.find(sq => sq.type === 'FIB' && sq.data?.options_pool?.length > 0);
-            const sharedOptionsPool = existingFibWithPool ? [...existingFibWithPool.data.options_pool] : null;
-            
             const newSubQuestion = {
                 id: newSubId,
                 type: 'SUBJECTIVE',
                 data: { content: '' }
             };
-            
-            // If there's a shared options_pool, add it to new sub-question (will apply if changed to FIB)
-            if (sharedOptionsPool) {
-                newSubQuestion.data.options_pool = sharedOptionsPool;
-            }
             
             q.data.sub_questions.push(newSubQuestion);
             renderSubQuestions(q);
@@ -4675,16 +4609,7 @@
                     ];
                 }
             }
-            
-            // For FIB type, inherit shared options_pool if exists
-            if(type === 'FIB') {
-                const existingFibWithPool = q.data.sub_questions.find((sq, i) => 
-                    i !== idx && sq.type === 'FIB' && sq.data?.options_pool?.length > 0
-                );
-                if (existingFibWithPool && !q.data.sub_questions[idx].data.options_pool) {
-                    q.data.sub_questions[idx].data.options_pool = [...existingFibWithPool.data.options_pool];
-                }
-            }
+            // v5.1: FIB sub-questions no longer have options_pool (it's at COMPOSITE level)
             
             renderSubQuestions(q);
             updateJsonView();
@@ -5281,7 +5206,7 @@
             applyPreviewFont();
         }
 
-        // Render question preview using shared module (v4.9 schema)
+        // Render question preview using shared module (v5.1 schema)
         // Uses renderPreviewToContainer from question-preview.js
         function renderPreview(q, idx) {
             console.log(`renderPreview called for ${q?.id || 'undefined'} at index ${idx}`);

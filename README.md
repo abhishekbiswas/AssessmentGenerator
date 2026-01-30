@@ -113,7 +113,7 @@ A modular system for creating, parsing, and rendering educational assessment que
                                        ▼
                               ┌─────────────────┐
                               │  Question[]     │
-                              │  (v4.9 schema)  │
+                              │  (v5.1 schema)  │
                               └────────┬────────┘
                                        │
               ┌────────────────────────┴────────────────────────┐
@@ -266,7 +266,7 @@ This **dependency injection** pattern allows the same preview code to work in bo
 │    ┌─────────────────────────────────────────────────────────────┐         │
 │    │                   question-renderer.js                       │         │
 │    │  • renderQuestionHTML  • formatRichText                      │         │
-│    │  • renderMCQPreview    • renderFIBPreview                    │         │
+│    │  • renderMCQPreview    • renderWordBankPreview               │         │
 │    │  • renderMatchPreview  • renderTablePreview                  │         │
 │    │  • renderCompositePreview                                    │         │
 │    └─────────────────────────────────────────────────────────────┘         │
@@ -334,9 +334,9 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
 
 ## Schema Version
 
-All modules use **v4.9 schema**. See `schema.json` for the complete specification.
+All modules use **v5.1 schema**. See `schema.json` for the complete specification.
 
-### Question Structure (v4.9)
+### Question Structure (v5.1)
 
 ```javascript
 {
@@ -359,7 +359,7 @@ Handles JSON/JSONL parsing and schema validation.
 | Function | Description | Called By |
 |----------|-------------|-----------|
 | `parseJson(content)` | Parse JSON/JSONL into question array | Authoring Tool (file import) |
-| `validateAndNormalize(obj)` | Validate v4.9 schema, apply defaults | `parseJson()` |
+| `validateAndNormalize(obj)` | Validate v5.1 schema, apply defaults | `parseJson()` |
 | `createEmptyQuestion(type)` | Create new question with defaults | Authoring Tool (new question) |
 | `validateQuestion(q)` | Validate question structure | Authoring Tool (before export) |
 | `prepareForExport(q)` | Clean question for JSON export | Authoring Tool (export) |
@@ -381,7 +381,7 @@ Renders questions as HTML for preview display.
 | `renderMarkdown(text)` | Markdown to HTML | `formatRichText()` |
 | `parseImageTag(tagContent)` | Parse `[[image:id\|height:H\|width:W]]` | `formatRichText()` |
 | `renderMCQPreview(data, opts)` | Render MCQ options | `renderQuestionHTML()` |
-| `renderFIBPreview(data)` | Render FIB word bank | `renderQuestionHTML()` |
+| `renderWordBankPreview(optionsPool)` | Render word bank for COMPOSITE | `renderQuestionHTML()` |
 | `renderMatchPreview(data, opts)` | Render MATCH pairs | `renderQuestionHTML()` |
 | `renderTablePreview(data, opts)` | Render TABLE grid | `renderQuestionHTML()` |
 | `renderCompositePreview(data, opts)` | Render COMPOSITE sub-questions | `renderQuestionHTML()` |
@@ -437,13 +437,14 @@ User uploads JSON/JSONL file
          └──► Type-specific renderer based on question.type:
                    │
                    ├── MCQ ──────► renderMCQPreview(data, opts)
-                   ├── FIB ──────► renderFIBPreview(data)
+                   ├── FIB ──────► (no additional rendering in v5.1)
                    ├── MATCH ────► renderMatchPreview(data, opts)
                    ├── TABLE ────► renderTablePreview(data, opts)
                    │                      └──► getCellBorderStyle(...)
                    └── COMPOSITE ► renderCompositePreview(data, opts)
                                           │
-                                          └──► Recursively calls type renderers
+                                          ├──► renderWordBankPreview(data.options_pool)
+                                          └──► Recursively calls type renderers for sub-questions
 ```
 
 ### Applying Layout/Style (Both Tools)
@@ -492,7 +493,7 @@ RichText strings support:
 | `question-parser.js` | JSON parsing, validation, image utilities |
 | `question-renderer.js` | HTML rendering for all question types |
 | `question-preview.js` | Shared preview component for containers |
-| `schema.json` | v4.9 JSON Schema specification |
+| `schema.json` | v5.1 JSON Schema specification |
 
 ---
 
