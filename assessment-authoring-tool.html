@@ -598,9 +598,10 @@
 
         /* PREVIEW VIEW */
         .preview-view-container { 
-            padding: 2rem; background: #525659; display: none; flex: 1; justify-content: center; overflow-y: auto; overflow-x: hidden;
+            padding: 0; background: #525659; display: none; flex: 1; flex-direction: column; overflow: hidden;
         }
         .preview-view-container.active { display: flex; }
+        .preview-view-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; justify-content: center; padding: 2rem; }
         
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
@@ -610,9 +611,9 @@
         /* Force toolbar font on entire preview: all descendants inherit font-family from .a4-page */
         .a4-page * { font-family: inherit !important; }
         .preview-font-toolbar {
-            position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 99;
-            display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; background: rgba(45,45,45,0.95); color: #eee;
-            border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 0.85rem; font-family: sans-serif;
+            flex-shrink: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+            padding: 0.5rem 1rem; background: rgba(45,45,45,0.95); color: #eee;
+            border-radius: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 0.85rem; font-family: sans-serif;
         }
         .preview-font-toolbar label { display: flex; align-items: center; gap: 0.5rem; }
         .preview-font-toolbar select { padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #555; background: #333; color: #eee; min-width: 140px; }
@@ -665,14 +666,15 @@
             border-radius: 8px; 
             margin: 1rem auto; 
             font-style: normal; 
-            font-size: 11pt; 
+            font-size: 1em; 
+            font-family: inherit;
             display: flex; 
             flex-wrap: wrap; 
             justify-content: center; 
             gap: 1.5rem 2rem;
             width: 90%;
         }
-        .p-word-bank-item { white-space: nowrap; }
+        .p-word-bank-item { white-space: nowrap; font-family: inherit; font-size: inherit; }
         
         /* Groups for sorting/classification */
         .p-groups-container { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
@@ -2076,7 +2078,7 @@
 
                             <!-- VIEW: PREVIEW -->
                             <div id="view-preview" class="preview-view-container">
-                                <!-- Preview font/size toolbar -->
+                                <!-- Font Family and Font Size at top of Preview -->
                                 <div class="preview-font-toolbar" id="preview-font-toolbar">
                                     <label>Font: <select id="preview-font-family" onchange="applyPreviewFont()">
                                         <option value="Bookman Old Style" selected>Bookman Old Style</option>
@@ -2088,13 +2090,15 @@
                                         <button type="button" class="size-btn" id="preview-size-increase" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
                                     </div></label>
                                 </div>
-                                <!-- Download PDF Button -->
-                                <button id="download-pdf-btn" onclick="downloadPDF()" style="position:fixed; top:80px; right:30px; z-index:100; padding:0.5rem 1rem; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-                                    📥 Download PDF
-                                </button>
-                                <div class="a4-pages-container" id="a4-pages-container">
-                                <div class="a4-page" id="a4-content">
-                                    <!-- Rendered Content Goes Here -->
+                                <!-- Download PDF Button (top right of scroll area) -->
+                                <div class="preview-view-scroll">
+                                    <button id="download-pdf-btn" onclick="downloadPDF()" style="position:fixed; top:80px; right:30px; z-index:100; padding:0.5rem 1rem; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+                                        📥 Download PDF
+                                    </button>
+                                    <div class="a4-pages-container" id="a4-pages-container">
+                                        <div class="a4-page" id="a4-content">
+                                            <!-- Rendered Content Goes Here -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
