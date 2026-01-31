@@ -65,14 +65,20 @@ function renderMarkdown(text) {
     if (!text || typeof marked === 'undefined') return text;
     
     try {
-        // Configure marked for inline rendering (no wrapping <p> tags for simple text)
+        // Configure marked for inline rendering
         marked.setOptions({
-            breaks: true,  // Convert \n to <br>
+            breaks: true,  // Convert \n to <br> (for block parsing)
             gfm: true      // GitHub Flavored Markdown
         });
         
-        // Use parseInline for text that shouldn't be wrapped in <p>
-        return marked.parseInline(text);
+        // Use parseInline for inline Markdown (bold, italic, etc.)
+        // Note: parseInline doesn't process newlines, so we handle them manually
+        let result = marked.parseInline(text);
+        
+        // Convert newlines to <br> tags (parseInline doesn't do this)
+        result = result.replace(/\n/g, '<br>');
+        
+        return result;
     } catch (e) {
         console.warn('Marked error:', e);
         return text;

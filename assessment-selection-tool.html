@@ -83,7 +83,6 @@
             margin-right: 0.125rem;
         }
         .q-preview .p-q-marks {
-            font-size: 1em;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -379,7 +378,7 @@
             padding: 12mm;
             box-shadow: 0 0 10px rgba(0,0,0,0.2);
             font-family: "Times New Roman", serif;
-            font-size: 13pt;
+            font-size: 14pt;
             line-height: 1.5;
             color: #000;
             page-break-after: always;
@@ -387,6 +386,12 @@
             display: flex;
             flex-direction: column;
         }
+        /* Force preview font-family on all descendants, font-size on main content elements */
+        .a4-preview-page * { font-family: inherit !important; }
+        .a4-preview-page .p-q-block, .a4-preview-page .p-q-num, .a4-preview-page .p-q-marks,
+        .a4-preview-page .p-section-text, .a4-preview-page .p-option-text, .a4-preview-page .p-option-id,
+        .a4-preview-page .p-sub-content, .a4-preview-page .p-word-bank { font-size: inherit; }
+        .a4-preview-page .katex { font-size: 1em; }
         .a4-preview-page:last-child {
             page-break-after: auto !important;
             break-after: auto !important;

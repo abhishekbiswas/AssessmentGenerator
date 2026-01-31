@@ -603,11 +603,14 @@
         
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.5; color: #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 14pt; line-height: 1.5; color: #000;
             text-align: left; box-sizing: border-box; overflow: hidden;
         }
-        /* Force toolbar font on entire preview: all descendants inherit font-family from .a4-page */
+        /* Force preview font-family on all descendants, font-size on main content elements */
         .a4-page * { font-family: inherit !important; }
+        .a4-page .p-q-block, .a4-page .p-q-num, .a4-page .p-q-marks, 
+        .a4-page .p-section-text, .a4-page .p-option-text, .a4-page .p-option-id,
+        .a4-page .p-sub-content, .a4-page .p-word-bank { font-size: inherit; }
         .preview-font-toolbar {
             flex-shrink: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem;
             padding: 0.5rem 1rem; background: rgba(45,45,45,0.95); color: #eee;
@@ -654,7 +657,7 @@
         
         /* Gap/blank styling - truncates at container edge */
         .p-gap { display: inline-block; border-bottom: 2px solid #000; margin: 0 4px; box-sizing: border-box; vertical-align: bottom; max-width: 100%; }
-        .p-q-marks { font-size: 1em; font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
+        .p-q-marks { font-weight: bold; white-space: nowrap; padding-top: 0.25rem; }
         
         .p-stimulus { padding: 0.75rem 0; margin-bottom: 1rem; text-align: justify; }
         .p-word-bank { 
@@ -691,7 +694,7 @@
         
         /* Math (KaTeX) and Markdown styles */
         .katex-display { margin: 0.5rem 0; text-align: center; }
-        .katex { font-size: 1.1em; }
+        .katex { font-size: 1em; }
         strong, b { font-weight: 600; }
         em, i { font-style: italic; }
         code { background: #f3f4f6; padding: 0.1em 0.3em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
@@ -2081,7 +2084,7 @@
                                     <label>Font: <span class="font-readonly">Times New Roman</span></label>
                                     <label>Size: <div class="size-controls">
                                         <button type="button" class="size-btn" onclick="changePreviewFontSize(-1)" aria-label="Decrease font size">−</button>
-                                        <span class="size-value" id="preview-size-value">13</span>
+                                        <span class="size-value" id="preview-size-value">14</span>
                                         <button type="button" class="size-btn" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
                                     </div></label>
                                     <label>Line Height: <div class="size-controls">
@@ -2129,10 +2132,11 @@
         let activeData = null; // Points to importData or libraryData
         // 4. Uploaded Images Store (maps tag names to data URLs)
         let uploadedImages = {};
-        // 5. Preview settings (Times New Roman, 13pt, 1.5 line height)
-        let previewFontSize = 13;
+        // 5. Preview settings (font family is fixed, size and line height are adjustable)
+        const PREVIEW_FONT_FAMILY = '"Times New Roman", serif';
+        let previewFontSize = 14;
         const PREVIEW_FONT_SIZE_MIN = 8;
-        const PREVIEW_FONT_SIZE_MAX = 18;
+        const PREVIEW_FONT_SIZE_MAX = 24;
         let previewLineHeight = 1.5;
         const PREVIEW_LINE_HEIGHT_MIN = 1.0;
         const PREVIEW_LINE_HEIGHT_MAX = 2.5;
@@ -5176,15 +5180,15 @@
             });
         }
 
-        // Apply preview font size and line height to the A4 content (syncs UI with state)
+        // Apply preview font settings to the A4 content (syncs UI with state)
         function applyPreviewFont() {
             const sizeEl = document.getElementById('preview-size-value');
             const lineHeightEl = document.getElementById('preview-line-height-value');
-            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 13;
+            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 14;
             if (lineHeightEl) previewLineHeight = parseFloat(lineHeightEl.textContent) || 1.5;
             const page = document.getElementById('a4-content');
             if (page) {
-                page.style.fontFamily = '"Times New Roman", serif';
+                page.style.fontFamily = PREVIEW_FONT_FAMILY;
                 page.style.fontSize = previewFontSize + 'pt';
                 page.style.lineHeight = previewLineHeight;
             }
@@ -5194,7 +5198,7 @@
         function changePreviewFontSize(delta) {
             const sizeEl = document.getElementById('preview-size-value');
             if (!sizeEl) return;
-            let size = parseInt(sizeEl.textContent, 10) || 13;
+            let size = parseInt(sizeEl.textContent, 10) || 14;
             size = Math.max(PREVIEW_FONT_SIZE_MIN, Math.min(PREVIEW_FONT_SIZE_MAX, size + delta));
             sizeEl.textContent = size;
             previewFontSize = size;
@@ -5230,11 +5234,11 @@
                 return;
             }
             
-            // Use shared renderPreviewToContainer from question-preview.js (pass current settings so preview uses toolbar choice)
+            // Use shared renderPreviewToContainer from question-preview.js (pass current settings)
             try {
                 const sizeValEl = document.getElementById('preview-size-value');
                 const lineHeightEl = document.getElementById('preview-line-height-value');
-                const currentSizeNum = sizeValEl ? (parseInt(sizeValEl.textContent, 10) || previewFontSize) : previewFontSize;
+                const currentSize = sizeValEl ? (parseInt(sizeValEl.textContent, 10) || previewFontSize) : previewFontSize;
                 const currentLineHeight = lineHeightEl ? (parseFloat(lineHeightEl.textContent) || previewLineHeight) : previewLineHeight;
                 renderPreviewToContainer(q, container, {
                     imageResolver: (imageId) => uploadedImages[imageId],
@@ -5242,8 +5246,8 @@
                     questionNumber: q.id || idx + 1,
                     showMarks: true,
                     wrapperClass: '',  // No wrapper needed, renderQuestionHTML provides p-q-block
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: currentSizeNum + 'pt',
+                    fontFamily: PREVIEW_FONT_FAMILY,
+                    fontSize: currentSize + 'pt',
                     lineHeight: currentLineHeight
                 });
                 console.log('renderPreviewToContainer completed successfully');
