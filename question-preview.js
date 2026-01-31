@@ -17,8 +17,8 @@
 // =====================================================
 
 const PREVIEW_DEFAULTS = {
-    fontFamily: 'Noto Sans, sans-serif',
-    fontSize: '11pt',
+    fontFamily: '"Times New Roman", serif',
+    fontSize: '13pt',
     lineHeight: '1.5'
 };
 
@@ -69,16 +69,17 @@ function renderPreviewToContainer(question, container, options = {}) {
         applyContainerStyles = true,
         fontFamily: optionsFontFamily = null,
         fontSize: optionsFontSize = null,
+        lineHeight: optionsLineHeight = null,
         wrapperClass = 'q-preview'
     } = options;
     
     try {
-        // Apply container styles: toolbar overrides (fontFamily, fontSize) take precedence, then question.data.style, then defaults
+        // Apply container styles: toolbar overrides (fontFamily, fontSize, lineHeight) take precedence, then question.data.style, then defaults
         if (applyContainerStyles) {
             const style = question.data?.style || {};
             container.style.fontFamily = optionsFontFamily ?? style.font_family ?? PREVIEW_DEFAULTS.fontFamily;
             container.style.fontSize = optionsFontSize ?? style.font_size ?? PREVIEW_DEFAULTS.fontSize;
-            container.style.lineHeight = style.line_height || PREVIEW_DEFAULTS.lineHeight;
+            container.style.lineHeight = optionsLineHeight ?? style.line_height ?? PREVIEW_DEFAULTS.lineHeight;
         }
         
         // Use shared renderQuestionHTML from question-renderer.js

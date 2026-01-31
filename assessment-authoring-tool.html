@@ -16,8 +16,6 @@
     <!-- PDF Generation (html2pdf.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- Preview fonts: Libre Baskerville used for "Bookman Old Style" (not web-safe) -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
     
     <!-- Shared Modules -->
     <script src="question-parser.js"></script>
@@ -605,7 +603,7 @@
         
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Libre Baskerville", "Bookman Old Style", "Bookman", serif; font-size: 11pt; line-height: 1.4; color: #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.5; color: #000;
             text-align: left; box-sizing: border-box; overflow: hidden;
         }
         /* Force toolbar font on entire preview: all descendants inherit font-family from .a4-page */
@@ -616,7 +614,7 @@
             border-radius: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 0.85rem; font-family: sans-serif;
         }
         .preview-font-toolbar label { display: flex; align-items: center; gap: 0.5rem; }
-        .preview-font-toolbar select { padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #555; background: #333; color: #eee; min-width: 140px; }
+        .preview-font-toolbar .font-readonly { padding: 0.35rem 0.5rem; background: #444; border-radius: 4px; border: 1px solid #555; color: #ccc; font-style: italic; }
         .preview-font-toolbar .size-controls { display: flex; align-items: center; gap: 0.25rem; }
         .preview-font-toolbar .size-value { min-width: 2rem; text-align: center; font-weight: 600; }
         .preview-font-toolbar button.size-btn { width: 28px; height: 28px; padding: 0; border: 1px solid #555; background: #444; color: #eee; border-radius: 4px; cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
@@ -2080,14 +2078,16 @@
                             <div id="view-preview" class="preview-view-container">
                                 <!-- Font Family and Font Size at top of Preview -->
                                 <div class="preview-font-toolbar" id="preview-font-toolbar">
-                                    <label>Font: <select id="preview-font-family" onchange="applyPreviewFont()">
-                                        <option value="Bookman Old Style" selected>Bookman Old Style</option>
-                                        <option value="Times New Roman">Times New Roman</option>
-                                    </select></label>
+                                    <label>Font: <span class="font-readonly">Times New Roman</span></label>
                                     <label>Size: <div class="size-controls">
-                                        <button type="button" class="size-btn" id="preview-size-decrease" onclick="changePreviewFontSize(-1)" aria-label="Decrease font size">−</button>
-                                        <span class="size-value" id="preview-size-value">11</span>
-                                        <button type="button" class="size-btn" id="preview-size-increase" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
+                                        <button type="button" class="size-btn" onclick="changePreviewFontSize(-1)" aria-label="Decrease font size">−</button>
+                                        <span class="size-value" id="preview-size-value">13</span>
+                                        <button type="button" class="size-btn" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
+                                    </div></label>
+                                    <label>Line Height: <div class="size-controls">
+                                        <button type="button" class="size-btn" onclick="changePreviewLineHeight(-0.1)" aria-label="Decrease line height">−</button>
+                                        <span class="size-value" id="preview-line-height-value">1.5</span>
+                                        <button type="button" class="size-btn" onclick="changePreviewLineHeight(0.1)" aria-label="Increase line height">+</button>
                                     </div></label>
                                 </div>
                                 <!-- Download PDF Button (top right of scroll area) -->
@@ -2129,11 +2129,13 @@
         let activeData = null; // Points to importData or libraryData
         // 4. Uploaded Images Store (maps tag names to data URLs)
         let uploadedImages = {};
-        // 5. Preview font settings (default Bookman Old Style, 11pt)
-        let previewFontFamily = 'Bookman Old Style';
-        let previewFontSize = 11;
+        // 5. Preview settings (Times New Roman, 13pt, 1.5 line height)
+        let previewFontSize = 13;
         const PREVIEW_FONT_SIZE_MIN = 8;
         const PREVIEW_FONT_SIZE_MAX = 18;
+        let previewLineHeight = 1.5;
+        const PREVIEW_LINE_HEIGHT_MIN = 1.0;
+        const PREVIEW_LINE_HEIGHT_MAX = 2.5;
         
         let activeIndex = null;
         let activeWorkflow = 'import'; // 'import' or 'library'
@@ -5174,28 +5176,17 @@
             });
         }
 
-        // Resolve preview font stack: Bookman Old Style uses Libre Baskerville (web-loaded) since Bookman isn't web-safe
-        function getPreviewFontStack(family) {
-            if (family === 'Bookman Old Style') return '"Libre Baskerville", "Bookman Old Style", "Bookman", serif';
-            return family + ', serif';
-        }
-
-        // Effective font size in pt: Times New Roman has smaller x-height, so use +1pt so it matches Bookman visually
-        function getPreviewFontSizePt(family, size) {
-            const pt = size || previewFontSize;
-            return (family === 'Times New Roman' ? Math.min(PREVIEW_FONT_SIZE_MAX, pt + 1) : pt) + 'pt';
-        }
-
-        // Apply preview font family and size to the A4 content (syncs UI with state)
+        // Apply preview font size and line height to the A4 content (syncs UI with state)
         function applyPreviewFont() {
-            const sel = document.getElementById('preview-font-family');
             const sizeEl = document.getElementById('preview-size-value');
-            if (sel) previewFontFamily = sel.value;
-            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 11;
+            const lineHeightEl = document.getElementById('preview-line-height-value');
+            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 13;
+            if (lineHeightEl) previewLineHeight = parseFloat(lineHeightEl.textContent) || 1.5;
             const page = document.getElementById('a4-content');
             if (page) {
-                page.style.fontFamily = getPreviewFontStack(previewFontFamily);
-                page.style.fontSize = getPreviewFontSizePt(previewFontFamily, previewFontSize);
+                page.style.fontFamily = '"Times New Roman", serif';
+                page.style.fontSize = previewFontSize + 'pt';
+                page.style.lineHeight = previewLineHeight;
             }
         }
 
@@ -5203,10 +5194,22 @@
         function changePreviewFontSize(delta) {
             const sizeEl = document.getElementById('preview-size-value');
             if (!sizeEl) return;
-            let size = parseInt(sizeEl.textContent, 10) || 11;
+            let size = parseInt(sizeEl.textContent, 10) || 13;
             size = Math.max(PREVIEW_FONT_SIZE_MIN, Math.min(PREVIEW_FONT_SIZE_MAX, size + delta));
             sizeEl.textContent = size;
             previewFontSize = size;
+            applyPreviewFont();
+        }
+
+        // Increase or decrease preview line height (delta: 0.1 or -0.1)
+        function changePreviewLineHeight(delta) {
+            const lineHeightEl = document.getElementById('preview-line-height-value');
+            if (!lineHeightEl) return;
+            let lh = parseFloat(lineHeightEl.textContent) || 1.5;
+            lh = Math.max(PREVIEW_LINE_HEIGHT_MIN, Math.min(PREVIEW_LINE_HEIGHT_MAX, lh + delta));
+            lh = Math.round(lh * 10) / 10; // Round to 1 decimal place
+            lineHeightEl.textContent = lh.toFixed(1);
+            previewLineHeight = lh;
             applyPreviewFont();
         }
 
@@ -5227,21 +5230,21 @@
                 return;
             }
             
-            // Use shared renderPreviewToContainer from question-preview.js (pass current font so preview uses toolbar choice)
+            // Use shared renderPreviewToContainer from question-preview.js (pass current settings so preview uses toolbar choice)
             try {
-                const fontSel = document.getElementById('preview-font-family');
                 const sizeValEl = document.getElementById('preview-size-value');
-                const currentFont = fontSel ? fontSel.value : previewFontFamily;
+                const lineHeightEl = document.getElementById('preview-line-height-value');
                 const currentSizeNum = sizeValEl ? (parseInt(sizeValEl.textContent, 10) || previewFontSize) : previewFontSize;
-                const currentSize = getPreviewFontSizePt(currentFont, currentSizeNum);
+                const currentLineHeight = lineHeightEl ? (parseFloat(lineHeightEl.textContent) || previewLineHeight) : previewLineHeight;
                 renderPreviewToContainer(q, container, {
                     imageResolver: (imageId) => uploadedImages[imageId],
                     interactive: true,  // Enable resize handles for images
                     questionNumber: q.id || idx + 1,
                     showMarks: true,
                     wrapperClass: '',  // No wrapper needed, renderQuestionHTML provides p-q-block
-                    fontFamily: getPreviewFontStack(currentFont),
-                    fontSize: currentSize
+                    fontFamily: '"Times New Roman", serif',
+                    fontSize: currentSizeNum + 'pt',
+                    lineHeight: currentLineHeight
                 });
                 console.log('renderPreviewToContainer completed successfully');
             } catch (e) {
