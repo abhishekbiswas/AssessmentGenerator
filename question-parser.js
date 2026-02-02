@@ -170,12 +170,12 @@ function ensureDefaults(obj) {
     
     // Ensure metadata
     if (!obj.metadata) obj.metadata = {};
-    obj.metadata.grade = obj.metadata.grade ?? 3;
-    obj.metadata.subject = obj.metadata.subject || 'Mathematics';
-    obj.metadata.chapter = obj.metadata.chapter ?? 1;
+    obj.metadata.grade = obj.metadata.grade ?? 'Nursery';
+    obj.metadata.subject = obj.metadata.subject || 'Maths';
+    obj.metadata.chapter = obj.metadata.chapter ?? 0;
     obj.metadata.section = obj.metadata.section || 'A';
     obj.metadata.difficulty = obj.metadata.difficulty || 'Medium';
-    obj.metadata.marks = obj.metadata.marks ?? 1;
+    obj.metadata.marks = obj.metadata.marks || 1;
     obj.metadata.pool = obj.metadata.pool || 'Practice';
     obj.metadata.subpool = obj.metadata.subpool || 'NA';
     
@@ -522,9 +522,9 @@ function createEmptyQuestion(type = 'SUBJECTIVE') {
     return {
         id: generateId(),
         metadata: {
-            grade: 3,
-            subject: 'Mathematics',
-            chapter: 1,
+            grade: 'Nursery',
+            subject: 'Maths',
+            chapter: 0,
             section: 'A',
             difficulty: 'Medium',
             marks: 1,
