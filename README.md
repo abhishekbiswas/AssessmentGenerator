@@ -13,6 +13,8 @@ A modular system for creating, parsing, and rendering educational assessment que
 │   - Rich text editing           │      - Assessment assembly                │
 │   - Image upload & resize       │      - Print preview                      │
 │   - JSON import/export          │      - PDF export                         │
+│   - Preview font controls       │                                           │
+│   - Metadata validation         │                                           │
 └───────────────┬─────────────────┴───────────────────┬───────────────────────┘
                 │                                     │
                 ▼                                     ▼
@@ -174,6 +176,8 @@ A modular system for creating, parsing, and rendering educational assessment que
                                                     └─────────────────┘
 ```
 
+**Note:** MATCH type renders pairs without numbering (Column A and Column B show text only).
+
 ---
 
 ## Shared Preview Pattern
@@ -192,6 +196,9 @@ Both tools use `question-preview.js` for rendering, which wraps `question-render
 │   │  interactive: boolean               ← Enable resize handles         │   │
 │   │  questionNumber: string             ← Display number prefix         │   │
 │   │  showMarks: boolean                 ← Show marks badge              │   │
+│   │  fontFamily: string                 ← Override font (e.g. Times New) │   │
+│   │  fontSize: string                   ← Override font size (e.g. 14pt)│   │
+│   │  lineHeight: number                 ← Override line height          │   │
 │   │  applyContainerStyles: boolean      ← Apply font styles to container│   │
 │   │  wrapperClass: string               ← CSS class for wrapper div     │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
@@ -242,6 +249,12 @@ Both tools use `question-preview.js` for rendering, which wraps `question-render
    ```
 
 This **dependency injection** pattern allows the same preview code to work in both tools while each tool controls its own data sources and features.
+
+### Authoring Tool Preview Features
+
+- **Preview toolbar**: Font (Times New Roman, read-only), Size (8–24pt), Line Height (1.0–2.5)
+- **Pool/SubPool logic**: When Pool = Practice, SubPool is forced to NA; when Pool = Exam, user can choose Written or Oral (Written default)
+- **End-of-question separator**: A visual dotted line (`- - - - - end of question - - - - -`) appears at the end of each question in preview to indicate answer space (not stored in JSON)
 
 ---
 
@@ -299,14 +312,14 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `options_layout` | `"vertical"` \| `"horizontal"` \| `"grid"` | MCQ/FIB options layout |
+| `options_layout` | `"vertical"` \| `"horizontal"` | MCQ/FIB options layout |
 | `sub_questions_layout` | `"vertical"` \| `"horizontal"` | COMPOSITE sub-question layout |
 | `image_layout` | `"vertical"` \| `"horizontal"` | Image positioning relative to content |
 | `table_grid_lines` | `"all"` \| `"none"` \| `"outer_only"` \| `"horizontal_only"` | TABLE borders |
 | `hide_header` | boolean | Hide TABLE header row |
 | `column_widths` | string[] | TABLE column width percentages |
-| `font_family` | string | Font family (default: "Noto Sans, sans-serif") |
-| `font_size` | string | Font size (default: "11pt") |
+| `font_family` | string | Font family (default: "Times New Roman", serif) |
+| `font_size` | string | Font size (default: "14pt") |
 | `line_height` | string | Line height (default: "1.5") |
 
 ### Example Question with Style
@@ -314,6 +327,16 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
 ```javascript
 {
   "id": "Q1",
+  "metadata": {
+    "grade": "3",
+    "subject": "Maths",
+    "chapter": 1,
+    "section": "A",
+    "difficulty": "Medium",
+    "marks": 2,
+    "pool": "Practice",
+    "subpool": "NA"
+  },
   "type": "MCQ",
   "data": {
     "content": "What is 2 + 2?",
@@ -323,8 +346,8 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
     ],
     "style": {
       "options_layout": "horizontal",
-      "font_family": "Arial, sans-serif",
-      "font_size": "12pt"
+      "font_family": "Times New Roman, serif",
+      "font_size": "14pt"
     }
   }
 }
@@ -341,12 +364,24 @@ All modules use **v5.1 schema**. See `schema.json` for the complete specificatio
 ```javascript
 {
   "id": "Q1",
-  "metadata": { grade, subject, chapter, section, difficulty, marks, pool },
+  "metadata": { grade, subject, chapter, section, difficulty, marks, pool, subpool },
   "type": "MCQ" | "FIB" | "MATCH" | "SUBJECTIVE" | "TABLE" | "COMPOSITE",
   "data": { content, style, ...type-specific fields },
   "solution": { text }
 }
 ```
+
+### Metadata Field Constraints
+
+| Field | Allowed Values | Default |
+|-------|----------------|---------|
+| `grade` | `"Nursery"` \| `"LKG"` \| `"UKG"` \| `"1"` \| `"2"` \| `"3"` \| `"4"` \| `"5"` | `"Nursery"` |
+| `subject` | `"Maths"` \| `"English"` \| `"EVS"` | `"Maths"` |
+| `chapter` | integer ≥ 0 | `0` |
+| `section` | `"A"` \| `"B"` \| `"C"` \| `"D"` | `"A"` |
+| `marks` | integer ≥ 1 | `1` |
+| `pool` | `"Practice"` \| `"Exam"` | `"Practice"` |
+| `subpool` | `"NA"` (when pool=Practice) \| `"Written"` \| `"Oral"` (when pool=Exam) | `"NA"` |
 
 ---
 
