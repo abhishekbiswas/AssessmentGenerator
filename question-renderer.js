@@ -623,5 +623,6 @@ function renderQuestionHTML(question, options = {}) {
             ${marksText ? `<div class="p-q-marks">${marksText}</div>` : ''}
         </div>
         ${typeContentHtml}
+        <div class="p-q-end-line">- - - - - - - - - - - - - - - - - - - - end of question - - - - - - - - - - - - - - - - - - - -</div>
     </div>`;
 }
