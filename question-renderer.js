@@ -338,14 +338,12 @@ function renderMatchPreview(data, renderOptions) {
     
     const leftItems = data.pairs.map((p, i) => 
         `<div class="p-pairs-item">
-            <span class="p-pairs-item-id">${i + 1}.</span>
             ${formatRichText(p.left, renderOptions)}
         </div>`
     ).join('');
     
     const rightItems = data.pairs.map((p, i) => 
         `<div class="p-pairs-item">
-            <span class="p-pairs-item-id">${String.fromCharCode(65 + i)}.</span>
             ${formatRichText(p.right, renderOptions)}
         </div>`
     ).join('');
