@@ -3282,8 +3282,8 @@
                 // Auto-add options for MCQ type
                 if(isMcqType && !q.data.options) {
                     q.data.options = [
-                        { id: 'a', text: 'Option A' },
-                        { id: 'b', text: 'Option B' }
+                        { id: 'i', text: 'Option A' },
+                        { id: 'ii', text: 'Option B' }
                     ];
                 }
                 
@@ -3596,7 +3596,8 @@
             if (!q.data) q.data = {};
             if(!q.data.options) q.data.options = [];
             const newIdx = q.data.options.length;
-            const newId = 'opt_' + newIdx;
+            const format = detectOptionIdFormat(q.data.options);
+            const newId = getOptionIdForIndex(newIdx, format);
             q.data.options.push({ id: newId, text: '' });
             renderMainOptions(q.data.options);
             updateJsonView();
@@ -3607,7 +3608,8 @@
             const opt = q.data?.options?.[idx];
             if (!opt) return;
             if(typeof opt === 'string') {
-                q.data.options[idx] = { id: 'opt_' + idx, text: value };
+                const format = detectOptionIdFormat(q.data.options);
+                q.data.options[idx] = { id: getOptionIdForIndex(idx, format), text: value };
             } else {
                 q.data.options[idx].text = value;
             }
@@ -3618,9 +3620,48 @@
             const q = activeData[activeIndex];
             if (q.data?.options) {
                 q.data.options.splice(idx, 1);
+                reindexOptions(q.data.options);
                 renderMainOptions(q.data.options);
             }
             updateJsonView();
+        }
+
+        /** Detect option ID format: 'roman' (i, ii, iii) or 'letter' (a, b, c) */
+        function detectOptionIdFormat(options) {
+            if (!options || options.length === 0) return 'roman';
+            const ROMAN_IDS = ['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv','xvi','xvii','xviii','xix','xx'];
+            for (const opt of options) {
+                const id = typeof opt === 'object' ? opt.id : undefined;
+                if (id && typeof id === 'string') {
+                    const lower = id.toLowerCase();
+                    if (ROMAN_IDS.includes(lower)) return 'roman';
+                    if (id.length === 1 && /[a-zA-Z]/.test(id)) return 'letter';
+                }
+            }
+            return 'roman';
+        }
+
+        /** Get option ID for index based on format */
+        function getOptionIdForIndex(idx, format) {
+            if (format === 'letter') {
+                if (idx < 26) return String.fromCharCode(97 + idx);
+                return typeof toRomanLower === 'function' ? toRomanLower(idx + 1) : ('opt_' + idx);
+            }
+            return typeof toRomanLower === 'function' ? toRomanLower(idx + 1) : ('opt_' + idx);
+        }
+
+        /** Reassign option IDs to preserve continuous ordering; uses same format as existing (a,b,c or i,ii,iii) */
+        function reindexOptions(options) {
+            if (!options || !Array.isArray(options)) return;
+            const format = detectOptionIdFormat(options);
+            const toId = (idx) => getOptionIdForIndex(idx, format);
+            options.forEach((opt, idx) => {
+                if (typeof opt === 'object') {
+                    opt.id = toId(idx);
+                } else {
+                    options[idx] = { id: toId(idx), text: String(opt) };
+                }
+            });
         }
 
         function addOptionMedia(idx) {
@@ -4689,8 +4730,8 @@
             if(type === 'MCQ') {
                 if(!q.data.sub_questions[idx].data.options) {
                     q.data.sub_questions[idx].data.options = [
-                        { id: 'a', text: 'Option A' },
-                        { id: 'b', text: 'Option B' }
+                        { id: 'i', text: 'Option A' },
+                        { id: 'ii', text: 'Option B' }
                     ];
                 }
             }
@@ -4707,15 +4748,19 @@
             if(!sq.data) sq.data = {};
             if(!sq.data.options) sq.data.options = [];
             const newIdx = sq.data.options.length;
-            sq.data.options.push({ id: 'opt_' + newIdx, text: '' });
+            const format = detectOptionIdFormat(sq.data.options);
+            const newId = getOptionIdForIndex(newIdx, format);
+            sq.data.options.push({ id: newId, text: '' });
             renderSubQuestions(q);
             updateJsonView();
         }
 
         function deleteSubQuestionOption(sqIdx, optIdx) {
             const q = activeData[activeIndex];
-            if (q.data?.sub_questions?.[sqIdx]?.data?.options) {
-                q.data.sub_questions[sqIdx].data.options.splice(optIdx, 1);
+            const opts = q.data?.sub_questions?.[sqIdx]?.data?.options;
+            if (opts) {
+                opts.splice(optIdx, 1);
+                reindexOptions(opts);
             }
             renderSubQuestions(q);
             updateJsonView();
@@ -4956,7 +5001,7 @@
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
                                 if (!sq.data) sq.data = { options: [] };
-                                if (!sq.data.options[oIdx]) sq.data.options[oIdx] = { id: 'opt_' + oIdx, text: '' };
+                                if (!sq.data.options[oIdx]) sq.data.options[oIdx] = { id: getOptionIdForIndex(oIdx, detectOptionIdFormat(sq.data.options)), text: '' };
                                 sq.data.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
@@ -4990,8 +5035,8 @@
                         addOptBtn.onclick = () => {
                             if (!sq.data) sq.data = {};
                             sq.data.options = [
-                                { id: 'opt_0', text: '' },
-                                { id: 'opt_1', text: '' }
+                                { id: 'i', text: '' },
+                                { id: 'ii', text: '' }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();
