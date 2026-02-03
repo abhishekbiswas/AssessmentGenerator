@@ -1614,9 +1614,11 @@
                                class="sub-question-marks-input"><span>marks)</span></span>`;
                     
                     // Sub-question type-specific content (v5.1: FIB sub-questions no longer have options_pool)
+                    // Sub-question MCQ options use Roman numerals (i, ii, iii...)
                     let sqTypeHtml = '';
                     if (sq.type === 'MCQ' && sqData.options) {
-                        sqTypeHtml = renderMCQPreview(sqData, renderOptions);
+                        const subRenderOpts = { ...renderOptions, optionIdStyle: 'roman' };
+                        sqTypeHtml = renderMCQPreview(sqData, subRenderOpts);
                     } else if (sq.type === 'TABLE' && sqData.table) {
                         sqTypeHtml = renderTablePreview(sqData, renderOptions);
                     }

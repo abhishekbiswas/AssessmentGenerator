@@ -3596,7 +3596,7 @@
             if (!q.data) q.data = {};
             if(!q.data.options) q.data.options = [];
             const newIdx = q.data.options.length;
-            const newId = String.fromCharCode(97 + newIdx);
+            const newId = 'opt_' + newIdx;
             q.data.options.push({ id: newId, text: '' });
             renderMainOptions(q.data.options);
             updateJsonView();
@@ -3607,7 +3607,7 @@
             const opt = q.data?.options?.[idx];
             if (!opt) return;
             if(typeof opt === 'string') {
-                q.data.options[idx] = { id: String.fromCharCode(97 + idx), text: value };
+                q.data.options[idx] = { id: 'opt_' + idx, text: value };
             } else {
                 q.data.options[idx].text = value;
             }
@@ -3618,12 +3618,6 @@
             const q = activeData[activeIndex];
             if (q.data?.options) {
                 q.data.options.splice(idx, 1);
-                // Re-index all option IDs to maintain continuous numbering (a, b, c, d...)
-                q.data.options.forEach((opt, i) => {
-                    if (typeof opt === 'object') {
-                        opt.id = String.fromCharCode(97 + i); // 97 = 'a'
-                    }
-                });
                 renderMainOptions(q.data.options);
             }
             updateJsonView();
@@ -4713,7 +4707,7 @@
             if(!sq.data) sq.data = {};
             if(!sq.data.options) sq.data.options = [];
             const newIdx = sq.data.options.length;
-            sq.data.options.push({ id: String.fromCharCode(97 + newIdx), text: '' });
+            sq.data.options.push({ id: 'opt_' + newIdx, text: '' });
             renderSubQuestions(q);
             updateJsonView();
         }
@@ -4722,12 +4716,6 @@
             const q = activeData[activeIndex];
             if (q.data?.sub_questions?.[sqIdx]?.data?.options) {
                 q.data.sub_questions[sqIdx].data.options.splice(optIdx, 1);
-                // Re-index option IDs to maintain continuous numbering (i, ii, iii... or a, b, c...)
-                q.data.sub_questions[sqIdx].data.options.forEach((opt, i) => {
-                    if (typeof opt === 'object') {
-                        opt.id = String.fromCharCode(97 + i); // 97 = 'a'
-                    }
-                });
             }
             renderSubQuestions(q);
             updateJsonView();
@@ -4968,7 +4956,7 @@
                             optInput.placeholder = 'Enter text...';
                             optInput.oninput = (e) => {
                                 if (!sq.data) sq.data = { options: [] };
-                                if (!sq.data.options[oIdx]) sq.data.options[oIdx] = { id: String.fromCharCode(97 + oIdx), text: '' };
+                                if (!sq.data.options[oIdx]) sq.data.options[oIdx] = { id: 'opt_' + oIdx, text: '' };
                                 sq.data.options[oIdx].text = e.target.value;
                                 updateJsonView(); 
                             };
@@ -5002,8 +4990,8 @@
                         addOptBtn.onclick = () => {
                             if (!sq.data) sq.data = {};
                             sq.data.options = [
-                                { id: 'a', text: '' },
-                                { id: 'b', text: '' }
+                                { id: 'opt_0', text: '' },
+                                { id: 'opt_1', text: '' }
                             ];
                             renderSubQuestions(q);
                             updateJsonView();

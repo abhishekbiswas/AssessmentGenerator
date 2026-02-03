@@ -245,10 +245,19 @@ function getCellBorderStyle(gridLines, isFirstCol, isLastCol, isFirstRow, isLast
 // TYPE-SPECIFIC PREVIEW RENDERERS
 // =====================================================
 
+/** Convert 1-based index to lowercase Roman numeral (i, ii, iii, iv, v, ...) */
+function toRomanLower(n) {
+    if (n < 1 || n > 20) return String(n);
+    const romans = ['', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
+        'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx'];
+    return romans[n];
+}
+
 /**
  * Render MCQ options
  * @param {Object} data - MCQ data object
  * @param {Object} renderOptions - Rendering options (passed to formatRichText)
+ * @param {string} renderOptions.optionIdStyle - 'roman' for sub-questions (i, ii, iii...), else use stored ids
  * @returns {string} HTML string
  */
 function renderMCQPreview(data, renderOptions) {
@@ -257,6 +266,7 @@ function renderMCQPreview(data, renderOptions) {
     const optLayout = data.style?.options_layout || 'vertical';
     const isHorizontal = optLayout === 'horizontal';
     const numOptions = data.options.length;
+    const useRomanIds = renderOptions?.optionIdStyle === 'roman';
     
     // Check if any option contains images (affects horizontal layout behavior)
     const hasImages = data.options.some(opt => 
@@ -265,7 +275,7 @@ function renderMCQPreview(data, renderOptions) {
     
     const optItems = data.options.map((opt, k) => {
         const optText = opt.text || '';
-        const optId = opt.id || String.fromCharCode(65 + k); // A, B, C, D...
+        const optId = useRomanIds ? toRomanLower(k + 1) : (opt.id || String.fromCharCode(65 + k)); // i, ii, iii... or A, B, C, D...
         
         // For horizontal layout, allow options to flex and images to scale
         let itemStyle, textStyle;
@@ -461,10 +471,11 @@ function renderCompositePreview(data, renderOptions) {
         const sqData = sq.data || {};
         const sqContent = sqData.content || '';
         
-        // Sub-question options for MCQ
+        // Sub-question options for MCQ - use Roman numerals (i, ii, iii...) for option labels
         let optHtml = '';
         if (sq.type === 'MCQ' && sqData.options && sqData.options.length > 0) {
-            optHtml = renderMCQPreview(sqData, renderOptions);
+            const subRenderOpts = { ...renderOptions, optionIdStyle: 'roman' };
+            optHtml = renderMCQPreview(sqData, subRenderOpts);
         }
         
         // TABLE type for sub-questions
