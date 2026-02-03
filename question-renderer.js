@@ -616,6 +616,24 @@ function renderQuestionHTML(question, options = {}) {
         }
     }
     
+    // Solution content (RichText) - aligned with question content
+    const solution = question.solution || {};
+    const solutionText = solution.text || '';
+    let solutionHtml = '';
+    if (solutionText) {
+        try {
+            solutionHtml = `<div class="p-solution-section">
+                <div class="p-solution-label">Solution</div>
+                <div class="p-solution-content">${formatRichText(solutionText, renderOptions)}</div>
+            </div>`;
+        } catch (e) {
+            solutionHtml = `<div class="p-solution-section">
+                <div class="p-solution-label">Solution</div>
+                <div class="p-solution-content" style="color:red;">Error: ${e.message}</div>
+            </div>`;
+        }
+    }
+    
     // For COMPOSITE: wordBankHtml (options_pool) appears after main content but before sub-questions
     return `<div class="p-q-block">
         <div class="p-q-header">
@@ -624,5 +642,7 @@ function renderQuestionHTML(question, options = {}) {
         </div>
         ${typeContentHtml}
         <div class="p-q-end-line">- - - - - - - - - - - - - - - - - - - - end of question - - - - - - - - - - - - - - - - - - - -</div>
+        ${solutionHtml}
+        ${solutionHtml ? '<div class="p-q-end-line">- - - - - - - - - - - - - - - - - - - - end of solution - - - - - - - - - - - - - - - - - - - -</div>' : ''}
     </div>`;
 }

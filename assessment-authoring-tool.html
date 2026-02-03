@@ -610,7 +610,7 @@
         .a4-page * { font-family: inherit !important; }
         .a4-page .p-q-block, .a4-page .p-q-num, .a4-page .p-q-marks, 
         .a4-page .p-section-text, .a4-page .p-option-text, .a4-page .p-option-id,
-        .a4-page .p-sub-content, .a4-page .p-word-bank { font-size: inherit; }
+        .a4-page .p-sub-content, .a4-page .p-word-bank, .a4-page .p-solution-content, .a4-page .p-solution-label { font-size: inherit; }
         .preview-font-toolbar {
             flex-shrink: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem;
             padding: 0.5rem 1rem; background: rgba(45,45,45,0.95); color: #eee;
@@ -632,6 +632,9 @@
         /* CONTENT STYLES */
         .p-q-block { margin-bottom: 1.5rem; text-align: justify; width: 100%; overflow: hidden; }
         .p-q-end-line { text-align: center; color: #999; font-size: 0.75em; margin-top: 1.5rem; letter-spacing: 0.1em; }
+        .p-solution-section { margin-top: 1.5rem; padding-top: 1rem; }
+        .p-solution-label { font-weight: bold; padding-left: 2.5rem; margin-bottom: 0.5rem; }
+        .p-solution-content { padding-left: 2.5rem; }
         
         /* Print styles */
         @media print {
