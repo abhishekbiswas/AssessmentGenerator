@@ -603,7 +603,7 @@
         
         .a4-page {
             width: 210mm; min-height: 297mm; background: white; padding: 12mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 14pt; line-height: 1.5; color: #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.5; color: #000;
             text-align: left; box-sizing: border-box; overflow: hidden;
         }
         /* Force preview font-family on all descendants, font-size on main content elements */
@@ -2101,7 +2101,7 @@
                                     <label>Font: <span class="font-readonly">Times New Roman</span></label>
                                     <label>Size: <div class="size-controls">
                                         <button type="button" class="size-btn" onclick="changePreviewFontSize(-1)" aria-label="Decrease font size">−</button>
-                                        <span class="size-value" id="preview-size-value">14</span>
+                                        <span class="size-value" id="preview-size-value">13</span>
                                         <button type="button" class="size-btn" onclick="changePreviewFontSize(1)" aria-label="Increase font size">+</button>
                                     </div></label>
                                     <label>Line Height: <div class="size-controls">
@@ -2151,7 +2151,7 @@
         let uploadedImages = {};
         // 5. Preview settings (font family is fixed, size and line height are adjustable)
         const PREVIEW_FONT_FAMILY = '"Times New Roman", serif';
-        let previewFontSize = 14;
+        let previewFontSize = 13;
         const PREVIEW_FONT_SIZE_MIN = 8;
         const PREVIEW_FONT_SIZE_MAX = 24;
         let previewLineHeight = 1.5;
@@ -5241,7 +5241,7 @@
         function applyPreviewFont() {
             const sizeEl = document.getElementById('preview-size-value');
             const lineHeightEl = document.getElementById('preview-line-height-value');
-            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 14;
+            if (sizeEl) previewFontSize = parseInt(sizeEl.textContent, 10) || 13;
             if (lineHeightEl) previewLineHeight = parseFloat(lineHeightEl.textContent) || 1.5;
             const page = document.getElementById('a4-content');
             if (page) {
@@ -5255,7 +5255,7 @@
         function changePreviewFontSize(delta) {
             const sizeEl = document.getElementById('preview-size-value');
             if (!sizeEl) return;
-            let size = parseInt(sizeEl.textContent, 10) || 14;
+            let size = parseInt(sizeEl.textContent, 10) || 13;
             size = Math.max(PREVIEW_FONT_SIZE_MIN, Math.min(PREVIEW_FONT_SIZE_MAX, size + delta));
             sizeEl.textContent = size;
             previewFontSize = size;

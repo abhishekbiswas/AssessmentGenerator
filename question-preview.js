@@ -18,7 +18,7 @@
 
 const PREVIEW_DEFAULTS = {
     fontFamily: '"Times New Roman", serif',
-    fontSize: '14pt',
+    fontSize: '13pt',
     lineHeight: '1.5'
 };
 

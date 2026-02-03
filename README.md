@@ -197,7 +197,7 @@ Both tools use `question-preview.js` for rendering, which wraps `question-render
 │   │  questionNumber: string             ← Display number prefix         │   │
 │   │  showMarks: boolean                 ← Show marks badge              │   │
 │   │  fontFamily: string                 ← Override font (e.g. Times New) │   │
-│   │  fontSize: string                   ← Override font size (e.g. 14pt)│   │
+│   │  fontSize: string                   ← Override font size (e.g. 13pt)│   │
 │   │  lineHeight: number                 ← Override line height          │   │
 │   │  applyContainerStyles: boolean      ← Apply font styles to container│   │
 │   │  wrapperClass: string               ← CSS class for wrapper div     │   │
@@ -319,7 +319,7 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
 | `hide_header` | boolean | Hide TABLE header row |
 | `column_widths` | string[] | TABLE column width percentages |
 | `font_family` | string | Font family (default: "Times New Roman", serif) |
-| `font_size` | string | Font size (default: "14pt") |
+| `font_size` | string | Font size (default: "13pt") |
 | `line_height` | string | Line height (default: "1.5") |
 
 ### Example Question with Style
@@ -347,7 +347,7 @@ Layout configuration is **embedded directly in the question JSON** under `data.s
     "style": {
       "options_layout": "horizontal",
       "font_family": "Times New Roman, serif",
-      "font_size": "14pt"
+      "font_size": "13pt"
     }
   }
 }
