@@ -2538,6 +2538,7 @@
             if (!activeData) return tags;
             
             activeData.forEach(q => {
+                tagRegex.lastIndex = 0; // reset so each question is scanned from the start
                 const data = q.data || {};
                 
                 // Check common_content and content
@@ -2598,6 +2599,15 @@
                             }
                         });
                     });
+                }
+                // Check solution.text so solution images can be matched when uploading
+                const solutionText = q.solution?.text;
+                if (solutionText) {
+                    tagRegex.lastIndex = 0;
+                    let match;
+                    while ((match = tagRegex.exec(solutionText)) !== null) {
+                        tags.add(extractImageId(match[1]));
+                    }
                 }
             });
             
